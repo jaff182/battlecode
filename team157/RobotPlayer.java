@@ -53,6 +53,63 @@ public class RobotPlayer {
                 case BEAVER:
                     Beaver.start();
                     break;
+                case AEROSPACELAB:
+                    AerospaceLab.start();
+                    break;
+                case BARRACKS:
+                    Barracks.start();
+                    break;
+                case BASHER:
+                    Basher.start();
+                    break;
+                case COMMANDER:
+                    Commander.start();
+                    break;
+                case COMPUTER:
+                    Computer.start();
+                    break;
+                case DRONE:
+                    Drone.start();
+                    break;
+                case HANDWASHSTATION:
+                    HandwashStation.start();
+                    break;
+                case HELIPAD:
+                    Helipad.start();
+                    break;
+                case LAUNCHER:
+                    Launcher.start();
+                    break;
+                case MINER:
+                    Miner.start();
+                    break;
+                case MINERFACTORY:
+                    MinerFactory.start();
+                    break;
+                case MISSILE:
+                    Missile.start();
+                    break;
+                case SOLDIER:
+                    Soldier.start();
+                    break;
+                case SUPPLYDEPOT:
+                    SupplyDepot.start();
+                    break;
+                case TANK:
+                    Tank.start();
+                    break;
+                case TANKFACTORY:
+                    TankFactory.start();
+                    break;
+                case TECHNOLOGYINSTITUTE:
+                    TechnologyInstitute.start();
+                    break;
+                case TOWER:
+                    Tower.start();
+                    break;
+                case TRAININGFIELD:
+                    TrainingField.start();
+                    break;
             }
             
 		} catch (Exception e) {
@@ -94,7 +151,6 @@ public class RobotPlayer {
         myloc = rc.getLocation();
         int dirInt = directionToInt(myloc.directionTo(target));
         int offsetIndex = 0;
-        
         while (offsetIndex < 5 && !rc.canMove(dirs[(dirInt+offsets[offsetIndex]+8)%8])) {
             offsetIndex++;
         }
