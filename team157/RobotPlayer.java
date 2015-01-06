@@ -100,6 +100,25 @@ public class RobotPlayer {
         }
     }
     
+    /**
+     * Primitive pathing to target location.
+     * @param target
+     * @throws GameActionException
+     */
+    static void walk(MapLocation target) throws GameActionException {
+        myloc = rc.getLocation();
+        int dirInt = directionToInt(myloc.directionTo(target));
+        int offsetIndex = 0;
+        int[] offsets = {0,1,-1,2,-2,3,-3,4};
+        
+        while (offsetIndex < 5 && !rc.canMove(dirs[(dirInt+offsets[offsetIndex]+8)%8])) {
+            offsetIndex++;
+        }
+        if (offsetIndex < 5) {
+            rc.move(dirs[(dirInt+offsets[offsetIndex]+8)%8]);
+        }
+
+    }
     
     //So ugly!!! =============================================================
     public static int directionToInt(Direction d) {
