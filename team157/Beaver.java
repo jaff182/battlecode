@@ -22,6 +22,8 @@ public class Beaver extends RobotPlayer {
     
     private static void loop() throws GameActionException {
         
+        //Vigilance
+        basicatk();
         
     }
     
