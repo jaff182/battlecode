@@ -148,16 +148,17 @@ public class RobotPlayer {
      * @throws GameActionException
      */
     static void walk(MapLocation target) throws GameActionException {
-        myloc = rc.getLocation();
-        int dirInt = directionToInt(myloc.directionTo(target));
-        int offsetIndex = 0;
-        while (offsetIndex < 5 && !rc.canMove(dirs[(dirInt+offsets[offsetIndex]+8)%8])) {
-            offsetIndex++;
+        if(rc.isCoreReady()) {
+            myloc = rc.getLocation();
+            int dirInt = myloc.directionTo(target).ordinal();
+            int offsetIndex = 0;
+            while (offsetIndex < 5 && !rc.canMove(dirs[(dirInt+offsets[offsetIndex]+8)%8])) {
+                offsetIndex++;
+            }
+            if (offsetIndex < 5) {
+                rc.move(dirs[(dirInt+offsets[offsetIndex]+8)%8]);
+            }
         }
-        if (offsetIndex < 5) {
-            rc.move(dirs[(dirInt+offsets[offsetIndex]+8)%8]);
-        }
-
     }
     
     

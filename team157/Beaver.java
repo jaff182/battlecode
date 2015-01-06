@@ -25,6 +25,9 @@ public class Beaver extends RobotPlayer {
         //Vigilance
         basicatk();
         
+        //Go to Enemy HQ
+        walk(enmloc);
+        
     }
     
     //Specific methods =========================================================
