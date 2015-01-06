@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class hq extends RobotPlayer {
+public class HQ extends RobotPlayer {
     
     //General methods =========================================================
     
@@ -15,24 +15,25 @@ public class hq extends RobotPlayer {
         }
     }
     
-    public static void init() throws GameActionException {
+    private static void init() throws GameActionException {
         rc.setIndicatorString(0,"hello i'm a hq.");
-        
         
         
     }
     
-    public static void loop() throws GameActionException {
+    private static void loop() throws GameActionException {
         
+        //Vigilance
+        basicatk();
+        
+        //Spawn
+        tryspawn(hqloc.directionTo(enmloc),RobotType.BEAVER);
         
     }
     
     //Specific methods =========================================================
     
-    //spawn
-    public static void spawn() throws GameActionException {
-        
-    }
+    
     
     
 }

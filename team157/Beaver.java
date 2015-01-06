@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class beaver extends RobotPlayer {
+public class Beaver extends RobotPlayer {
     
     //General methods =========================================================
     
@@ -15,12 +15,12 @@ public class beaver extends RobotPlayer {
         }
     }
     
-    public static void init() throws GameActionException {
+    private static void init() throws GameActionException {
         rc.setIndicatorString(0,"hello i'm a beaver.");
         
     }
     
-    public static void loop() throws GameActionException {
+    private static void loop() throws GameActionException {
         
         
     }
