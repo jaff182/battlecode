@@ -1,6 +1,7 @@
 package team157;
 
 import java.util.Random;
+
 import battlecode.common.*;
 
 public class RobotPlayer {
@@ -13,16 +14,21 @@ public class RobotPlayer {
     public static Team myteam, enmteam;
     public static RobotType mytype;
     public static int myrng; //range
-    public static Random rand;
     
-    //Preset variables
+    public static Random rand;
     public final static Direction[] dirs = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST}; //call dirs[i] for the ith direction
-    public final static int[] offsets = {0,1,-1,2,-2,3};
+    public final static int[] offsets = {0,1,-1,2,-2,3,-3,4};
     public final static RobotType[] rbtypes = {RobotType.HQ,RobotType.TOWER,RobotType.SUPPLYDEPOT,RobotType.TECHNOLOGYINSTITUTE,RobotType.BARRACKS,RobotType.HELIPAD,RobotType.TRAININGFIELD,RobotType.TANKFACTORY,RobotType.MINERFACTORY,RobotType.HANDWASHSTATION,RobotType.AEROSPACELAB,RobotType.BEAVER,RobotType.COMPUTER,RobotType.SOLDIER,RobotType.BASHER,RobotType.MINER,RobotType.DRONE,RobotType.TANK,RobotType.COMMANDER,RobotType.LAUNCHER,RobotType.MISSILE}; //in order of ordinal
     
     //Internal map
     public static int mapx0, mapy0, symmetry=0;
     public static int[][] map = new int[122][122];
+    
+    // For pathing
+    private static PathingState pathingState = PathingState.BUGGING;
+    private static Direction previousDir = Direction.NORTH;
+    private static int turnClockwise;
+    private static int totalTurnOffset = 0;
     
     
     //Main script =============================================================
@@ -180,12 +186,13 @@ public class RobotPlayer {
      * Allocations:<br>
      * 0 - type of symmetry of map (rotational, type)<br>
      * 1-14884 - global shared map data<br>
-     * 16001 - indices of dirty variables in 16002-16020 (non-zero when buildings
-     * are to be built right now)<br>
-     * 16002-16010 - target number of buildings to be built (read on even round
-     * number, write on odd rounds)<br>
-     * 16012-16020 - target number of buildings to be built (read on odd round
-     * number, write on even rounds)<br>
+     * 16001 - reserved <br>
+     * 16002-16010 - number of buildings of different types currently built
+     * (read on even round number, write on odd rounds)<br>
+     * 16012-16020 - number of buildings of different types currently built
+     * (read on odd round number, write on even rounds)<br>
+     * 17001-21000 - reserved, possible unit command mechanism
+     * 21001-25000 - reserved, possible unit response mechanism
      * 
      * @param chnlname
      *            the friendly name for the particular index into array (ie
@@ -219,7 +226,7 @@ public class RobotPlayer {
      * @param target Destination location
      * @throws GameActionException
      */
-    static void walk(MapLocation target) throws GameActionException {
+    public static void explore(MapLocation target) throws GameActionException {
         if(rc.isCoreReady()) {
             myloc = rc.getLocation();
             int dirInt = myloc.directionTo(target).ordinal();
@@ -231,6 +238,97 @@ public class RobotPlayer {
                 rc.move(dirs[(dirInt+offsets[offsetIndex]+8)%8]);
             }
         }
+    }
+    
+    /**
+     * Primitive pathing with randomness to target location, with no knowledge of terrain.
+     * @param target
+     * @throws GameActionException
+     */
+    public static void exploreRandom(MapLocation target) throws GameActionException {
+        if(rc.isCoreReady()) {
+            myloc = rc.getLocation();
+            int dirInt = myloc.directionTo(target).ordinal() + rand.nextInt(5)-2;
+            int offsetIndex = 0;
+            while (offsetIndex < 5 && !rc.canMove(dirs[(dirInt+offsets[offsetIndex]+8)%8])) {
+                offsetIndex++;
+            }
+            if (offsetIndex < 5) {
+                rc.move(dirs[(dirInt+offsets[offsetIndex]+8)%8]);
+            }
+        }
+    }
+    
+    /**
+     * Move around randomly.
+     * @throws GameActionException
+     */
+    public static void wander() throws GameActionException {
+        if(rc.isCoreReady()) {
+            int dirInt = rand.nextInt(8);
+            int offsetIndex = 0;
+            while (offsetIndex < 8 && !rc.canMove(dirs[(dirInt+offsets[offsetIndex]+8)%8])) {
+                offsetIndex++;
+            }
+            if (offsetIndex < 8) {
+                rc.move(dirs[(dirInt+offsets[offsetIndex]+8)%8]);
+            }
+        }
+    }
+    
+    /**
+     * Basic bugging around obstacles
+     * @param target
+     * @throws GameActionException
+     */
+    public static void bug(MapLocation target) throws GameActionException {
+        if (rc.isCoreReady()) {
+            if (pathingState == PathingState.BUGGING) {
+                Direction targetDir = rc.getLocation().directionTo(target);
+                if (rc.canMove(targetDir)) {
+                    // target is not blocked
+                    rc.move(targetDir);
+                } else {
+                    // target is blocked, move clockwise/counterclockwise around obstacle
+                    pathingState = PathingState.HUGGING;
+                    turnClockwise = rand.nextInt(2)*2 - 1;
+                    totalTurnOffset = 0;
+                    hug(targetDir, turnClockwise);
+                }
+            } else {
+                if (totalTurnOffset == 8) {
+                    pathingState = PathingState.BUGGING;
+                } else if (rc.canMove(previousDir)) {
+                    pathingState = PathingState.BUGGING;
+                    rc.move(previousDir);
+                } else if (totalTurnOffset > 12) {
+                    // robot turns one whole round but still does not clear obstacle
+                    turnClockwise *= -1; // bug in opposite direction  
+                    hug(previousDir, turnClockwise);
+                } else {
+                    hug(previousDir, turnClockwise);
+                }
+            }       
+        }
+    }
+    
+    /**
+     * Helper method to bug, hugs around obstacle in obstacleDir.
+     * @param obstacleDir direction of obstacle
+     * @param turnClockwise 1 if robot should go clockwise around obstacle, -1 if robot should go counterclockwise.
+     * @throws GameActionException
+     */
+    private static void hug(Direction obstacleDir, int turnClockwise) throws GameActionException {
+        int ordinalOffset = turnClockwise;
+        while (Math.abs(ordinalOffset) < 8 && !rc.canMove(dirs[(obstacleDir.ordinal()+ordinalOffset+8)%8])) {          
+            ordinalOffset += turnClockwise;
+        }
+        if (Math.abs(ordinalOffset) < 8) {
+            totalTurnOffset += ordinalOffset;
+            rc.move(dirs[(obstacleDir.ordinal()+ordinalOffset+8)%8]);
+            // offset previousDir by 2 to point towards obstacle
+            previousDir = dirs[(obstacleDir.ordinal()+ordinalOffset-2*turnClockwise + 8)%8];
+        }   
     }
     
     
