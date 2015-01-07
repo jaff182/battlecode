@@ -121,6 +121,19 @@ public class RobotPlayer {
     
     //Comms ===================================================================
 	
+	/**
+	 * Names of channels. See javadoc for getchnl for more information.
+	 * 
+	 * Feel free to register and append your own names
+	 * 
+	 * @author Josiah
+	 *
+	 */
+	public enum ChannelName {
+	    MAP_SYMMETRY, MAP_DATA,
+	    BARRACKS, TECHINST, HELIPAD, MINERFACTORY
+	}
+	
 	                /**
      * Gets the index into the messaging array.
      * 
@@ -144,19 +157,19 @@ public class RobotPlayer {
      *            variable name with array being the variables)
      * @return integer between 0-65535 indexing into messaging array
      */
-    public static int getchnl(String chnlname) {
+    public static int getchnl(ChannelName chnlname) {
         switch(chnlname) {
-            case "symmetry":
+            case MAP_SYMMETRY:
                 return 0;
-            case "map":
+            case MAP_DATA:
                 return 1; //14400 channels from 1 to 14400
-            case "barracks":
+            case BARRACKS:
                 return 14500;
-            case "techinst":
+            case TECHINST:
                 return 14600;
-            case "helipad":
+            case HELIPAD:
                 return 14700;
-            case "minerfactory":
+            case MINERFACTORY:
                 return 14800;
             default:
                 return -1;
