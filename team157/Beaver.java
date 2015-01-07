@@ -53,10 +53,9 @@ public class Beaver extends RobotPlayer {
     
     
     
-    // Methods to build buildings - Josiah
+    // Methods to build buildings (anticipated 2 turn latency) - Josiah
     // Procedure to be used
-    // 1) HQ broadcasts on specific radio channel the desired number of
-    // buildings
+    // 1) HQ broadcasts on specific radio channel the desired building to be built
     // 2) Buildings report their existence on each round to produce total count
     // 3) Beavers check for need to build any buildings, and claim the job to
     // build it
@@ -69,12 +68,42 @@ public class Beaver extends RobotPlayer {
      * 1) check for need to build building <br>
      * 2) if building is needed, read off messaging array to check building
      * type, parameters (say, coordinates of build site), and score suitability<br>
-     * 3) 
+     * 3) return suitability score to headquarters if it is the highest so far,
+     * else, ignore <br>
      * 
      * MUST COMPLETE IN ONE TURN OR CODE WILL BREAK (POSSIBLY GLOBALLY)
+     * 
+     * This function DOES NOT yield
+     * 
+     * @return true if request to build was made by beaver, false otherwise
      */
-    public static void checkAndRequestBuilding() {
-
+    public static boolean checkAndRequestBuilding() {
+        return false;
     }
+    
+    /**
+     * Specifies the building this beaver wants to build
+     * 
+     * null if no building is to be built, a building type otherwise
+     */
+    private RobotType buildingToBeBuilt = null;
+    private int buildingToBeBuiltXCoordinate = 0;
+    private int buildingToBeBuiltYCoordinate = 0;
 
+    /**
+     * check if beaver has been told to build a building. If needed, then claims
+     * it on the messaging system, and updates parameters as seen in return
+     * 
+     * DOES NOT ACTUALLY BUILD THE BUILDING
+     * 
+     * This function DOES NOT yield
+     * 
+     * @return true if building is to be built, false otherwise<br>
+     *         See global variables for more info on the building to be built
+     *         They are buildingToBeBuilt, buildingToBeBuiltXCoordinate,
+     *         buildingToBeBuiltYCoordinate
+     */
+    public static boolean checkIfBuildingToBebuilt() {
+        return false;
+    }
 }
