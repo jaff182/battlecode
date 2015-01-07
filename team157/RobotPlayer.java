@@ -121,7 +121,7 @@ public class RobotPlayer {
     
     //Comms ===================================================================
 	
-	        /**
+	                /**
      * Gets the index into the messaging array.
      * 
      * The messaging array is a size-65536 array of ints that can be broadcasted
@@ -132,10 +132,13 @@ public class RobotPlayer {
      * Allocations:<br>
      * 0 - type of symmetry of map (rotational, type)<br>
      * 1-14400 - global shared map data<br>
-     * 15001-15010 - target number of buildings to be built (read on even round
+     * 15001 - indices of dirty variables in 15002-1520 (non-zero when buildings
+     * are to be built right now)<br>
+     * 15002-15010 - target number of buildings to be built (read on even round
      * number, write on odd rounds)<br>
-     * 15011-15020 - target number of buildings to be built (read on odd round
+     * 15012-15020 - target number of buildings to be built (read on odd round
      * number, write on even rounds)<br>
+     * 
      * @param chnlname
      *            the friendly name for the particular index into array (ie
      *            variable name with array being the variables)
