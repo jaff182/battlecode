@@ -102,12 +102,13 @@ public class RobotPlayer {
      * Allocations:<br>
      * 0 - type of symmetry of map (rotational, type)<br>
      * 1-14400 - global shared map data<br>
-     * 15001 - indices of dirty variables in 15002-1520 (non-zero when buildings
-     * are to be built right now)<br>
-     * 15002-15010 - target number of buildings to be built (read on even round
-     * number, write on odd rounds)<br>
-     * 15012-15020 - target number of buildings to be built (read on odd round
-     * number, write on even rounds)<br>
+     * 15001 - reserved <br>
+     * 15002-15010 - number of buildings of different types currently built
+     * (read on even round number, write on odd rounds)<br>
+     * 15012-15020 - number of buildings of different types currently built
+     * (read on odd round number, write on even rounds)<br>
+     * 16001-20000 - reserved, possible unit command mechanism
+     * 20001-24000 - reserved, possible unit response mechanism
      * 
      * @param chnlname
      *            the friendly name for the particular index into array (ie
