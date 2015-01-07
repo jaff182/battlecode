@@ -19,6 +19,8 @@ public class HQ extends RobotPlayer {
         //rc.setIndicatorString(0,"hello i'm a hq.");
         
         //checkRobotTypeOrdinal();
+        
+        
     }
     
     private static void loop() throws GameActionException {

@@ -6,20 +6,23 @@ import battlecode.common.*;
 public class RobotPlayer {
     
     //Global variables ========================================================
+    //Unset Variables
     public static RobotController rc;
     public static MapLocation hqloc, enmloc, myloc; //locations
     public static MapLocation[] mytwrs, enmtwrs; //tower location arrays
     public static Team myteam, enmteam;
     public static RobotType mytype;
     public static int myrng; //range
-    
     public static Random rand;
+    
+    //Preset variables
     public final static Direction[] dirs = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST}; //call dirs[i] for the ith direction
     public final static int[] offsets = {0,1,-1,2,-2,3};
     public final static RobotType[] rbtypes = {RobotType.HQ,RobotType.TOWER,RobotType.SUPPLYDEPOT,RobotType.TECHNOLOGYINSTITUTE,RobotType.BARRACKS,RobotType.HELIPAD,RobotType.TRAININGFIELD,RobotType.TANKFACTORY,RobotType.MINERFACTORY,RobotType.HANDWASHSTATION,RobotType.AEROSPACELAB,RobotType.BEAVER,RobotType.COMPUTER,RobotType.SOLDIER,RobotType.BASHER,RobotType.MINER,RobotType.DRONE,RobotType.TANK,RobotType.COMMANDER,RobotType.LAUNCHER,RobotType.MISSILE}; //in order of ordinal
     
     //Internal map
-    public static int[][] map;
+    public static int mapx0, mapy0, symmetry=0;
+    public static int[][] map = new int[122][122];
     
     
     //Main script =============================================================
@@ -43,6 +46,14 @@ public class RobotPlayer {
         //get teams
         myteam = rc.getTeam();
         enmteam = myteam.opponent();
+        
+        //internal map
+        //This year's implementation randomizes offsets to the x,y coordinates
+        //Coordinate offsets at map[60][60]
+        mapx0 = (hqloc.x+enmloc.x)/2;
+        mapy0 = (hqloc.y+enmloc.y)/2;
+        //computeMap();
+        
         
         //RobotType specific methods ------------------------------------------
         try {
@@ -76,10 +87,77 @@ public class RobotPlayer {
     }
     
     
+    //Map methods =============================================================
+    
+    /**
+     * Internal map is toroidal and approximately centered at midpoint of HQs.
+     * Map representation modulo 6:
+     *  0: unknown,  1: nonvoid,  2: enemy HQ,  3: HQ,  4: void,  5: out of map
+     * Symmetry representation:
+     *  0: unknown,  1: rotational,  2: x-reflection,  3: y-reflection
+     */
+    public static void computeMap() {
+        
+        
+    }
+    
+    /**
+     * Sets value in internal map for MapLocation(xcoord,ycoord)
+     */
+    public static void setInternalMap(int xcoord, int ycoord, int value) {
+        map[(182+xcoord-mapx0)%122][(182+ycoord-mapy0)%122] = value;
+    }
+    
+    /**
+     * Gets value in internal map for MapLocation(xcoord,ycoord)
+     */
+    public static int getInternalMap(int xcoord, int ycoord) {
+        return map[(182+xcoord-mapx0)%122][(182+ycoord-mapy0)%122];
+    }
+    
+    /**
+     * Updates internal map with radio map value for MapLocation(xcoord,ycoord)
+     */
+    public static void updateInternalMap(int xcoord, int ycoord) throws GameActionException {
+        int xidx = (182+xcoord-mapx0)%122;
+        int yidx = (182+ycoord-mapy0)%122;
+        map[xidx][yidx] = rc.readBroadcast(xidx*122+yidx+getChannel(MAP_DATA));
+    }
+    
+    /**
+     * Sets value in radio map for MapLocation(xcoord,ycoord)
+     */
+    public static void setRadioMap(int xcoord, int ycoord, int value) throws GameActionException {
+        int xidx = (182+xcoord-mapx0)%122;
+        int yidx = (182+ycoord-mapy0)%122;
+        rc.broadcast(xidx*122+yidx+getChannel(MAP_DATA), value);
+    }
+    
+    /**
+     * Gets value in radio map for MapLocation(xcoord,ycoord)
+     */
+    public static void getRadioMap(int xcoord, int ycoord) throws GameActionException {
+        int xidx = (182+xcoord-mapx0)%122;
+        int yidx = (182+ycoord-mapy0)%122;
+        return rc.readBroadcast(xidx*122+yidx+getChannel(MAP_DATA));
+    }
+    
+    /**
+     * Updates radio map with internal map value for MapLocation(xcoord,ycoord)
+     */
+    public static void updateRadioMap(int xcoord, int ycoord) throws GameActionException {
+        int xidx = (182+xcoord-mapx0)%122;
+        int yidx = (182+ycoord-mapy0)%122;
+        rc.broadcast(xidx*122+yidx+getChannel(MAP_DATA), map[xidx][yidx]);
+    }
+    
+    
+    
+    
     //Comms ===================================================================
     
     /**
-     * Names of channels. See javadoc for getchnl for more information.
+     * Names of channels. See javadoc for getChannel for more information.
      * 
      * Feel free to register and append your own names
      * 
@@ -101,12 +179,12 @@ public class RobotPlayer {
      * 
      * Allocations:<br>
      * 0 - type of symmetry of map (rotational, type)<br>
-     * 1-14400 - global shared map data<br>
-     * 15001 - indices of dirty variables in 15002-1520 (non-zero when buildings
+     * 1-14884 - global shared map data<br>
+     * 16001 - indices of dirty variables in 16002-16020 (non-zero when buildings
      * are to be built right now)<br>
-     * 15002-15010 - target number of buildings to be built (read on even round
+     * 16002-16010 - target number of buildings to be built (read on even round
      * number, write on odd rounds)<br>
-     * 15012-15020 - target number of buildings to be built (read on odd round
+     * 16012-16020 - target number of buildings to be built (read on odd round
      * number, write on even rounds)<br>
      * 
      * @param chnlname
@@ -119,15 +197,15 @@ public class RobotPlayer {
             case MAP_SYMMETRY:
                 return 0;
             case MAP_DATA:
-                return 1; //14400 channels from 1 to 14400
+                return 1; //14884 channels from 1 to 14884
             case BARRACKS:
-                return 14500;
+                return 15500;
             case TECHINST:
-                return 14600;
+                return 15600;
             case HELIPAD:
-                return 14700;
+                return 15700;
             case MINERFACTORY:
-                return 14800;
+                return 15800;
             default:
                 return -1;
         }
@@ -198,7 +276,7 @@ public class RobotPlayer {
     //Spawn/Build =============================================================
     
     /**
-     * Spawn robot of type rbtype in direction dir0 if allowed
+     * Spawn robot of type rbtype in direction dir0 if allowed, transfers supply
      * @param dir0 Direction to spawn at
      * @param rbtype RobotType of robot to spawn
      * @throws GameActionException
@@ -210,6 +288,8 @@ public class RobotPlayer {
                 int dirint = (dirint0+offset+8)%8;
                 if(rc.canSpawn(dirs[dirint],rbtype)) {
                     rc.spawn(dirs[dirint],rbtype);
+                    myloc = rc.getLocation();
+                    rc.transferSupplies(500,myloc.add(dirs[dirint]));
                     break;
                 }
             }
