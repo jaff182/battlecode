@@ -23,7 +23,14 @@ public class Beaver extends RobotPlayer {
     private static void loop() throws GameActionException {
         
         //Vigilance
-        basicatk();
+        RobotInfo[] enemies = rc.senseNearbyRobots(myrng, enmteam);
+        while(enemies.length > 0) {
+            if(rc.isWeaponReady()) {
+                basicAttack(enemies);
+            }
+            enemies = rc.senseNearbyRobots(myrng, enmteam);
+            rc.yield();
+        }
         
         //Go to Enemy HQ
         walk(enmloc);
