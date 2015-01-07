@@ -127,7 +127,7 @@ public class RobotPlayer {
     public static void updateInternalMap(int xcoord, int ycoord) throws GameActionException {
         int xidx = (182+xcoord-mapx0)%122;
         int yidx = (182+ycoord-mapy0)%122;
-        map[xidx][yidx] = rc.readBroadcast(xidx*122+yidx+getChannel(MAP_DATA));
+        map[xidx][yidx] = rc.readBroadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA));
     }
     
     /**
@@ -136,16 +136,16 @@ public class RobotPlayer {
     public static void setRadioMap(int xcoord, int ycoord, int value) throws GameActionException {
         int xidx = (182+xcoord-mapx0)%122;
         int yidx = (182+ycoord-mapy0)%122;
-        rc.broadcast(xidx*122+yidx+getChannel(MAP_DATA), value);
+        rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), value);
     }
     
     /**
      * Gets value in radio map for MapLocation(xcoord,ycoord)
      */
-    public static void getRadioMap(int xcoord, int ycoord) throws GameActionException {
+    public static int getRadioMap(int xcoord, int ycoord) throws GameActionException {
         int xidx = (182+xcoord-mapx0)%122;
         int yidx = (182+ycoord-mapy0)%122;
-        return rc.readBroadcast(xidx*122+yidx+getChannel(MAP_DATA));
+        return rc.readBroadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA));
     }
     
     /**
@@ -154,7 +154,7 @@ public class RobotPlayer {
     public static void updateRadioMap(int xcoord, int ycoord) throws GameActionException {
         int xidx = (182+xcoord-mapx0)%122;
         int yidx = (182+ycoord-mapy0)%122;
-        rc.broadcast(xidx*122+yidx+getChannel(MAP_DATA), map[xidx][yidx]);
+        rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), map[xidx][yidx]);
     }
     
     
@@ -386,8 +386,6 @@ public class RobotPlayer {
                 int dirint = (dirint0+offset+8)%8;
                 if(rc.canSpawn(dirs[dirint],rbtype)) {
                     rc.spawn(dirs[dirint],rbtype);
-                    myloc = rc.getLocation();
-                    rc.transferSupplies(500,myloc.add(dirs[dirint]));
                     break;
                 }
             }
