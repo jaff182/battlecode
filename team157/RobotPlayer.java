@@ -5,25 +5,25 @@ import battlecode.common.*;
 
 public class RobotPlayer {
     
-	//Global variables ========================================================
+    //Global variables ========================================================
     public static RobotController rc;
-	public static MapLocation hqloc, enmloc, myloc; //locations
+    public static MapLocation hqloc, enmloc, myloc; //locations
     public static MapLocation[] mytwrs, enmtwrs; //tower location arrays
-	public static Team myteam, enmteam;
+    public static Team myteam, enmteam;
     public static RobotType mytype;
     public static int myrng; //range
     
-	public static Random rand;
-	public final static Direction[] dirs = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST}; //call dirs[i] for the ith direction
+    public static Random rand;
+    public final static Direction[] dirs = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST}; //call dirs[i] for the ith direction
     public final static int[] offsets = {0,1,-1,2,-2,3};
     public final static RobotType[] rbtypes = {RobotType.HQ,RobotType.TOWER,RobotType.SUPPLYDEPOT,RobotType.TECHNOLOGYINSTITUTE,RobotType.BARRACKS,RobotType.HELIPAD,RobotType.TRAININGFIELD,RobotType.TANKFACTORY,RobotType.MINERFACTORY,RobotType.HANDWASHSTATION,RobotType.AEROSPACELAB,RobotType.BEAVER,RobotType.COMPUTER,RobotType.SOLDIER,RobotType.BASHER,RobotType.MINER,RobotType.DRONE,RobotType.TANK,RobotType.COMMANDER,RobotType.LAUNCHER,RobotType.MISSILE}; //in order of ordinal
     
     //Internal map
     public static int[][] map;
-	
     
-	//Main script =============================================================
-	public static void run(RobotController RC) {
+    
+    //Main script =============================================================
+    public static void run(RobotController RC) {
         
         //Global inits --------------------------------------------------------
         rc = RC; //set robotcontroller
@@ -45,7 +45,7 @@ public class RobotPlayer {
         enmteam = myteam.opponent();
         
         //RobotType specific methods ------------------------------------------
-		try {
+        try {
             switch(mytype) {
                 case AEROSPACELAB: AerospaceLab.start(); break;
                 case BARRACKS: Barracks.start(); break;
@@ -70,28 +70,28 @@ public class RobotPlayer {
                 case TRAININGFIELD: TrainingField.start(); break;
             }
             
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     
     
     //Comms ===================================================================
-	
-	/**
-	 * Names of channels. See javadoc for getchnl for more information.
-	 * 
-	 * Feel free to register and append your own names
-	 * 
-	 * @author Josiah
-	 *
-	 */
-	public enum ChannelName {
-	    MAP_SYMMETRY, MAP_DATA,
-	    BARRACKS, TECHINST, HELIPAD, MINERFACTORY
-	}
-	
-	/**
+    
+    /**
+     * Names of channels. See javadoc for getchnl for more information.
+     * 
+     * Feel free to register and append your own names
+     * 
+     * @author Josiah
+     *
+     */
+    public enum ChannelName {
+        MAP_SYMMETRY, MAP_DATA,
+        BARRACKS, TECHINST, HELIPAD, MINERFACTORY
+    }
+    
+    /**
      * Gets the index into the messaging array.
      * 
      * The messaging array is a size-65536 array of ints that can be broadcasted
@@ -114,7 +114,7 @@ public class RobotPlayer {
      *            variable name with array being the variables)
      * @return integer between 0-65535 indexing into messaging array
      */
-    public static int getchnl(ChannelName chnlname) {
+    public static int getChannel(ChannelName chnlname) {
         switch(chnlname) {
             case MAP_SYMMETRY:
                 return 0;
@@ -165,7 +165,7 @@ public class RobotPlayer {
      */
     public static void basicAttack(RobotInfo[] enemies) throws GameActionException {
         rc.attackLocation(enemies[0].location);
-	}
+    }
     
     /**
      * Prioritized attack on the weakest of nearby enemies
@@ -179,11 +179,11 @@ public class RobotPlayer {
         
         for(int i=0; i<enemies.length; i++) {
             int type = enemies[i].type.ordinal();
-            if(atkorder[type] < atkorder[targettype]) {
-                targettype = enemies[i].type.ordinal();
+            if(atkorder[type] < targettype) {
+                targettype = atkorder[type];
                 minhp = enemies[i].health;
                 targetidx = i;
-            else if(atkorder[type] == atkorder[targettype] && enemies[i].health < minhp) {
+            } else if(atkorder[type] == targettype && enemies[i].health < minhp) {
                 minhp = enemies[i].health;
                 targetidx = i;
             }
@@ -191,7 +191,7 @@ public class RobotPlayer {
         if (targetidx != -1) {
             rc.attackLocation(enemies[targetidx].location);
         }
-	}
+    }
     
     
     

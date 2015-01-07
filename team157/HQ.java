@@ -27,7 +27,8 @@ public class HQ extends RobotPlayer {
         RobotInfo[] enemies = rc.senseNearbyRobots(myrng, enmteam);
         while(enemies.length > 0) {
             if(rc.isWeaponReady()) {
-                basicAttack(enemies);
+                //basicAttack(enemies);
+                priorityAttack(enemies,atkpriorities);
             }
             enemies = rc.senseNearbyRobots(myrng, enmteam);
             rc.yield();

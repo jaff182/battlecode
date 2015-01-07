@@ -26,7 +26,8 @@ public class Beaver extends RobotPlayer {
         RobotInfo[] enemies = rc.senseNearbyRobots(myrng, enmteam);
         while(enemies.length > 0) {
             if(rc.isWeaponReady()) {
-                basicAttack(enemies);
+                //basicAttack(enemies);
+                priorityAttack(enemies,atkpriorities);
             }
             enemies = rc.senseNearbyRobots(myrng, enmteam);
             rc.yield();
@@ -37,9 +38,21 @@ public class Beaver extends RobotPlayer {
 
     }
 
-    // Specific methods
-    // =========================================================
-
+    // Specific methods =======================================================
+    
+    private static int[] atkpriorities = {
+        0/*0:HQ*/,          1/*1:TOWER*/,       15/*2:SUPPLYDPT*/,  18/*3:TECHINST*/,
+        14/*4:BARRACKS*/,   13/*5:HELIPAD*/,    16/*6:TRNGFIELD*/,  12/*7:TANKFCTRY*/,
+        17/*8:MINERFCTRY*/, 20/*9:HNDWSHSTN*/,  11/*10:AEROLAB*/,    8/*11:BEAVER*/,
+        19/*12:COMPUTER*/,  6/*13:SOLDIER*/,    7/*14:BASHER*/,     9/*15:MINER*/,
+        5/*16:DRONE*/,      3/*17:TANK*/,       4/*18:COMMANDER*/,  10/*19:LAUNCHER*/,
+        2/*20:MISSILE*/
+    };
+    //lower means more important
+    //needs to be adjusted based on defence strategy
+    
+    
+    
     // Methods to build buildings - Josiah
     // Procedure to be used
     // 1) HQ broadcasts on specific radio channel the desired number of
