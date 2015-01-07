@@ -120,6 +120,27 @@ public class RobotPlayer {
     
     
     //Comms ===================================================================
+	
+	        /**
+     * Gets the index into the messaging array.
+     * 
+     * The messaging array is a size-65536 array of ints that can be broadcasted
+     * to and read from by almost all Robots.
+     * 
+     * See "Messaging [bcd09]" from the spec document
+     * 
+     * Allocations:<br>
+     * 0 - type of symmetry of map (rotational, type)<br>
+     * 1-14400 - global shared map data<br>
+     * 15001-15010 - target number of buildings to be built (read on even round
+     * number, write on odd rounds)<br>
+     * 15011-15020 - target number of buildings to be built (read on odd round
+     * number, write on even rounds)<br>
+     * @param chnlname
+     *            the friendly name for the particular index into array (ie
+     *            variable name with array being the variables)
+     * @return integer between 0-65535 indexing into messaging array
+     */
     public static int getchnl(String chnlname) {
         switch(chnlname) {
             case "symmetry":
