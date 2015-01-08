@@ -113,7 +113,7 @@ public class Request {
                 if (proposedJobMetadata == 0)
                     return proposedJobID;
                 else if (Clock.getRoundNum()
-                        - getRequestLastRoundNumber(proposedJobMetadata) >= 5) {
+                        - getRequestInfoLastRoundNumber(proposedJobMetadata) >= 5) {
                     RobotPlayer.rc.broadcast(proposedJobID, 0);
                     return proposedJobID;
                 }
@@ -130,7 +130,7 @@ public class Request {
      * 
      * @return
      */
-    private static int getJobID(int request) {
+    public static int getJobID(int request) {
         return (request & 0xFC00) >>> 18;
     }
     
@@ -147,9 +147,9 @@ public class Request {
      */
     public static long getBuildRobotRequest(int robotType, int x, int y) {
         assert x <= 61 && x >= -61 && y <= 61 && y >= -61;
-        return (x << (64 - 7 - 3)) & (y << (64 - 14 - 3)) & (getJobID() << (32 - 14))
-                & (Clock.getRoundNum() << (32 - 11 - 14))
-                & JobType.BUILD_MOVING_ROBOT_MASK & robotType;
+        return (x << (64 - 7 - 3)) | (y << (64 - 14 - 3)) | (getJobID() << (32 - 14))
+                | (Clock.getRoundNum() << (32 - 11 - 14))
+                | JobType.BUILD_MOVING_ROBOT_MASK & robotType;
     }
     
     /**
@@ -167,11 +167,11 @@ public class Request {
      */
     public static int getConstructBuildingRequest(int buildingType, int x, int y, int fudgeAreaCircleRadius) {
         assert x <= 61 && x >= -61 && y <= 61 && y >= -61;
-        return (x << (64 - 7 - 3)) & (y << (64 - 14 - 3))
-                & (fudgeAreaCircleRadius << (64 - 21 - 3))
-                & (getJobID() << (32 - 14))
-                & (Clock.getRoundNum() << (32 - 11 - 14))
-                & JobType.BUILD_MOVING_ROBOT_MASK & buildingType;
+        return (x << (64 - 7 - 3)) | (y << (64 - 14 - 3))
+                | (fudgeAreaCircleRadius << (64 - 21 - 3))
+                | (getJobID() << (32 - 14))
+                | (Clock.getRoundNum() << (32 - 11 - 14))
+                | JobType.BUILD_MOVING_ROBOT_MASK | buildingType;
     }
 
     /**
@@ -183,9 +183,9 @@ public class Request {
      */
     public long getMoveRequest(int x, int y) {
         assert x <= 61 && x >= -61 && y <= 61 && y >= -61;
-        return (x << (64 - 7 - 3)) & (y << (64 - 14 - 3)) & (getJobID() << (32 - 14))
-                & (Clock.getRoundNum() << (32 - 11 - 14))
-                & JobType.MOVE;
+        return (x << (64 - 7 - 3)) | (y << (64 - 14 - 3)) | (getJobID() << (32 - 14))
+                | (Clock.getRoundNum() << (32 - 11 - 14))
+                | JobType.MOVE;
     }
     
     /**
@@ -201,9 +201,9 @@ public class Request {
      */
     public long getSupplyRequest(int x, int y, int amount) {
         assert amount < 262144;
-        return (x << (64 - 7 - 3)) & (y << (64 - 14 - 3)) & (amount << 32)
-                & (getJobID() << (32 - 14))
-                & (Clock.getRoundNum() << (32 - 11 - 14)) & JobType.SUPPLY;
+        return (x << (64 - 7 - 3)) | (y << (64 - 14 - 3)) | (amount << 32)
+                | (getJobID() << (32 - 14))
+                | (Clock.getRoundNum() << (32 - 11 - 14)) | JobType.SUPPLY;
     }
     
     /**
@@ -260,12 +260,12 @@ public class Request {
     /**
      * Gets the scoring metadata for a request.
      * 
-     * Unpack with getRequest* set of functions.
+     * Unpack with getRequestInfo* set of functions.
      *
      * @return requestInfo an integer containing all the scoring information, from the metadata 
      * @throws GameActionException 
      */
-    public static int getRequest(int jobID) throws GameActionException {
+    public static int getRequestInfo(int jobID) throws GameActionException {
         return RobotPlayer.rc.readBroadcast(BASE_REQUEST_METADATA_CHANNEL + jobID);
     }
     
@@ -279,11 +279,11 @@ public class Request {
      * @param requestInfo
      * @return
      */
-    public static int getRequestScore(int requestInfo) {
+    public static int getRequestInfoScore(int requestInfo) {
         final int requestStatus = requestInfo >>> (32-3);
         if (requestStatus != JobStatus.REQUESTING)
             return 64;
-        return requestInfo >>> (32-3);
+        return requestInfo & 0x3F;
     }
     
     /**
@@ -292,7 +292,7 @@ public class Request {
      * @param requestInfo
      * @return
      */
-    public static int getRequestPriority(int requestInfo) {
+    public static int getRequestInfoPriority(int requestInfo) {
         return 0;
     }
     
@@ -302,7 +302,7 @@ public class Request {
      * @param requestInfo
      * @return
      */
-    public static int getRequestLastRoundNumber(int requestInfo) {
+    public static int getRequestInfoLastRoundNumber(int requestInfo) {
         return (requestInfo >>> (32-3-11)) & 0x7FF;
     }
     
@@ -313,17 +313,19 @@ public class Request {
      * Only run attemptToClaimJob if robot has higher score, and it believes it
      * can complete task
      * 
-     * @param jobID
+     * @param request the request we were given earlier (not requestInfo!)
      * @param countingID
      * @param currentScore must be below 63
      * @return
      * @throws GameActionException 
      */
-    public static void attemptToClaimJob(int jobID, int countingID, int currentScore) throws GameActionException {
+    public static void attemptToClaimJob(int request, int countingID, int currentScore) throws GameActionException {
+        final int jobID = getJobID(request);
         assert currentScore < 63 && currentScore >= 0;
         final int taskInfo = (JobStatus.REQUESTING << (32 - 3))
-                & (Clock.getRoundNum() << (32 - 3 - 11))
-                & (countingID << (32 - 3 - 11 - 12)) & (currentScore);
+                | (Clock.getRoundNum() << (32 - 3 - 11))
+                | (countingID << (32 - 3 - 11 - 12)) | (currentScore);
+        System.out.println("Taskinfo" + taskInfo);
         RobotPlayer.rc.broadcast(BASE_REQUEST_METADATA_CHANNEL + jobID,
                 taskInfo);
     }
@@ -363,7 +365,7 @@ public class Request {
         final int lastJobStatus = requestInfo >>> (32-3);
         if (jobStatus != JobStatus.DELAYED && lastJobStatus != JobStatus.IN_PROGRESS)
             return false;
-        final int newRequestInfo = (jobStatus << (32-3)) & (Clock.getRoundNum() << (32-11)) & (inboxID << (32-3-11-12));
+        final int newRequestInfo = (jobStatus << (32-3)) | (Clock.getRoundNum() << (32-11)) & (inboxID << (32-3-11-12));
         RobotPlayer.rc.broadcast(BASE_REQUEST_METADATA_CHANNEL + jobID, newRequestInfo);
         return true;
     }
