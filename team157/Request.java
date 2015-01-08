@@ -1,5 +1,9 @@
 package team157;
 
+import battlecode.common.Clock;
+import battlecode.common.GameActionException;
+import battlecode.common.RobotType;
+
 public class Request {
     /**
      * Class for making requests. 
@@ -7,6 +11,29 @@ public class Request {
      * 1) use the get*Request series of functions to create a request
      * 2) use the broadcastTo* series of functions to broadcast a request
      * 
+     * Variable namings available to callees:
+     * request
+     * The value to be broadcasted on the request channel
+     * Contains jobID, round number, task type, and parameters
+     * request is a long, and requires two contiguous channels to transmitted.
+     * put the high bits on the first, low on the second.
+     * 
+     * bit allocation, from left to right:
+     * 14 bits -> jobID
+     * 11 bits -> round number
+     * 8 bits -> task type
+     * 
+     * parameters:
+     * task info, task specific. See job documentation later for info.
+     * 
+     * 
+     * requestInfo
+     * Reporting back on request made
+     * Contains task score, inboxID
+     * 3 bits -> job status
+     * 11 bits -> round number
+     * 12 bits -> inboxID (uniquely identifies robot on task)
+     * 6 bits -> task score suitability, reverts to task info later
      */
     
     public class JobStatus {
@@ -26,26 +53,54 @@ public class Request {
     /**
      * Base address into messaging array of a randomized data structure storing request metadata
      */
-    private final int BASE_REQUEST_METADATA_CHANNEL = 30000;
+    private static final int BASE_REQUEST_METADATA_CHANNEL = 30000;
     
     /**
      * Size of randomized data structure in channels.
      * 
      * Ideally, we would like load factor to be low, to make channel allocations faster.
      */
-    private final int REQUEST_METADATA_SIZE = 4000;
+    private static final int REQUEST_METADATA_SIZE = 4000; // max value of 16384
     
     /**
      * Gets a job id. This job id is also your relative index into the
      * "request metadata" structure in the messaging array.
      * 
+     * The returned jobID may not index to a zeroed location. Zero it before
+     * usage.
+     * 
      * So, if REQUEST_METADATA_SIZE is 4000, you can get a value from 0-4000.
      * Your channel index is then BASE_REQUEST_METADATA_CHANNEL + jobID
      * 
-     * @return
+     * @return -1 if error, positive integer otherwise
      */
     private static int getJobID() {
-        return 0;
+        try {
+            for (int tries = 15; tries != 0; --tries) {
+
+                // Randomly generate a jobID
+                int proposedJobID = RobotPlayer.rand
+                        .nextInt(REQUEST_METADATA_SIZE);
+
+                // Check if jobID is in use, by retrieving metadata from
+                // REQUEST_METADATA and testing
+                int proposedJobMetadata = RobotPlayer.rc
+                        .readBroadcast(BASE_REQUEST_METADATA_CHANNEL
+                                + proposedJobID);
+
+                if (proposedJobMetadata == 0)
+                    return proposedJobID;
+                else if (Clock.getRoundNum()
+                        - getRequestLastRoundNumber(proposedJobMetadata) >= 5) {
+                    RobotPlayer.rc.broadcast(proposedJobID, 0);
+                    return proposedJobID;
+                }
+            }
+        } catch (GameActionException e) {
+            e.printStackTrace();
+            return -1;
+        }
+        return -1;
     }
     
     /**
@@ -54,7 +109,7 @@ public class Request {
      * @return
      */
     private static int getJobID(int request) {
-        return 0;
+        return (request & 0xFC00) >>> 18;
     }
     
     
@@ -97,6 +152,21 @@ public class Request {
      * @return
      */
     public int getExploreRequest(int x, int y) {
+        return 0;
+    }
+    
+    /**
+     * Asks for supplies to be sent to this spot.
+     * 
+     * Does not guarantee supplies will be delivered, just that a robot with
+     * this amount of supply will move to given spot.
+     * 
+     * @param x
+     * @param y
+     * @param amount
+     * @return
+     */
+    public int getSupplyRequest(int x, int y, int amount) {
         return 0;
     }
     
@@ -184,6 +254,16 @@ public class Request {
     }
     
     /**
+     * Gets the round number this job was last updated.
+     * 
+     * @param requestInfo
+     * @return
+     */
+    public static int getRequestLastRoundNumber(int requestInfo) {
+        return 0;
+    }
+    
+    /**
      * Attempts to claim the task. If successful, the task will be allocated to
      * robot next round.
      * 
@@ -195,8 +275,7 @@ public class Request {
      * @param currentScore
      * @return
      */
-    public static boolean attemptToClaimJob(int jobID, int taskInfo, int currentScore) {
-        return false;
+    public static void attemptToClaimJob(int jobID, int taskInfo, int currentScore) {
     }
     
     /**
