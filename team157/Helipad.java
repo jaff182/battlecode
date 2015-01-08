@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class Helipad extends RobotPlayer {
+public class Helipad extends Structure {
     
     //General methods =========================================================
     

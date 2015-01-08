@@ -9,26 +9,20 @@ public class RobotPlayer {
     //Global variables ========================================================
     //Unset Variables
     public static RobotController rc;
-    public static MapLocation hqloc, enmloc, myloc; //locations
-    public static MapLocation[] mytwrs, enmtwrs; //tower location arrays
-    public static Team myteam, enmteam;
-    public static RobotType mytype;
-    public static int sightrange, atkrange; //ranges
+    public static MapLocation HQLocation, enemyHQLocation, myLocation; //locations
+    public static MapLocation[] myTowers, enemyTowers; //tower location arrays
+    public static Team myTeam, enemyTeam;
+    public static RobotType myType;
+    public static int sightRange, attackRange; //ranges
     
     public static Random rand;
-    public final static Direction[] dirs = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST}; //call dirs[i] for the ith direction
+    public final static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST}; //call directions[i] for the ith direction
     public final static int[] offsets = {0,1,-1,2,-2,3,-3,4};
-    public final static RobotType[] rbtypes = {RobotType.HQ,RobotType.TOWER,RobotType.SUPPLYDEPOT,RobotType.TECHNOLOGYINSTITUTE,RobotType.BARRACKS,RobotType.HELIPAD,RobotType.TRAININGFIELD,RobotType.TANKFACTORY,RobotType.MINERFACTORY,RobotType.HANDWASHSTATION,RobotType.AEROSPACELAB,RobotType.BEAVER,RobotType.COMPUTER,RobotType.SOLDIER,RobotType.BASHER,RobotType.MINER,RobotType.DRONE,RobotType.TANK,RobotType.COMMANDER,RobotType.LAUNCHER,RobotType.MISSILE}; //in order of ordinal
+    public final static RobotType[] robotTypes = {RobotType.HQ,RobotType.TOWER,RobotType.SUPPLYDEPOT,RobotType.TECHNOLOGYINSTITUTE,RobotType.BARRACKS,RobotType.HELIPAD,RobotType.TRAININGFIELD,RobotType.TANKFACTORY,RobotType.MINERFACTORY,RobotType.HANDWASHSTATION,RobotType.AEROSPACELAB,RobotType.BEAVER,RobotType.COMPUTER,RobotType.SOLDIER,RobotType.BASHER,RobotType.MINER,RobotType.DRONE,RobotType.TANK,RobotType.COMMANDER,RobotType.LAUNCHER,RobotType.MISSILE}; //in order of ordinal
     
     //Internal map
     public static int mapx0, mapy0, symmetry=0;
     public static int[][] map = new int[122][122];
-    
-    // For pathing
-    private static PathingState pathingState = PathingState.BUGGING;
-    private static int turnClockwise;
-    private static int totalOffsetDir = 0;
-    private static Direction obstacleDir = Direction.NORTH;
     
     
     //Main script =============================================================
@@ -39,32 +33,32 @@ public class RobotPlayer {
         rand = new Random(rc.getID()); //seed random number generator
         
         //my properties
-        mytype = rc.getType();
-        sightrange = mytype.sensorRadiusSquared;
-        atkrange = mytype.attackRadiusSquared;
+        myType = rc.getType();
+        sightRange = myType.sensorRadiusSquared;
+        attackRange = myType.attackRadiusSquared;
         
         //sense locations
-        hqloc = rc.senseHQLocation();
-        enmloc = rc.senseEnemyHQLocation();
-        mytwrs = rc.senseTowerLocations();
-        enmtwrs = rc.senseEnemyTowerLocations();
-        myloc = rc.getLocation();
+        HQLocation = rc.senseHQLocation();
+        enemyHQLocation = rc.senseEnemyHQLocation();
+        myTowers = rc.senseTowerLocations();
+        enemyTowers = rc.senseEnemyTowerLocations();
+        myLocation = rc.getLocation();
         
         //get teams
-        myteam = rc.getTeam();
-        enmteam = myteam.opponent();
+        myTeam = rc.getTeam();
+        enemyTeam = myTeam.opponent();
         
         //internal map
         //This year's implementation randomizes offsets to the x,y coordinates
         //Coordinate offsets at map[60][60]
-        mapx0 = (hqloc.x+enmloc.x)/2;
-        mapy0 = (hqloc.y+enmloc.y)/2;
+        mapx0 = (HQLocation.x+enemyHQLocation.x)/2;
+        mapy0 = (HQLocation.y+enemyHQLocation.y)/2;
         //computeMap();
         
         
         //RobotType specific methods ------------------------------------------
         try {
-            switch(mytype) {
+            switch(myType) {
                 case AEROSPACELAB: AerospaceLab.start(); break;
                 case BARRACKS: Barracks.start(); break;
                 case BASHER: Basher.start(); break;
@@ -109,52 +103,58 @@ public class RobotPlayer {
     }
     
     /**
-     * Sets value in internal map for MapLocation(xcoord,ycoord)
+     * Sets value in internal map
+     * @param loc MapLocation to set value.
      */
-    public static void setInternalMap(int xcoord, int ycoord, int value) {
-        map[(182+xcoord-mapx0)%122][(182+ycoord-mapy0)%122] = value;
+    public static void setInternalMap(MapLocation loc, int value) {
+        map[(182+loc.x-mapx0)%122][(182+loc.y-mapy0)%122] = value;
     }
     
     /**
-     * Gets value in internal map for MapLocation(xcoord,ycoord)
+     * Gets value in internal map
+     * @param loc MapLocation to get value.
      */
-    public static int getInternalMap(int xcoord, int ycoord) {
-        return map[(182+xcoord-mapx0)%122][(182+ycoord-mapy0)%122];
+    public static int getInternalMap(MapLocation loc) {
+        return map[(182+loc.x-mapx0)%122][(182+loc.y-mapy0)%122];
     }
     
     /**
-     * Updates internal map with radio map value for MapLocation(xcoord,ycoord)
+     * Updates internal map with radio map value
+     * @param loc MapLocation to update value.
      */
-    public static void updateInternalMap(int xcoord, int ycoord) throws GameActionException {
-        int xidx = (182+xcoord-mapx0)%122;
-        int yidx = (182+ycoord-mapy0)%122;
+    public static void updateInternalMap(MapLocation loc) throws GameActionException {
+        int xidx = (182+loc.x-mapx0)%122;
+        int yidx = (182+loc.y-mapy0)%122;
         map[xidx][yidx] = rc.readBroadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA));
     }
     
     /**
-     * Sets value in radio map for MapLocation(xcoord,ycoord)
+     * Sets value in radio map
+     * @param loc MapLocation to set value.
      */
-    public static void setRadioMap(int xcoord, int ycoord, int value) throws GameActionException {
-        int xidx = (182+xcoord-mapx0)%122;
-        int yidx = (182+ycoord-mapy0)%122;
+    public static void setRadioMap(MapLocation loc, int value) throws GameActionException {
+        int xidx = (182+loc.x-mapx0)%122;
+        int yidx = (182+loc.y-mapy0)%122;
         rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), value);
     }
     
     /**
-     * Gets value in radio map for MapLocation(xcoord,ycoord)
+     * Gets value in radio map
+     * @param loc MapLocation to get value.
      */
-    public static int getRadioMap(int xcoord, int ycoord) throws GameActionException {
-        int xidx = (182+xcoord-mapx0)%122;
-        int yidx = (182+ycoord-mapy0)%122;
+    public static int getRadioMap(MapLocation loc) throws GameActionException {
+        int xidx = (182+loc.x-mapx0)%122;
+        int yidx = (182+loc.y-mapy0)%122;
         return rc.readBroadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA));
     }
     
     /**
-     * Updates radio map with internal map value for MapLocation(xcoord,ycoord)
+     * Updates radio map with internal map value
+     * @param loc MapLocation to update value.
      */
-    public static void updateRadioMap(int xcoord, int ycoord) throws GameActionException {
-        int xidx = (182+xcoord-mapx0)%122;
-        int yidx = (182+ycoord-mapy0)%122;
+    public static void updateRadioMap(MapLocation loc) throws GameActionException {
+        int xidx = (182+loc.x-mapx0)%122;
+        int yidx = (182+loc.y-mapy0)%122;
         rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), map[xidx][yidx]);
     }
     
@@ -195,13 +195,13 @@ public class RobotPlayer {
      * 17001-21000 - reserved, possible unit command mechanism
      * 21001-25000 - reserved, possible unit response mechanism
      * 
-     * @param chnlname
+     * @param channelName
      *            the friendly name for the particular index into array (ie
      *            variable name with array being the variables)
      * @return integer between 0-65535 indexing into messaging array
      */
-    public static int getChannel(ChannelName chnlname) {
-        switch(chnlname) {
+    public static int getChannel(ChannelName channelName) {
+        switch(channelName) {
             case MAP_SYMMETRY:
                 return 0;
             case MAP_DATA:
@@ -220,130 +220,6 @@ public class RobotPlayer {
     }
     
     
-    //Movement ================================================================
-    
-    /**
-     * Primitive pathing to target location, with no knowledge of terrain.
-     * @param target Destination location
-     * @throws GameActionException
-     */
-    public static void explore(MapLocation target) throws GameActionException {
-        if(rc.isCoreReady()) {
-            myloc = rc.getLocation();
-            int dirInt = myloc.directionTo(target).ordinal();
-            int offsetIndex = 0;
-            while (offsetIndex < 5 && !rc.canMove(dirs[(dirInt+offsets[offsetIndex]+8)%8])) {
-                offsetIndex++;
-            }
-            if (offsetIndex < 5) {
-                rc.move(dirs[(dirInt+offsets[offsetIndex]+8)%8]);
-            }
-        }
-    }
-    
-    /**
-     * Primitive pathing with randomness to target location, with no knowledge of terrain.
-     * @param target
-     * @throws GameActionException
-     */
-    public static void exploreRandom(MapLocation target) throws GameActionException {
-        if(rc.isCoreReady()) {
-            myloc = rc.getLocation();
-            int dirInt = myloc.directionTo(target).ordinal() + rand.nextInt(5)-2;
-            int offsetIndex = 0;
-            while (offsetIndex < 5 && !rc.canMove(dirs[(dirInt+offsets[offsetIndex]+8)%8])) {
-                offsetIndex++;
-            }
-            if (offsetIndex < 5) {
-                rc.move(dirs[(dirInt+offsets[offsetIndex]+8)%8]);
-            }
-        }
-    }
-    
-    /**
-     * Move around randomly.
-     * @throws GameActionException
-     */
-    public static void wander() throws GameActionException {
-        if(rc.isCoreReady()) {
-            int dirInt = rand.nextInt(8);
-            int offsetIndex = 0;
-            while (offsetIndex < 8 && !rc.canMove(dirs[(dirInt+offsets[offsetIndex]+8)%8])) {
-                offsetIndex++;
-            }
-            if (offsetIndex < 8) {
-                rc.move(dirs[(dirInt+offsets[offsetIndex]+8)%8]);
-            }
-        }
-    }
-    
-    /**
-     * Basic bugging around obstacles
-     * @param target
-     * @throws GameActionException
-     */
-    public static void bug(MapLocation target) throws GameActionException {
-        if (rc.isCoreReady()) {
-            if (pathingState == PathingState.BUGGING) {
-                Direction targetDir = rc.getLocation().directionTo(target);
-                rc.setIndicatorString(1,"bug " + targetDir);
-                if (rc.canMove(targetDir)) {
-                    // target is not blocked
-                    rc.move(targetDir);
-                } else {
-                    // target is blocked, move clockwise/counterclockwise around obstacle
-                    pathingState = PathingState.HUGGING;
-                    totalOffsetDir = 0;
-                    obstacleDir = targetDir;
-                    
-                    // Choose direction to hug in
-                    int dirInt = targetDir.ordinal();
-                    int offsetIndex = rand.nextInt(5);
-                    while (offsetIndex < 8 && !rc.canMove(dirs[(dirInt+offsets[offsetIndex]+8)%8])) {
-                        offsetIndex++;
-                    }
-                    if (offsetIndex < 8) {
-                        int offset = offsets[offsetIndex];
-                        turnClockwise = offset/Math.abs(offset);
-                        hug(obstacleDir, turnClockwise);
-                    }
-                }
-            } else {
-                if (rc.canMove(obstacleDir)) {
-                    rc.move(obstacleDir);
-                    pathingState = PathingState.BUGGING;
-                } else if (Math.abs(totalOffsetDir) > 24) { //TODO
-                    pathingState = PathingState.BUGGING;
-                    System.out.println("bug around");
-                } else {
-                    hug(obstacleDir, turnClockwise);
-                }
-            }       
-        }
-    }
-    
-    /**
-     * Helper method to bug, hugs around obstacle in obstacleDir.
-     * @param obstacleDir direction of obstacle
-     * @param turnClockwise 1 if robot should go clockwise around obstacle, -1 if robot should go counterclockwise.
-     * @throws GameActionException
-     */
-    private static void hug(Direction obstacleDir, int turnClockwise) throws GameActionException {
-        rc.setIndicatorString(1, "HUG " + obstacleDir);
-        int ordinalOffset = turnClockwise;
-        Direction nextDir = obstacleDir;
-        while (Math.abs(ordinalOffset) < 8 && !rc.canMove(nextDir)) {
-            ordinalOffset += turnClockwise;
-            nextDir = dirs[(obstacleDir.ordinal()+ordinalOffset+8)%8];
-        }
-        if (Math.abs(ordinalOffset) < 8) {
-            rc.move(nextDir);
-            obstacleDir = dirs[(nextDir.ordinal()-turnClockwise+8)%8];
-            totalOffsetDir += ordinalOffset;
-        }  
-    }
-    
-    
     //Attack ==================================================================
     
     /**
@@ -358,7 +234,7 @@ public class RobotPlayer {
     /**
      * Prioritized attack on the weakest of nearby enemies
      * @param enemies RobotInfo array of enemies in attack range
-     * @param atkorder int array of attack priority rank (0 to 20, allowing ties) for each corresponding RobotType ordinal in rbtypes (eg: atkorder[1] = 5 means TOWERs are the 6th most important RobotType to attack)
+     * @param atkorder int array of attack priority rank (0 to 20, allowing ties) for each corresponding RobotType ordinal in robotTypes (eg: atkorder[1] = 5 means TOWERs are the 6th most important RobotType to attack)
      * @throws GameActionException
      */
     public static void priorityAttack(RobotInfo[] enemies, int[] atkorder) throws GameActionException {
@@ -382,132 +258,14 @@ public class RobotPlayer {
     }
     
     
-    
-    //Spawn/Build =============================================================
-    
-    /**
-     * Spawn robot of type rbtype in direction dir0 if allowed, transfers supply
-     * @param dir0 Direction to spawn at
-     * @param rbtype RobotType of robot to spawn
-     * @throws GameActionException
-     */
-    public static void trySpawn(Direction dir0, RobotType rbtype) throws GameActionException {
-        if(rc.isCoreReady() && rc.getTeamOre() >= rbtype.oreCost) {
-            int dirint0 = dir0.ordinal();
-            for(int offset : offsets) {
-                int dirint = (dirint0+offset+8)%8;
-                if(rc.canSpawn(dirs[dirint],rbtype)) {
-                    rc.spawn(dirs[dirint],rbtype);
-                    break;
-                }
-            }
-        }
-    }
-    
-    
-    /**
-     * Build robot of type rbtype in direction dir0 if allowed
-     * @param dir0 Direction to build at
-     * @param rbtype RobotType of building to build
-     * @throws GameActionException
-     */
-    public static void tryBuild(Direction dir0, RobotType rbtype) throws GameActionException {
-        if(rc.isCoreReady() && rc.getTeamOre() >= rbtype.oreCost) {
-            int dirint0 = dir0.ordinal();
-            for(int offset : offsets) {
-                int dirint = (dirint0+offset+8)%8;
-                if(rc.canBuild(dirs[dirint],rbtype)) {
-                    rc.build(dirs[dirint],rbtype);
-                    break;
-                }
-            }
-        }
-    }
-    
-    
-    
-    //Supply ==================================================================
-    
-    /**
-     * Dispense supply to neighboring units according to health/supplyUpkeep. 
-     * Primarily used by a large source/storage of supply, eq HQ/building.
-     */
-    public static void dispenseSupply(double[] hpcapacity) throws GameActionException {
-        if(2000 - Clock.getBytecodeNum() >  500) {
-            //Sense nearby friendly robots
-            RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myteam);
-            int targetidx = -1;
-            double totalsupply = 0, totalcapacity = 0;
-            double targetsupplyratio = 250, minsupplyratio = targetsupplyratio;
-            //targetsupplyratio arbitrarily set to 250 for now
-            
-            for(int i=0; i<friends.length; i++) {
-                //Keep track of total values to find mean later
-                totalsupply += friends[i].supplyLevel;
-                totalcapacity += friends[i].health*hpcapacity[friends[i].type.ordinal()];
-                
-                //Find robot with lowest supply per capacity
-                double supplyratio = friends[i].supplyLevel/(friends[i].health*hpcapacity[friends[i].type.ordinal()]);
-                if(supplyratio < minsupplyratio) {
-                    minsupplyratio = supplyratio;
-                    targetidx = i;
-                }
-            }
-            
-            //Replenish supply
-            double targetsupply = totalcapacity*targetsupplyratio;
-            if(targetidx != -1 && totalsupply < targetsupply) {
-                MapLocation loc = friends[targetidx].location;
-                rc.transferSupplies((int)(targetsupply-totalsupply),loc);
-            }
-        }
-    }
-    
-    /**
-     * Distribute supply among neighboring units, according to health/supplyUpkeep. 
-     * Primarily used by a temporary holder of supply, eg beaver/soldier.
-     */
-    public static void distributeSupply(double[] hpcapacity) throws GameActionException {
-        if(2000 - Clock.getBytecodeNum() >  500) {
-            //Sense nearby friendly robots
-            RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myteam);
-            if(friends.length > 0) {
-                int targetidx = -1;
-                double mycapacity = rc.getHealth()*hpcapacity[rc.getType().ordinal()];
-                double totalsupply = rc.getSupplyLevel(), totalcapacity = mycapacity;
-                double minsupplyratio = 10000000;
-                
-                for(int i=0; i<friends.length; i++) {
-                    //Keep track of total values to find mean later
-                    totalsupply += friends[i].supplyLevel;
-                    totalcapacity += friends[i].health/(1+0.2*friends[i].type.supplyUpkeep);
-                    
-                    //Find robot with lowest supply per capacity
-                    double supplyratio = friends[i].supplyLevel*(1+0.2*friends[i].type.supplyUpkeep)/friends[i].health;
-                    if(supplyratio < minsupplyratio) {
-                        minsupplyratio = supplyratio;
-                        targetidx = i;
-                    }
-                }
-                
-                //Transfer half of excess supply above mean
-                double meansupply = totalsupply/totalcapacity*mycapacity;
-                if(targetidx != -1 && rc.getSupplyLevel() > meansupply) {
-                    MapLocation loc = friends[targetidx].location;
-                    rc.transferSupplies((int)(rc.getSupplyLevel()-meansupply)/2,loc);
-                }
-            }
-        }
-    }
-    
     //Tests ===================================================================
     
     /**
-     * Check RobotType ordinal agreement with order in rbtypes
+     * Check RobotType ordinal agreement with order in robotTypes
      */
     public static void checkRobotTypeOrdinal() {
         for(int i=0; i<=20; i++) {
-            assert rbtypes[i].ordinal() == i : rbtypes[i];
+            assert robotTypes[i].ordinal() == i : robotTypes[i];
         }
         System.out.println("RobotType Ordinal Test passed.");
     }

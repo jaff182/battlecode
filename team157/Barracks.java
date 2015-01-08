@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class Barracks extends RobotPlayer {
+public class Barracks extends Structure {
     
     //General methods =========================================================
     

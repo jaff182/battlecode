@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class AerospaceLab extends RobotPlayer {
+public class AerospaceLab extends Structure {
     
     //General methods =========================================================
     

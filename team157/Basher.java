@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class Basher extends RobotPlayer {
+public class Basher extends MovableUnit {
     
     //General methods =========================================================
     

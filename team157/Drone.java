@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class Drone extends RobotPlayer {
+public class Drone extends MovableUnit {
     
     //General methods =========================================================
     

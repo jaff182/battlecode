@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class Beaver extends RobotPlayer {
+public class Beaver extends MovableUnit {
 
     // General methods =========================================================
 
@@ -23,27 +23,35 @@ public class Beaver extends RobotPlayer {
     private static void loop() throws GameActionException {
         
         //Vigilance
-        RobotInfo[] enemies = rc.senseNearbyRobots(atkrange, enmteam);
+        //Stops everything and attacks when enemies are in attack range.
+        RobotInfo[] enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
         while(enemies.length > 0) {
             if(rc.isWeaponReady()) {
                 //basicAttack(enemies);
-                priorityAttack(enemies,atkpriorities);
+                priorityAttack(enemies,attackPriorities);
             }
-            enemies = rc.senseNearbyRobots(atkrange, enmteam);
+            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
             rc.yield();
         }
         
         //Go to Enemy HQ
-        bug(enmloc);
+        bug(enemyHQLocation);
         //rc.setIndicatorString(1, "Number of bytecodes: " + Clock.getBytecodeNum());
 
         //Distribute supply
-        distributeSupply(hpcapacity);
+        distributeSupply(suppliabilityMultiplier);
     }
 
     // Specific methods =======================================================
     
-    private static int[] atkpriorities = {
+    
+    //Parameters ==============================================================
+    
+    /**
+     * Ranks the RobotType order in which enemy units should be attacked (so lower 
+     * means attack first). Needs to be adjusted dynamically based on defence strategy.
+     */
+    private static int[] attackPriorities = {
         1/*0:HQ*/,          0/*1:TOWER*/,       15/*2:SUPPLYDPT*/,  18/*3:TECHINST*/,
         14/*4:BARRACKS*/,   13/*5:HELIPAD*/,    16/*6:TRNGFIELD*/,  12/*7:TANKFCTRY*/,
         17/*8:MINERFCTRY*/, 20/*9:HNDWSHSTN*/,  11/*10:AEROLAB*/,   8/*11:BEAVER*/,
@@ -51,10 +59,13 @@ public class Beaver extends RobotPlayer {
         7/*16:DRONE*/,      4/*17:TANK*/,       3/*18:COMMANDER*/,  10/*19:LAUNCHER*/,
         2/*20:MISSILE*/
     };
-    //lower means more important
-    //needs to be adjusted based on defence strategy
     
-    private static double[] hpcapacity = {
+    /**
+     * Multipliers for the effective supply capacity for friendly unit robotTypes, by 
+     * which the dispenseSupply() and distributeSupply() methods allocate supply (so 
+     * higher means give more supply to units of that type).
+     */
+    private static double[] suppliabilityMultiplier = {
         0/*0:HQ*/,          1/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   1/*3:TECHINST*/,
         1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     1/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
         1/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
@@ -62,6 +73,29 @@ public class Beaver extends RobotPlayer {
         1/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };
+    
+    
+    //Build methods ===========================================================
+    
+    /**
+     * Build robot of type rbtype in direction dir0 if allowed
+     * @param dir0 Direction to build at
+     * @param robotType RobotType of building to build
+     * @throws GameActionException
+     */
+    public static void tryBuild(Direction dir0, RobotType robotType) throws GameActionException {
+        if(rc.isCoreReady() && rc.getTeamOre() >= robotType.oreCost) {
+            int dirint0 = dir0.ordinal();
+            for(int offset : offsets) {
+                int dirint = (dirint0+offset+8)%8;
+                if(rc.canBuild(directions[dirint],robotType)) {
+                    rc.build(directions[dirint],robotType);
+                    break;
+                }
+            }
+        }
+    }
+    
     
     // Methods to build buildings - Josiah
     // Procedure to be used

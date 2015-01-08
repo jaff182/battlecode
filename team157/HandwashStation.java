@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class HandwashStation extends RobotPlayer {
+public class HandwashStation extends Structure {
     
     //General methods =========================================================
     

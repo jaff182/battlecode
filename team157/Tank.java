@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class Tank extends RobotPlayer {
+public class Tank extends MovableUnit {
     
     //General methods =========================================================
     

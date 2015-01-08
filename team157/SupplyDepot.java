@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class SupplyDepot extends RobotPlayer {
+public class SupplyDepot extends Structure {
     
     //General methods =========================================================
     

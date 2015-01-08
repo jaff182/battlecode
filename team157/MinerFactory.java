@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class MinerFactory extends RobotPlayer {
+public class MinerFactory extends Structure {
     
     //General methods =========================================================
     
