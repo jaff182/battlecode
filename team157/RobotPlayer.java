@@ -13,7 +13,7 @@ public class RobotPlayer {
     public static MapLocation[] mytwrs, enmtwrs; //tower location arrays
     public static Team myteam, enmteam;
     public static RobotType mytype;
-    public static int myrng; //range
+    public static int sightrange, atkrange; //ranges
     
     public static Random rand;
     public final static Direction[] dirs = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST}; //call dirs[i] for the ith direction
@@ -40,7 +40,8 @@ public class RobotPlayer {
         
         //my properties
         mytype = rc.getType();
-        myrng = mytype.attackRadiusSquared;
+        sightrange = mytype.sensorRadiusSquared;
+        atkrange = mytype.attackRadiusSquared;
         
         //sense locations
         hqloc = rc.senseHQLocation();
@@ -412,6 +413,81 @@ public class RobotPlayer {
         }
     }
     
+    
+    
+    //Supply ==================================================================
+    
+    /**
+     * Dispense supply to neighboring units according to health/supplyUpkeep. 
+     * Primarily used by a large source/storage of supply, eq HQ/building.
+     */
+    public static void dispenseSupply(double[] hpcapacity) throws GameActionException {
+        if(2000 - Clock.getBytecodeNum() >  500) {
+            //Sense nearby friendly robots
+            RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myteam);
+            int targetidx = -1;
+            double totalsupply = 0, totalcapacity = 0;
+            double targetsupplyratio = 250, minsupplyratio = targetsupplyratio;
+            //targetsupplyratio arbitrarily set to 250 for now
+            
+            for(int i=0; i<friends.length; i++) {
+                //Keep track of total values to find mean later
+                totalsupply += friends[i].supplyLevel;
+                totalcapacity += friends[i].health*hpcapacity[friends[i].type.ordinal()];
+                
+                //Find robot with lowest supply per capacity
+                double supplyratio = friends[i].supplyLevel/(friends[i].health*hpcapacity[friends[i].type.ordinal()]);
+                if(supplyratio < minsupplyratio) {
+                    minsupplyratio = supplyratio;
+                    targetidx = i;
+                }
+            }
+            
+            //Replenish supply
+            double targetsupply = totalcapacity*targetsupplyratio;
+            if(targetidx != -1 && totalsupply < targetsupply) {
+                MapLocation loc = friends[targetidx].location;
+                rc.transferSupplies((int)(targetsupply-totalsupply),loc);
+            }
+        }
+    }
+    
+    /**
+     * Distribute supply among neighboring units, according to health/supplyUpkeep. 
+     * Primarily used by a temporary holder of supply, eg beaver/soldier.
+     */
+    public static void distributeSupply(double[] hpcapacity) throws GameActionException {
+        if(2000 - Clock.getBytecodeNum() >  500) {
+            //Sense nearby friendly robots
+            RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myteam);
+            if(friends.length > 0) {
+                int targetidx = -1;
+                double mycapacity = rc.getHealth()*hpcapacity[rc.getType().ordinal()];
+                double totalsupply = rc.getSupplyLevel(), totalcapacity = mycapacity;
+                double minsupplyratio = 10000000;
+                
+                for(int i=0; i<friends.length; i++) {
+                    //Keep track of total values to find mean later
+                    totalsupply += friends[i].supplyLevel;
+                    totalcapacity += friends[i].health/(1+0.2*friends[i].type.supplyUpkeep);
+                    
+                    //Find robot with lowest supply per capacity
+                    double supplyratio = friends[i].supplyLevel*(1+0.2*friends[i].type.supplyUpkeep)/friends[i].health;
+                    if(supplyratio < minsupplyratio) {
+                        minsupplyratio = supplyratio;
+                        targetidx = i;
+                    }
+                }
+                
+                //Transfer half of excess supply above mean
+                double meansupply = totalsupply/totalcapacity*mycapacity;
+                if(targetidx != -1 && rc.getSupplyLevel() > meansupply) {
+                    MapLocation loc = friends[targetidx].location;
+                    rc.transferSupplies((int)(rc.getSupplyLevel()-meansupply)/2,loc);
+                }
+            }
+        }
+    }
     
     //Tests ===================================================================
     

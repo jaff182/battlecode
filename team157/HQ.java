@@ -24,19 +24,21 @@ public class HQ extends RobotPlayer {
     private static void loop() throws GameActionException {
         
         //Vigilance
-        RobotInfo[] enemies = rc.senseNearbyRobots(myrng, enmteam);
+        RobotInfo[] enemies = rc.senseNearbyRobots(atkrange, enmteam);
         while(enemies.length > 0) {
             if(rc.isWeaponReady()) {
                 //basicAttack(enemies);
                 priorityAttack(enemies,atkpriorities);
             }
-            enemies = rc.senseNearbyRobots(myrng, enmteam);
+            enemies = rc.senseNearbyRobots(atkrange, enmteam);
             rc.yield();
         }
         
         //Spawn
         trySpawn(hqloc.directionTo(enmloc),RobotType.BEAVER);
         
+        //Dispense supply
+        dispenseSupply(hpcapacity);
     }
     
     //Specific methods =========================================================
@@ -52,6 +54,13 @@ public class HQ extends RobotPlayer {
     //lower means more important
     //needs to be adjusted based on defence strategy
     
-    
+    private static double[] hpcapacity = {
+        0/*0:HQ*/,          0/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     1/*15:MINER*/,
+        1/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
+        0/*20:MISSILE*/
+    };
     
 }

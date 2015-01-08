@@ -23,19 +23,21 @@ public class Beaver extends RobotPlayer {
     private static void loop() throws GameActionException {
         
         //Vigilance
-        RobotInfo[] enemies = rc.senseNearbyRobots(myrng, enmteam);
+        RobotInfo[] enemies = rc.senseNearbyRobots(atkrange, enmteam);
         while(enemies.length > 0) {
             if(rc.isWeaponReady()) {
                 //basicAttack(enemies);
                 priorityAttack(enemies,atkpriorities);
             }
-            enemies = rc.senseNearbyRobots(myrng, enmteam);
+            enemies = rc.senseNearbyRobots(atkrange, enmteam);
             rc.yield();
         }
         
         //Go to Enemy HQ
-        bug(enmloc);
-        rc.setIndicatorString(1, "Number of bytecodes: " + Clock.getBytecodeNum());
+        exploreRandom(enmloc);
+        
+        //Distribute supply
+        distributeSupply(hpcapacity);
     }
 
     // Specific methods =======================================================
@@ -51,11 +53,19 @@ public class Beaver extends RobotPlayer {
     //lower means more important
     //needs to be adjusted based on defence strategy
     
+    private static double[] hpcapacity = {
+        0/*0:HQ*/,          1/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   1/*3:TECHINST*/,
+        1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     1/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
+        1/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     1/*15:MINER*/,
+        1/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
+        0/*20:MISSILE*/
+    };
     
-    
-    // Methods to build buildings (anticipated 2 turn latency) - Josiah
+    // Methods to build buildings - Josiah
     // Procedure to be used
-    // 1) HQ broadcasts on specific radio channel the desired building to be built
+    // 1) HQ broadcasts on specific radio channel the desired number of
+    // buildings
     // 2) Buildings report their existence on each round to produce total count
     // 3) Beavers check for need to build any buildings, and claim the job to
     // build it
@@ -68,42 +78,12 @@ public class Beaver extends RobotPlayer {
      * 1) check for need to build building <br>
      * 2) if building is needed, read off messaging array to check building
      * type, parameters (say, coordinates of build site), and score suitability<br>
-     * 3) return suitability score to headquarters if it is the highest so far,
-     * else, ignore <br>
+     * 3) 
      * 
      * MUST COMPLETE IN ONE TURN OR CODE WILL BREAK (POSSIBLY GLOBALLY)
-     * 
-     * This function DOES NOT yield
-     * 
-     * @return true if request to build was made by beaver, false otherwise
      */
-    public static boolean checkAndRequestBuilding() {
-        return false;
-    }
-    
-    /**
-     * Specifies the building this beaver wants to build
-     * 
-     * null if no building is to be built, a building type otherwise
-     */
-    private RobotType buildingToBeBuilt = null;
-    private int buildingToBeBuiltXCoordinate = 0;
-    private int buildingToBeBuiltYCoordinate = 0;
+    public static void checkAndRequestBuilding() {
 
-    /**
-     * check if beaver has been told to build a building. If needed, then claims
-     * it on the messaging system, and updates parameters as seen in return
-     * 
-     * DOES NOT ACTUALLY BUILD THE BUILDING
-     * 
-     * This function DOES NOT yield
-     * 
-     * @return true if building is to be built, false otherwise<br>
-     *         See global variables for more info on the building to be built
-     *         They are buildingToBeBuilt, buildingToBeBuiltXCoordinate,
-     *         buildingToBeBuiltYCoordinate
-     */
-    public static boolean checkIfBuildingToBebuilt() {
-        return false;
     }
+
 }
