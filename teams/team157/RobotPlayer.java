@@ -55,12 +55,15 @@ public class RobotPlayer {
         mapy0 = (HQLocation.y+enemyHQLocation.y)/2;
         //computeMap();
         
-        //set countingID for messaging (WARNING, ASSUMES MESSAGING ARRAY IS INITIALIZED TO ZERO)
-        countingID = rc.readBroadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER));
-        rc.broadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER), countingID+1);
-        
-        //RobotType specific methods ------------------------------------------
         try {
+            
+            //set countingID for messaging (WARNING, ASSUMES MESSAGING ARRAY IS INITIALIZED TO ZERO)
+            if(myType != RobotType.MISSILE) {
+                countingID = rc.readBroadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER));
+                rc.broadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER), countingID+1);
+            }
+            
+            //RobotType specific methods --------------------------------------
             switch(myType) {
                 case AEROSPACELAB: AerospaceLab.start(); break;
                 case BARRACKS: Barracks.start(); break;
@@ -117,7 +120,7 @@ public class RobotPlayer {
     public static void setInternalMap(MapLocation loc, int value) {
         int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
         int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
-        map[xidx][yidx] = value;
+        map[yidx][xidx] = value;
     }
     
     /**
@@ -128,7 +131,7 @@ public class RobotPlayer {
     public static int getInternalMap(MapLocation loc) {
         int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
         int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
-        return map[xidx][yidx];
+        return map[yidx][xidx];
     }
     
     /**
@@ -138,7 +141,7 @@ public class RobotPlayer {
     public static void updateInternalMap(MapLocation loc) throws GameActionException {
         int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
         int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
-        map[xidx][yidx] = rc.readBroadcast(xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA));
+        map[yidx][xidx] = rc.readBroadcast(xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA));
     }
     
     /**
@@ -169,7 +172,7 @@ public class RobotPlayer {
     public static void updateRadioMap(MapLocation loc) throws GameActionException {
         int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
         int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
-        rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), map[xidx][yidx]);
+        rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), map[yidx][xidx]);
     }
     
     
