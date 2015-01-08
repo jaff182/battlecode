@@ -24,9 +24,9 @@ public class RobotPlayer {
     
     // For pathing
     private static PathingState pathingState = PathingState.BUGGING;
-    private static Direction previousDir = Direction.NORTH;
     private static int turnClockwise;
-    private static int totalTurnOffset = 0;
+    private static int totalOffsetDir = 0;
+    private static Direction obstacleDir = Direction.NORTH;
     
     
     //Main script =============================================================
@@ -145,13 +145,8 @@ public class RobotPlayer {
     //Movement ================================================================
     
     /**
-<<<<<<< HEAD
      * Primitive pathing to target location, with no knowledge of terrain.
-     * @param target
-=======
-     * Primitive pathing to target location.
      * @param target Destination location
->>>>>>> 5efcdcd83406444a176e031b139c739b529b222a
      * @throws GameActionException
      */
     public static void explore(MapLocation target) throws GameActionException {
@@ -213,28 +208,37 @@ public class RobotPlayer {
         if (rc.isCoreReady()) {
             if (pathingState == PathingState.BUGGING) {
                 Direction targetDir = rc.getLocation().directionTo(target);
+                rc.setIndicatorString(1,"bug " + targetDir);
                 if (rc.canMove(targetDir)) {
                     // target is not blocked
                     rc.move(targetDir);
                 } else {
                     // target is blocked, move clockwise/counterclockwise around obstacle
                     pathingState = PathingState.HUGGING;
-                    turnClockwise = rand.nextInt(2)*2 - 1;
-                    totalTurnOffset = 0;
-                    hug(targetDir, turnClockwise);
+                    totalOffsetDir = 0;
+                    obstacleDir = targetDir;
+                    
+                    // Choose direction to hug in
+                    int dirInt = targetDir.ordinal();
+                    int offsetIndex = rand.nextInt(5);
+                    while (offsetIndex < 8 && !rc.canMove(dirs[(dirInt+offsets[offsetIndex]+8)%8])) {
+                        offsetIndex++;
+                    }
+                    if (offsetIndex < 8) {
+                        int offset = offsets[offsetIndex];
+                        turnClockwise = offset/Math.abs(offset);
+                        hug(obstacleDir, turnClockwise);
+                    }
                 }
             } else {
-                if (totalTurnOffset == 8) {
+                if (rc.canMove(obstacleDir)) {
+                    rc.move(obstacleDir);
                     pathingState = PathingState.BUGGING;
-                } else if (rc.canMove(previousDir)) {
+                } else if (Math.abs(totalOffsetDir) > 24) { //TODO
                     pathingState = PathingState.BUGGING;
-                    rc.move(previousDir);
-                } else if (totalTurnOffset > 12) {
-                    // robot turns one whole round but still does not clear obstacle
-                    turnClockwise *= -1; // bug in opposite direction  
-                    hug(previousDir, turnClockwise);
+                    System.out.println("bug around");
                 } else {
-                    hug(previousDir, turnClockwise);
+                    hug(obstacleDir, turnClockwise);
                 }
             }       
         }
@@ -247,16 +251,18 @@ public class RobotPlayer {
      * @throws GameActionException
      */
     private static void hug(Direction obstacleDir, int turnClockwise) throws GameActionException {
+        rc.setIndicatorString(1, "HUG " + obstacleDir);
         int ordinalOffset = turnClockwise;
-        while (Math.abs(ordinalOffset) < 8 && !rc.canMove(dirs[(obstacleDir.ordinal()+ordinalOffset+8)%8])) {          
+        Direction nextDir = obstacleDir;
+        while (Math.abs(ordinalOffset) < 8 && !rc.canMove(nextDir)) {
             ordinalOffset += turnClockwise;
+            nextDir = dirs[(obstacleDir.ordinal()+ordinalOffset+8)%8];
         }
         if (Math.abs(ordinalOffset) < 8) {
-            totalTurnOffset += ordinalOffset;
-            rc.move(dirs[(obstacleDir.ordinal()+ordinalOffset+8)%8]);
-            // offset previousDir by 2 to point towards obstacle
-            previousDir = dirs[(obstacleDir.ordinal()+ordinalOffset-2*turnClockwise + 8)%8];
-        }   
+            rc.move(nextDir);
+            obstacleDir = dirs[(nextDir.ordinal()-turnClockwise+8)%8];
+            totalOffsetDir += ordinalOffset;
+        }  
     }
     
     

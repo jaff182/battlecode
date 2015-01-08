@@ -35,7 +35,7 @@ public class Beaver extends RobotPlayer {
         
         //Go to Enemy HQ
         bug(enmloc);
-        rc.setIndicatorString(1, "Number of bytecodes: " + Clock.getBytecodeNum());
+        //rc.setIndicatorString(1, "Number of bytecodes: " + Clock.getBytecodeNum());
     }
 
     // Specific methods =======================================================
