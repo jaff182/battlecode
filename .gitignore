@@ -13,3 +13,7 @@ hs_err_pid*
 
 # MAC file
 .DS_Store
+
+# MinhTue's IDEA files:
+team157/.idea/
+team157/team157.iml
