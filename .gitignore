@@ -24,6 +24,7 @@ team157/team157.iml
 
 # Battlecode starter code
 .installationinformation
+specs.md
 AllowedPackages.txt
 bc.conf
 DisallowedClasses.txt
@@ -36,3 +37,4 @@ lib/
 music/
 sound/
 Uninstaller/
+
