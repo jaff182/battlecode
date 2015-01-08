@@ -24,6 +24,16 @@ public class RobotPlayer {
     public static int mapx0, mapy0, symmetry=0;
     public static int[][] map = new int[122][122];
     
+    //Sensing variables    
+    // Ex = Ny, Ey = Nx, Sx = Nx, Wx = Sy, Wy = Nx
+    private final static int[] senseNx = {-4, 4,-3, 3,-2,-1, 0, 1, 2};
+    private final static int[] senseNy = { 3, 3, 4, 4, 5, 5, 5, 5, 5};
+    private final static int[] senseSy = {-3,-3,-4,-4,-5,-5,-5,-5,-5};
+    // NEx = NWy, SEx = NEy, SWx = SEy, SWy = NWx
+    private final static int[] senseNWx = {-5,-5,-5,-5,-5,-4,-4,-3,-3,-2,-1, 0, 1};
+    private final static int[] senseNWy = {-1, 0, 1, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5};
+    private final static int[] senseNEy = { 5, 5, 5, 5, 5, 4, 4, 3, 3, 2, 1, 0,-1};
+    private final static int[] senseSEy = { 1, 0,-1,-2,-3,-3,-4,-4,-5,-5,-5,-5,-5};
     
     //Main script =============================================================
     public static void run(RobotController RC) {
@@ -96,6 +106,9 @@ public class RobotPlayer {
      *  0: unknown,  1: nonvoid,  2: enemy HQ,  3: HQ,  4: void,  5: out of map
      * Symmetry representation:
      *  0: unknown,  1: rotational,  2: x-reflection,  3: y-reflection
+     *  
+     *  
+     *  (ordinal values for terrain tiles: 2: unknown, 1: void, 3: offmap, 0: normal)
      */
     public static void computeMap() {
         
@@ -156,6 +169,109 @@ public class RobotPlayer {
         int xidx = (182+loc.x-mapx0)%122;
         int yidx = (182+loc.y-mapy0)%122;
         rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), map[xidx][yidx]);
+    }
+    
+    /**
+     * Update internal map within sensor radius using values from radio map.
+     * If some locations are unknown, then sense them and update radio map and
+     * internal map.
+     * @param robotLoc location of robot
+     * @throws GameActionException
+     */
+    public static void initialSense(MapLocation robotLoc) throws GameActionException {
+        MapLocation[] sensingLoc = MapLocation.getAllMapLocationsWithinRadiusSq(robotLoc, sightRange);
+        for (MapLocation loc: sensingLoc) {
+            senseMap(loc);
+        }
+    }
+    
+    /**
+     * Update internal map at input loc using values from radio map.
+     * If loc is unknown, then sense it and update radio map and
+     * internal map.
+     * @param loc location to sense
+     * @throws GameActionException
+     */
+    public static void senseMap(MapLocation loc) throws GameActionException {
+        if (getRadioMap(loc) == 0) {
+            switch (rc.senseTerrainTile(loc)) {
+                case VOID: setInternalMap(loc, 4); break;
+                case NORMAL: setInternalMap(loc, 1); break;
+                case OFF_MAP: setInternalMap(loc, 5); break;
+                case UNKNOWN: break;
+                default: break;
+            }
+            updateRadioMap(loc);
+        } else {
+            updateInternalMap(loc);
+        }
+    }
+    
+    /**
+     * Update internal and radio map after moving once in specified direction.
+     * @param robotLoc location of robot
+     * @param dir Direction of movement.
+     * @throws GameActionException
+     */
+    public static void senseWhenMove(MapLocation robotLoc, Direction dir) throws GameActionException {
+        switch (dir) {
+        // Ex = Ny, Ey = Nx, Sx = Nx, Wx = Sy, Wy = Nx
+        // NEx = NWy, SEx = NEy, SWx = SEy, SWy = NWx
+        case NORTH: 
+            for (int i=0; i<9; i++) {
+                senseMap(robotLoc.add(senseNx[i], senseNy[i]));
+            }
+            break;
+        case EAST:
+            for (int i=0; i<9; i++) {
+                senseMap(robotLoc.add(senseNy[i], senseNx[i]));
+            } 
+            break;
+        case SOUTH:
+            for (int i=0; i<9; i++) {
+                senseMap(robotLoc.add(senseNx[i], senseSy[i]));
+            } 
+            break;
+        case WEST:
+            for (int i=0; i<9; i++) {
+                senseMap(robotLoc.add(senseSy[i], senseNx[i]));
+            }
+            break;
+        case NORTH_WEST:
+            for (int i=0; i<13; i++) {
+                senseMap(robotLoc.add(senseNWx[i], senseNWy[i]));
+            } 
+            break;
+        case NORTH_EAST:
+            for (int i=0; i<13; i++) {
+                senseMap(robotLoc.add(senseNWy[i], senseNEy[i]));
+            } 
+            break;
+        case SOUTH_EAST:
+            for (int i=0; i<13; i++) {
+                senseMap(robotLoc.add(senseNEy[i], senseSEy[i]));
+            } 
+            break;
+        case SOUTH_WEST:
+            for (int i=0; i<13; i++) {
+                senseMap(robotLoc.add(senseSEy[i], senseNWx[i]));
+            }
+            break;
+        default:
+            break; 
+        }
+    }
+    
+    /**
+     * Print internal map to console.
+     */
+    public static void printInternalMap() {
+        for (int[] line: map) {
+            for (int i: line) {
+                System.out.print(i + " ");
+            }
+            System.out.println(" ");
+        }
     }
     
     

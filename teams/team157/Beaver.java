@@ -17,7 +17,7 @@ public class Beaver extends MovableUnit {
 
     private static void init() throws GameActionException {
         rc.setIndicatorString(0, "hello i'm a beaver.");
-
+        initialSense(rc.getLocation());
     }
 
     private static void loop() throws GameActionException {
@@ -36,8 +36,7 @@ public class Beaver extends MovableUnit {
         
         //Go to Enemy HQ
         bug(enemyHQLocation);
-        //rc.setIndicatorString(1, "Number of bytecodes: " + Clock.getBytecodeNum());
-
+        
         //Distribute supply
         distributeSupply(suppliabilityMultiplier);
     }

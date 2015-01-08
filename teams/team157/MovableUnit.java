@@ -1,6 +1,7 @@
 package team157;
 
 import java.util.Random;
+
 import battlecode.common.*;
 
 public class MovableUnit extends RobotPlayer {
@@ -12,6 +13,16 @@ public class MovableUnit extends RobotPlayer {
     private static int turnClockwise;
     private static int totalOffsetDir = 0;
     private static Direction obstacleDir = Direction.NORTH;
+    
+    /**
+     * Sense terrain while moving.
+     * @param dir Direction of movement 
+     * @throws GameActionException
+     */
+    public static void moveSense(Direction dir) throws GameActionException {
+        rc.move(dir);
+        senseWhenMove(rc.getLocation(), dir);
+    }
     
     /**
      * Primitive pathing to target location, with no knowledge of terrain.
@@ -46,7 +57,9 @@ public class MovableUnit extends RobotPlayer {
                 offsetIndex++;
             }
             if (offsetIndex < 5) {
-                rc.move(directions[(dirInt+offsets[offsetIndex]+8)%8]);
+                Direction dirToMove = directions[(dirInt+offsets[offsetIndex]+8)%8];
+                rc.move(dirToMove);
+                senseWhenMove(myLocation, dirToMove);
             }
         }
     }
@@ -80,7 +93,7 @@ public class MovableUnit extends RobotPlayer {
                 rc.setIndicatorString(1,"bug " + targetDir);
                 if (rc.canMove(targetDir)) {
                     // target is not blocked
-                    rc.move(targetDir);
+                    moveSense(targetDir);
                 } else {
                     // target is blocked, move clockwise/counterclockwise around obstacle
                     pathingState = PathingState.HUGGING;
@@ -101,7 +114,7 @@ public class MovableUnit extends RobotPlayer {
                 }
             } else {
                 if (rc.canMove(obstacleDir)) {
-                    rc.move(obstacleDir);
+                    moveSense(obstacleDir);
                     pathingState = PathingState.BUGGING;
                 } else if (Math.abs(totalOffsetDir) > 24) { //TODO
                     pathingState = PathingState.BUGGING;
@@ -128,7 +141,7 @@ public class MovableUnit extends RobotPlayer {
             nextDir = directions[(obstacleDir.ordinal()+ordinalOffset+8)%8];
         }
         if (Math.abs(ordinalOffset) < 8) {
-            rc.move(nextDir);
+            moveSense(nextDir);
             obstacleDir = directions[(nextDir.ordinal()-turnClockwise+8)%8];
             totalOffsetDir += ordinalOffset;
         }  
