@@ -24,6 +24,10 @@ public class RobotPlayer {
     public static int mapx0, mapy0, symmetry=0;
     public static int[][] map = new int[122][122];
     
+    // The number of robots produced before this robot.
+    // Includes HQ and towers in count, also determines execution order ingame
+    // (lower countingIDs move before higher ones).
+    public static int countingID;
     
     //Main script =============================================================
     public static void run(RobotController RC) {
@@ -55,6 +59,9 @@ public class RobotPlayer {
         mapy0 = (HQLocation.y+enemyHQLocation.y)/2;
         //computeMap();
         
+        //set countingID for messaging (WARNING, ASSUMES MESSAGING ARRAY IS INITIALIZED TO ZERO)
+        countingID = rc.readBroadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER));
+        rc.broadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER), countingID+1);
         
         //RobotType specific methods ------------------------------------------
         try {
@@ -173,7 +180,8 @@ public class RobotPlayer {
      */
     public enum ChannelName {
         MAP_SYMMETRY, MAP_DATA,
-        BARRACKS, TECHINST, HELIPAD, MINERFACTORY
+        BARRACKS, TECHINST, HELIPAD, MINERFACTORY,
+        SEQ_UNIT_NUMBER
     }
     
     /**
@@ -187,7 +195,7 @@ public class RobotPlayer {
      * Allocations:<br>
      * 0 - type of symmetry of map (rotational, type)<br>
      * 1-14884 - global shared map data<br>
-     * 16001 - reserved <br>
+     * 16001 - number of units produced since start of game by you (including towers, HQ) <br>
      * 16002-16010 - number of buildings of different types currently built
      * (read on even round number, write on odd rounds)<br>
      * 16012-16020 - number of buildings of different types currently built
@@ -214,6 +222,8 @@ public class RobotPlayer {
                 return 15700;
             case MINERFACTORY:
                 return 15800;
+            case SEQ_UNIT_NUMBER:
+                return 16001;
             default:
                 return -1;
         }
