@@ -5,6 +5,7 @@ package Utility;
  */
 public class MiningFunctions {
 
+	// TODO: for efficiency's sake, we might maintain a list of ore values & locations
     public static Point simpleRatio(Point currentLocation, int[][] grid)
     {
         float minRatio = 0;
