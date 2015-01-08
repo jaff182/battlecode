@@ -35,7 +35,7 @@ public class Beaver extends MovableUnit {
         }
         
         //Go to Enemy HQ
-        bug(enemyHQLocation);
+        exploreRandom(enemyHQLocation);
         //rc.setIndicatorString(1, "Number of bytecodes: " + Clock.getBytecodeNum());
 
         //Distribute supply

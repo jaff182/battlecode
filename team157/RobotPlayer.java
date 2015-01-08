@@ -20,10 +20,6 @@ public class RobotPlayer {
     public final static int[] offsets = {0,1,-1,2,-2,3,-3,4};
     public final static RobotType[] robotTypes = {RobotType.HQ,RobotType.TOWER,RobotType.SUPPLYDEPOT,RobotType.TECHNOLOGYINSTITUTE,RobotType.BARRACKS,RobotType.HELIPAD,RobotType.TRAININGFIELD,RobotType.TANKFACTORY,RobotType.MINERFACTORY,RobotType.HANDWASHSTATION,RobotType.AEROSPACELAB,RobotType.BEAVER,RobotType.COMPUTER,RobotType.SOLDIER,RobotType.BASHER,RobotType.MINER,RobotType.DRONE,RobotType.TANK,RobotType.COMMANDER,RobotType.LAUNCHER,RobotType.MISSILE}; //in order of ordinal
     
-    //Internal map
-    public static int mapx0, mapy0, symmetry=0;
-    public static int[][] map = new int[122][122];
-    
     
     //Main script =============================================================
     public static void run(RobotController RC) {
@@ -90,6 +86,11 @@ public class RobotPlayer {
     
     //Map methods =============================================================
     
+    public static int mapx0, mapy0, symmetry=0;
+    public static int allocatedWidth = GameConstants.MAP_MAX_WIDTH+2;
+    public static int allocatedHeight = GameConstants.MAP_MAX_HEIGHT+2;
+    public static int[][] map = new int[allocatedWidth][allocatedHeight];
+    
     /**
      * Internal map is toroidal and approximately centered at midpoint of HQs.
      * Map representation modulo 6:
@@ -107,15 +108,20 @@ public class RobotPlayer {
      * @param loc MapLocation to set value.
      */
     public static void setInternalMap(MapLocation loc, int value) {
-        map[(182+loc.x-mapx0)%122][(182+loc.y-mapy0)%122] = value;
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+        map[xidx][yidx] = value;
     }
     
     /**
      * Gets value in internal map
      * @param loc MapLocation to get value.
+     * @return map value
      */
     public static int getInternalMap(MapLocation loc) {
-        return map[(182+loc.x-mapx0)%122][(182+loc.y-mapy0)%122];
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+        return map[xidx][yidx];
     }
     
     /**
@@ -123,9 +129,9 @@ public class RobotPlayer {
      * @param loc MapLocation to update value.
      */
     public static void updateInternalMap(MapLocation loc) throws GameActionException {
-        int xidx = (182+loc.x-mapx0)%122;
-        int yidx = (182+loc.y-mapy0)%122;
-        map[xidx][yidx] = rc.readBroadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA));
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+        map[xidx][yidx] = rc.readBroadcast(xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA));
     }
     
     /**
@@ -133,19 +139,20 @@ public class RobotPlayer {
      * @param loc MapLocation to set value.
      */
     public static void setRadioMap(MapLocation loc, int value) throws GameActionException {
-        int xidx = (182+loc.x-mapx0)%122;
-        int yidx = (182+loc.y-mapy0)%122;
-        rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), value);
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+        rc.broadcast(xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA), value);
     }
     
     /**
      * Gets value in radio map
      * @param loc MapLocation to get value.
+     * @return map value
      */
     public static int getRadioMap(MapLocation loc) throws GameActionException {
-        int xidx = (182+loc.x-mapx0)%122;
-        int yidx = (182+loc.y-mapy0)%122;
-        return rc.readBroadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA));
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+        return rc.readBroadcast(xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA));
     }
     
     /**
@@ -153,8 +160,8 @@ public class RobotPlayer {
      * @param loc MapLocation to update value.
      */
     public static void updateRadioMap(MapLocation loc) throws GameActionException {
-        int xidx = (182+loc.x-mapx0)%122;
-        int yidx = (182+loc.y-mapy0)%122;
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
         rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), map[xidx][yidx]);
     }
     
