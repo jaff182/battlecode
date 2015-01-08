@@ -17,3 +17,22 @@ hs_err_pid*
 # MinhTue's IDEA files:
 team157/.idea/
 team157/team157.iml
+
+# Josiah's Eclipse files:
+.classpath
+.project
+
+# Battlecode starter code
+.installationinformation
+AllowedPackages.txt
+bc.conf
+DisallowedClasses.txt
+MethodCosts.txt
+version.txt
+art/
+bin/
+doc/
+lib/
+music/
+sound/
+Uninstaller/
