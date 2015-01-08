@@ -20,10 +20,6 @@ public class RobotPlayer {
     public final static int[] offsets = {0,1,-1,2,-2,3,-3,4};
     public final static RobotType[] robotTypes = {RobotType.HQ,RobotType.TOWER,RobotType.SUPPLYDEPOT,RobotType.TECHNOLOGYINSTITUTE,RobotType.BARRACKS,RobotType.HELIPAD,RobotType.TRAININGFIELD,RobotType.TANKFACTORY,RobotType.MINERFACTORY,RobotType.HANDWASHSTATION,RobotType.AEROSPACELAB,RobotType.BEAVER,RobotType.COMPUTER,RobotType.SOLDIER,RobotType.BASHER,RobotType.MINER,RobotType.DRONE,RobotType.TANK,RobotType.COMMANDER,RobotType.LAUNCHER,RobotType.MISSILE}; //in order of ordinal
     
-    //Internal map
-    public static int mapx0, mapy0, symmetry=0;
-    public static int[][] map = new int[122][122];
-    
     //Sensing variables    
     // Ex = Ny, Ey = Nx, Sx = Nx, Wx = Sy, Wy = Nx
     private final static int[] senseNx = {-4, 4,-3, 3,-2,-1, 0, 1, 2};
@@ -34,6 +30,11 @@ public class RobotPlayer {
     private final static int[] senseNWy = {-1, 0, 1, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5};
     private final static int[] senseNEy = { 5, 5, 5, 5, 5, 4, 4, 3, 3, 2, 1, 0,-1};
     private final static int[] senseSEy = { 1, 0,-1,-2,-3,-3,-4,-4,-5,-5,-5,-5,-5};
+
+    // The number of robots produced before this robot.
+    // Includes HQ and towers in count, also determines execution order ingame
+    // (lower countingIDs move before higher ones).
+    public static int countingID;
     
     //Main script =============================================================
     public static void run(RobotController RC) {
@@ -65,9 +66,15 @@ public class RobotPlayer {
         mapy0 = (HQLocation.y+enemyHQLocation.y)/2;
         //computeMap();
         
-        
-        //RobotType specific methods ------------------------------------------
         try {
+            
+            //set countingID for messaging (WARNING, ASSUMES MESSAGING ARRAY IS INITIALIZED TO ZERO)
+            if(myType != RobotType.MISSILE) {
+                countingID = rc.readBroadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER));
+                rc.broadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER), countingID+1);
+            }
+            
+            //RobotType specific methods --------------------------------------
             switch(myType) {
                 case AEROSPACELAB: AerospaceLab.start(); break;
                 case BARRACKS: Barracks.start(); break;
@@ -100,6 +107,11 @@ public class RobotPlayer {
     
     //Map methods =============================================================
     
+    public static int mapx0, mapy0, symmetry=0;
+    public static int allocatedWidth = GameConstants.MAP_MAX_WIDTH+2;
+    public static int allocatedHeight = GameConstants.MAP_MAX_HEIGHT+2;
+    public static int[][] map = new int[allocatedWidth][allocatedHeight];
+    
     /**
      * Internal map is toroidal and approximately centered at midpoint of HQs.
      * Map representation modulo 6:
@@ -120,15 +132,20 @@ public class RobotPlayer {
      * @param loc MapLocation to set value.
      */
     public static void setInternalMap(MapLocation loc, int value) {
-        map[(182+loc.x-mapx0)%122][(182+loc.y-mapy0)%122] = value;
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+        map[yidx][xidx] = value;
     }
     
     /**
      * Gets value in internal map
      * @param loc MapLocation to get value.
+     * @return map value
      */
     public static int getInternalMap(MapLocation loc) {
-        return map[(182+loc.x-mapx0)%122][(182+loc.y-mapy0)%122];
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+        return map[yidx][xidx];
     }
     
     /**
@@ -136,9 +153,9 @@ public class RobotPlayer {
      * @param loc MapLocation to update value.
      */
     public static void updateInternalMap(MapLocation loc) throws GameActionException {
-        int xidx = (182+loc.x-mapx0)%122;
-        int yidx = (182+loc.y-mapy0)%122;
-        map[xidx][yidx] = rc.readBroadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA));
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+        map[yidx][xidx] = rc.readBroadcast(xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA));
     }
     
     /**
@@ -146,19 +163,20 @@ public class RobotPlayer {
      * @param loc MapLocation to set value.
      */
     public static void setRadioMap(MapLocation loc, int value) throws GameActionException {
-        int xidx = (182+loc.x-mapx0)%122;
-        int yidx = (182+loc.y-mapy0)%122;
-        rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), value);
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+        rc.broadcast(xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA), value);
     }
     
     /**
      * Gets value in radio map
      * @param loc MapLocation to get value.
+     * @return map value
      */
     public static int getRadioMap(MapLocation loc) throws GameActionException {
-        int xidx = (182+loc.x-mapx0)%122;
-        int yidx = (182+loc.y-mapy0)%122;
-        return rc.readBroadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA));
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+        return rc.readBroadcast(xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA));
     }
     
     /**
@@ -166,9 +184,9 @@ public class RobotPlayer {
      * @param loc MapLocation to update value.
      */
     public static void updateRadioMap(MapLocation loc) throws GameActionException {
-        int xidx = (182+loc.x-mapx0)%122;
-        int yidx = (182+loc.y-mapy0)%122;
-        rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), map[xidx][yidx]);
+        int xidx = (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+        int yidx = (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+        rc.broadcast(xidx*122+yidx+getChannel(ChannelName.MAP_DATA), map[yidx][xidx]);
     }
     
     /**
@@ -289,7 +307,8 @@ public class RobotPlayer {
      */
     public enum ChannelName {
         MAP_SYMMETRY, MAP_DATA,
-        BARRACKS, TECHINST, HELIPAD, MINERFACTORY
+        BARRACKS, TECHINST, HELIPAD, MINERFACTORY,
+        SEQ_UNIT_NUMBER
     }
     
     /**
@@ -303,7 +322,7 @@ public class RobotPlayer {
      * Allocations:<br>
      * 0 - type of symmetry of map (rotational, type)<br>
      * 1-14884 - global shared map data<br>
-     * 16001 - reserved <br>
+     * 16001 - number of units produced since start of game by you (including towers, HQ) <br>
      * 16002-16010 - number of buildings of different types currently built
      * (read on even round number, write on odd rounds)<br>
      * 16012-16020 - number of buildings of different types currently built
@@ -330,6 +349,8 @@ public class RobotPlayer {
                 return 15700;
             case MINERFACTORY:
                 return 15800;
+            case SEQ_UNIT_NUMBER:
+                return 16001;
             default:
                 return -1;
         }
