@@ -130,8 +130,8 @@ public class Request {
      * 
      * @return
      */
-    public static int getJobID(int request) {
-        return (request & 0xFC00) >>> 18;
+    public static int getJobID(long request) {
+        return (int)(request & 0xFC00) >>> 18;
     }
     
     
@@ -165,7 +165,7 @@ public class Request {
      *            built inexactly at
      * @return request to be broadcast
      */
-    public static int getConstructBuildingRequest(int buildingType, int x, int y, int fudgeAreaCircleRadius) {
+    public static long getConstructBuildingRequest(int buildingType, int x, int y, int fudgeAreaCircleRadius) {
         assert x <= 61 && x >= -61 && y <= 61 && y >= -61;
         return (x << (64 - 7 - 3)) | (y << (64 - 14 - 3))
                 | (fudgeAreaCircleRadius << (64 - 21 - 3))
@@ -181,7 +181,7 @@ public class Request {
      * @param y
      * @return
      */
-    public long getMoveRequest(int x, int y) {
+    public static long getMoveRequest(int x, int y) {
         assert x <= 61 && x >= -61 && y <= 61 && y >= -61;
         return (x << (64 - 7 - 3)) | (y << (64 - 14 - 3)) | (getJobID() << (32 - 14))
                 | (Clock.getRoundNum() << (32 - 11 - 14))
@@ -199,7 +199,7 @@ public class Request {
      * @param amount up to 262144
      * @return
      */
-    public long getSupplyRequest(int x, int y, int amount) {
+    public static long getSupplyRequest(int x, int y, int amount) {
         assert amount < 262144;
         return (x << (64 - 7 - 3)) | (y << (64 - 14 - 3)) | (amount << 32)
                 | (getJobID() << (32 - 14))
@@ -319,7 +319,7 @@ public class Request {
      * @return
      * @throws GameActionException 
      */
-    public static void attemptToClaimJob(int request, int countingID, int currentScore) throws GameActionException {
+    public static void attemptToClaimJob(long request, int countingID, int currentScore) throws GameActionException {
         final int jobID = getJobID(request);
         assert currentScore < 63 && currentScore >= 0;
         final int taskInfo = (JobStatus.REQUESTING << (32 - 3))
