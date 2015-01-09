@@ -6,35 +6,60 @@ import battlecode.common.RobotType;
 
 public class Request {
     /**
-     * Class for making requests. 
+     * Class for making requests.
      * 
-     * 1) use the get*Request series of functions to create a request
-     * 2) use the broadcastTo* series of functions to broadcast a request
+     * Requesters:<br>
+     * They create a request, broadcast it, and (optionally) keep tabs on its
+     * completion.<br>
      * 
-     * Variable namings available to callees:
-     * request
-     * The value to be broadcasted on the request channel
-     * Contains jobID, round number, task type, and parameters
-     * request is a long, and requires two contiguous channels to transmitted.
-     * put the high bits on the first, low on the second.
+     * 1) use the get*Request series of functions to create a request<br>
+     * 2) use the broadcastTo* series of functions to broadcast the created
+     * request<br>
+     * 3) From the next round onwards, use the checkJobStatus function to get
+     * the status of a request
      * 
-     * bit allocation, from left to right:
-     * 14 bits -> jobID
-     * 11 bits -> round number
-     * 7 bits -> task type
+     * Workers:<br>
+     * They check for requests, score their own suitability for the task, and
+     * then try to claim the job. If they succeed, they find out the next round.
+     * They then continually send updates on the job.<br>
      * 
-     * parameters:
-     * 3 bits -> task priority
-     * task info, task specific. See job documentation later for info.
+     * 1) Use the checkForRequest function to check for any unfilled requests<br>
+     * 2) Unpack the request data returned to get parameters and request type. <br>
+     * Functions to unpack request are unwritten.<br>
+     * Robots that are suitable for the task must score its suitability for the
+     * task from 0-63, with 63 the most suitable. (For example, if it is a
+     * request to move, then how far and fast a robot is from that point)<br>
+     * 3) Use getRequestInfo and then getRequestInfoScore to see if any other
+     * robots score higher. requestInfo scores the current top scorer. <br>
+     * 4) Use the attemptToClaimJob function if this robot is the best scorer.<br>
+     * 5) Check the next round to see whether this robot has won the job. 6) If
+     * so, start doing the job, and use updateJobStatus to advise requester on
+     * job status<br>
+     * 
+     * Variable namings available to callees:<br>
+     * request<br>
+     * The value to be broadcasted on the request channel<br>
+     * Contains jobID, round number, task type, and parameters<br>
+     * request is a long, and requires two contiguous channels to transmitted.<br>
+     * put the high bits on the first, low on the second.<br>
+     * 
+     * bit allocation, from left to right:<br>
+     * 14 bits -> jobID<br>
+     * 11 bits -> round number<br>
+     * 7 bits -> task type<br>
+     * 
+     * parameters:<br>
+     * 3 bits -> task priority<br>
+     * task info, task specific. See job documentation later for info.<br>
      * 
      * 
-     * requestInfo
-     * Reporting back on request made
-     * Contains task score, countingID
-     * 3 bits -> job status
-     * 11 bits -> round number
-     * 12 bits -> countingID (uniquely identifies robot on task)
-     * 6 bits -> task score suitability, reverts to task info later
+     * requestInfo<br>
+     * Reporting back on request made<br>
+     * Contains task score, countingID<br>
+     * 3 bits -> job status<br>
+     * 11 bits -> round number<br>
+     * 12 bits -> countingID (uniquely identifies robot on task)<br>
+     * 6 bits -> task score suitability, reverts to task info later<br>
      */
     
     public class JobStatus {
@@ -253,7 +278,7 @@ public class Request {
      * @param unitType
      * @return jobID
      */
-    public static int getRequest(int x, int y, int unitType) {
+    public static int checkForRequest(int x, int y, int unitType) {
         return 0;
     }
     
@@ -363,7 +388,7 @@ public class Request {
         final int requestInfo = RobotPlayer.rc.readBroadcast(BASE_REQUEST_METADATA_CHANNEL
                 + jobID);
         final int lastJobStatus = requestInfo >>> (32-3);
-        if (jobStatus != JobStatus.DELAYED && lastJobStatus != JobStatus.IN_PROGRESS)
+        if (lastJobStatus != JobStatus.DELAYED && lastJobStatus != JobStatus.IN_PROGRESS)
             return false;
         final int newRequestInfo = (jobStatus << (32-3)) | (Clock.getRoundNum() << (32-11)) & (inboxID << (32-3-11-12));
         RobotPlayer.rc.broadcast(BASE_REQUEST_METADATA_CHANNEL + jobID, newRequestInfo);
