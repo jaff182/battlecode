@@ -101,14 +101,14 @@ public class Request {
     /**
      * Base address into messaging array of a randomized data structure storing request metadata
      */
-    private static final int BASE_REQUEST_METADATA_CHANNEL = 30000;
+    private static final int BASE_REQUEST_METADATA_CHANNEL = RobotPlayer.getChannel(RobotPlayer.ChannelName.REQUESTS_METADATA);
     
     /**
      * Size of randomized data structure in channels.
      * 
      * Ideally, we would like load factor to be low, to make channel allocations faster.
      */
-    private static final int REQUEST_METADATA_SIZE = 4000; // max value of 16384
+    private static final int REQUEST_METADATA_SIZE = 7000; // max value of 16384
     
     /**
      * Gets a job id. This job id is also your relative index into the

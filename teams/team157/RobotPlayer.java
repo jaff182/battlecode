@@ -302,7 +302,7 @@ public class RobotPlayer {
     public enum ChannelName {
         MAP_SYMMETRY, MAP_DATA,
         BARRACKS, TECHINST, HELIPAD, MINERFACTORY,
-        SEQ_UNIT_NUMBER
+        SEQ_UNIT_NUMBER, REQUESTS_METADATA
     }
     
     /**
@@ -321,8 +321,7 @@ public class RobotPlayer {
      * (read on even round number, write on odd rounds)<br>
      * 16012-16020 - number of buildings of different types currently built
      * (read on odd round number, write on even rounds)<br>
-     * 17001-21000 - reserved, possible unit command mechanism
-     * 21001-25000 - reserved, possible unit response mechanism
+     * 17000-23999 - request system metadata
      * 
      * @param channelName
      *            the friendly name for the particular index into array (ie
@@ -345,6 +344,8 @@ public class RobotPlayer {
                 return 15800;
             case SEQ_UNIT_NUMBER:
                 return 16001;
+            case REQUESTS_METADATA:
+                return 17000;
             default:
                 return -1;
         }
