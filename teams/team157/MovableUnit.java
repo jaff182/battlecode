@@ -6,6 +6,8 @@ import battlecode.common.*;
 
 public class MovableUnit extends RobotPlayer {
     
+    
+    
     //Movement ================================================================
     
     // For pathing
@@ -13,6 +15,7 @@ public class MovableUnit extends RobotPlayer {
     private static int turnClockwise;
     private static int totalOffsetDir = 0;
     private static Direction obstacleDir = Direction.NORTH;
+    
     
     /**
      * Sense terrain while moving.
@@ -122,7 +125,7 @@ public class MovableUnit extends RobotPlayer {
                 } else {
                     hug(obstacleDir, turnClockwise);
                 }
-            }       
+            }
         }
     }
     
@@ -144,8 +147,79 @@ public class MovableUnit extends RobotPlayer {
             moveSense(nextDir);
             obstacleDir = directions[(nextDir.ordinal()-turnClockwise+8)%8];
             totalOffsetDir += ordinalOffset;
-        }  
+        }
     }
+    
+    
+    //Move and sense ==========================================================
+    
+    //Sensing variables    
+    // Ex = Ny, Ey = Nx, Sx = Nx, Wx = Sy, Wy = Nx
+    private final static int[] senseNx = {-4, 4,-3, 3,-2,-1, 0, 1, 2};
+    private final static int[] senseNy = { 3, 3, 4, 4, 5, 5, 5, 5, 5};
+    private final static int[] senseSy = {-3,-3,-4,-4,-5,-5,-5,-5,-5};
+    // NEx = NWy, SEx = NEy, SWx = SEy, SWy = NWx
+    private final static int[] senseNWx = {-5,-5,-5,-5,-5,-4,-4,-3,-3,-2,-1, 0, 1};
+    private final static int[] senseNWy = {-1, 0, 1, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5};
+    private final static int[] senseNEy = { 5, 5, 5, 5, 5, 4, 4, 3, 3, 2, 1, 0,-1};
+    private final static int[] senseSEy = { 1, 0,-1,-2,-3,-3,-4,-4,-5,-5,-5,-5,-5};
+    
+    /**
+     * Update internal and radio map after moving once in specified direction.
+     * @param robotLoc location of robot
+     * @param dir Direction of movement.
+     * @throws GameActionException
+     */
+    public static void senseWhenMove(MapLocation robotLoc, Direction dir) throws GameActionException {
+        switch (dir) {
+        // Ex = Ny, Ey = Nx, Sx = Nx, Wx = Sy, Wy = Nx
+        // NEx = NWy, SEx = NEy, SWx = SEy, SWy = NWx
+        case NORTH: 
+            for (int i=0; i<9; i++) {
+                senseMap(robotLoc.add(senseNx[i], senseNy[i]));
+            }
+            break;
+        case EAST:
+            for (int i=0; i<9; i++) {
+                senseMap(robotLoc.add(senseNy[i], senseNx[i]));
+            } 
+            break;
+        case SOUTH:
+            for (int i=0; i<9; i++) {
+                senseMap(robotLoc.add(senseNx[i], senseSy[i]));
+            } 
+            break;
+        case WEST:
+            for (int i=0; i<9; i++) {
+                senseMap(robotLoc.add(senseSy[i], senseNx[i]));
+            }
+            break;
+        case NORTH_WEST:
+            for (int i=0; i<13; i++) {
+                senseMap(robotLoc.add(senseNWx[i], senseNWy[i]));
+            } 
+            break;
+        case NORTH_EAST:
+            for (int i=0; i<13; i++) {
+                senseMap(robotLoc.add(senseNWy[i], senseNEy[i]));
+            } 
+            break;
+        case SOUTH_EAST:
+            for (int i=0; i<13; i++) {
+                senseMap(robotLoc.add(senseNEy[i], senseSEy[i]));
+            } 
+            break;
+        case SOUTH_WEST:
+            for (int i=0; i<13; i++) {
+                senseMap(robotLoc.add(senseSEy[i], senseNWx[i]));
+            }
+            break;
+        default:
+            break; 
+        }
+    }
+    
+    
     
     
     //Distribute Supply =======================================================
