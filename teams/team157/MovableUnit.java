@@ -16,6 +16,8 @@ public class MovableUnit extends RobotPlayer {
     private static int totalOffsetDir = 0;
     private static Direction obstacleDir = Direction.NORTH;
     
+    //Robot overall state ================================================================
+    public static RobotState robotState = RobotState.WANDER;
     
     /**
      * Sense terrain while moving.
