@@ -15,8 +15,8 @@ hs_err_pid*
 .DS_Store
 
 # MinhTue's IDEA files:
-team157/.idea/
-team157/team157.iml
+battlecode.iml
+.idea/
 
 # Josiah's Eclipse files:
 .classpath
