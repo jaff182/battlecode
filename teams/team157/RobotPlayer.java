@@ -302,7 +302,8 @@ public class RobotPlayer {
     public enum ChannelName {
         MAP_SYMMETRY, MAP_DATA,
         BARRACKS, TECHINST, HELIPAD, MINERFACTORY,
-        SEQ_UNIT_NUMBER, REQUESTS_METADATA
+        SEQ_UNIT_NUMBER, 
+        REQUEST_MAILBOX_BASE, REQUESTS_METADATA_BASE
     }
     
     /**
@@ -321,6 +322,7 @@ public class RobotPlayer {
      * (read on even round number, write on odd rounds)<br>
      * 16012-16020 - number of buildings of different types currently built
      * (read on odd round number, write on even rounds)<br>
+     * 16100-16140 - request system unit type mailboxes. each unit uses 2 channels.
      * 17000-23999 - request system metadata
      * 
      * @param channelName
@@ -344,7 +346,9 @@ public class RobotPlayer {
                 return 15800;
             case SEQ_UNIT_NUMBER:
                 return 16001;
-            case REQUESTS_METADATA:
+            case REQUEST_MAILBOX_BASE:
+                return 16100;
+            case REQUESTS_METADATA_BASE:
                 return 17000;
             default:
                 return -1;

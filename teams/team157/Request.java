@@ -81,27 +81,35 @@ public class Request {
     }
     
     public class JobType { 
-        // 7 bits for this, use a byte to avoid blowing limit
-        private final static int BUILD_BUILDING_MASK = 0b00100000; 
+        // 7 bits for this
+        
+        // xx                             xxxxx
+        // <build flag (2 bits)>          <general instruction number>
+        
+        // leftmost 3 bits reserved
+        private final static int BUILD_BUILDING_MASK = 0b010_0000; 
         // Indicates this is a build command for buildings
-        // No other commands must set the 2nd-leftmost bit to 1
+        // The sequence of 01 for the leftmost two bits characterize this 
         //The rightmost 5 bits determine what to build, according to the robotType ordinal. Add to use
         
-        private final static int BUILD_MOVING_ROBOT_MASK = 0b01000000; 
-        // Indicates this is a build command for buildings
-        // No other commands must set the leftmost bit to 1
+        private final static int BUILD_MOVING_ROBOT_MASK = 0b100_0000; 
+        // Indicates this is a build command for moving robots
+        // The sequence of 10 for the leftmost two bits characterize this 
         //The rightmost 5 bits determine what to build, according to the robotType ordinal. Add to use
+
         
+        // You have 32 instructions using the rightmost 5 bits (with 00 for leftmost 2)
+        // Reserve 0
         private final static int MOVE = 1;
         
         private final static int SUPPLY = 2;
-
+        
     }
     
     /**
      * Base address into messaging array of a randomized data structure storing request metadata
      */
-    private static final int BASE_REQUEST_METADATA_CHANNEL = RobotPlayer.getChannel(RobotPlayer.ChannelName.REQUESTS_METADATA);
+    private static final int BASE_REQUEST_METADATA_CHANNEL = RobotPlayer.getChannel(RobotPlayer.ChannelName.REQUESTS_METADATA_BASE);
     
     /**
      * Size of randomized data structure in channels.
