@@ -1,5 +1,6 @@
 package team157;
 
+import team157.RobotPlayer.ChannelName;
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotType;
@@ -254,9 +255,16 @@ public class Request {
      * Broadcast to all units of a given type
      * 
      * @param unitType
+     * @throws GameActionException 
      */
-    public static void broadcastToUnitType(int request, int unitType) {
-        
+    public static void broadcastToUnitType(long request, int unitType) throws GameActionException {
+        RobotPlayer.rc.broadcast(
+                RobotPlayer.getChannel(ChannelName.REQUEST_MAILBOX_BASE)
+                        + unitType, (int) (request >>> 32));
+        RobotPlayer.rc.broadcast(
+                RobotPlayer.getChannel(ChannelName.REQUEST_MAILBOX_BASE)
+                        + unitType + 20, (int) request);
+
     }
     
     /**
@@ -281,13 +289,27 @@ public class Request {
      * 
      * Zero if no requested jobs are found.
      * 
+     * 43 bytecode just to check (one mailbox)
+     * 
      * @param x
      * @param y
      * @param unitType
      * @return jobID
+     * @throws GameActionException 
      */
-    public static int checkForRequest(int x, int y, int unitType) {
+    public static long checkForRequest(int x, int y, int unitType) throws GameActionException {
+        // Only check unit mailbox for now
+        int lowBits = RobotPlayer.rc.readBroadcast(RobotPlayer
+                .getChannel(ChannelName.REQUEST_MAILBOX_BASE) + unitType + 20);
+        int requestRoundNum = (lowBits >>> 7) & 0b111_1111_1111;
+        if (Clock.getRoundNum() - requestRoundNum <= 1) { // Request is valid
+            long highBits = RobotPlayer.rc.readBroadcast(RobotPlayer
+                    .getChannel(ChannelName.REQUEST_MAILBOX_BASE) + unitType);
+            return (highBits << 32) | lowBits;
+        }
         return 0;
+        // Interesting case occurs when round number is 0 or 1. Then, we will always transmit requests.
+        // This would require corruption to occur in 2 rounds though.
     }
     
     /**
