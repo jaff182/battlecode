@@ -1,6 +1,7 @@
 package team157;
 
 import java.util.Random;
+
 import battlecode.common.*;
 
 public class Beaver extends MovableUnit {
@@ -21,25 +22,91 @@ public class Beaver extends MovableUnit {
     }
 
     private static void loop() throws GameActionException {
-        
-        //Vigilance
-        //Stops everything and attacks when enemies are in attack range.
+        rc.breakpoint();
+        // Sensing
         RobotInfo[] enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-        while(enemies.length > 0) {
-            if(rc.isWeaponReady()) {
-                //basicAttack(enemies);
-                priorityAttack(enemies,attackPriorities);
+        myLocation = rc.getLocation();
+        
+        
+        System.out.println(" " + RobotPlayer.myLocation.distanceSquaredTo(enemyHQLocation) + " "+  RobotPlayer.myLocation
+                    .distanceSquaredTo(HQLocation));
+        // Switch states
+        switch (robotState) {
+        case WANDER:
+            if (RobotPlayer.myLocation.distanceSquaredTo(enemyHQLocation) < RobotPlayer.myLocation
+                    .distanceSquaredTo(HQLocation)
+                    && rc.senseOre(myLocation) < GameConstants.BEAVER_MINE_MAX
+                            * GameConstants.BEAVER_MINE_RATE) {
+                robotState = RobotState.MINE;
             }
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-            rc.yield();
+            break;
+        case MINE:
+            if (Clock.getRoundNum() > 1500 && rc.getHealth() > 10) {
+                robotState = RobotState.ATTACK_MOVE;
+                moveTargetLocation = enemyHQLocation;
+            } else if (enemies.length != 0) {
+                robotState = RobotState.ATTACK_MOVE;
+                moveTargetLocation = HQLocation;
+            } else if (rc.senseOre(myLocation) < GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE)
+                robotState = RobotState.WANDER;
+            break;
+
         }
         
-        //Go to Enemy HQ
-        exploreRandom(enemyHQLocation);
-        //rc.setIndicatorString(1, "Number of bytecodes: " + Clock.getBytecodeNum());
+        rc.setIndicatorString(1, "In state: " + robotState);
 
-        //Distribute supply
-        distributeSupply(suppliabilityMultiplier);
+        // Perform action based on state
+        switch (robotState) {
+        case ATTACK_MOVE:
+            // Vigilance
+            // Stops everything and attacks when enemies are in attack range.
+            while (enemies.length > 0) {
+                if (rc.isWeaponReady()) {
+                    // basicAttack(enemies);
+                    priorityAttack(enemies, attackPriorities);
+                }
+                enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+                rc.yield();
+            }
+
+            // Go to Enemy HQ
+            exploreRandom(enemyHQLocation);
+            // rc.setIndicatorString(1, "Number of bytecodes: " +
+            // Clock.getBytecodeNum());
+
+            // Distribute supply
+            distributeSupply(suppliabilityMultiplier);
+            break;
+        case WANDER:
+            // Vigilance
+            // Stops everything and attacks when enemies are in attack range.
+            while (enemies.length > 0) {
+                if (rc.isWeaponReady()) {
+                    // basicAttack(enemies);
+                    priorityAttack(enemies, attackPriorities);
+                }
+                enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+                rc.yield();
+            }
+
+            // Go to Enemy HQ
+            wander();
+            // rc.setIndicatorString(1, "Number of bytecodes: " +
+            // Clock.getBytecodeNum());
+
+            // Distribute supply
+            distributeSupply(suppliabilityMultiplier);
+            break;
+        case MINE:
+            if (rc.getCoreDelay()< 1)
+                 rc.mine();
+            // Distribute supply
+            distributeSupply(suppliabilityMultiplier);
+            break;
+        default:
+            throw new IllegalStateException();
+        }
+
     }
 
     // Specific methods =======================================================
