@@ -1,12 +1,12 @@
 package team157;
 
-import java.util.Random;
-
 import battlecode.common.*;
 
 public class Beaver extends MovableUnit {
 
     // General methods =========================================================
+
+    private static MapLocation myLocation;
 
     public static void start() throws GameActionException {
         init();
@@ -19,8 +19,86 @@ public class Beaver extends MovableUnit {
     private static void init() throws GameActionException {
         rc.setIndicatorString(0, "hello i'm a beaver.");
         //initialSense(rc.getLocation());
-        
-        
+    }
+
+    private static void idle() throws GameActionException
+    {
+        long request = Request.checkForRequest(myLocation.x, myLocation.y, RobotPlayer.myType.ordinal());
+        if (request != 0)
+               scoreRequest(request);
+    }
+
+    private static void switchStateFromWanderState()
+    {
+        if (rc.isCoreReady())
+        {
+            double ore = rc.senseOre(myLocation);
+            double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
+            if (buildingType != null) {
+                robotState = RobotState.BUILD;
+            }
+            else if(rand.nextInt(100) <= 100*miningProbability) {
+                robotState = RobotState.MINE;
+            }
+        }
+    }
+
+    private static void switchStateFromMineState()
+    {
+        // Sensing methods go here
+        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+
+        if (Clock.getRoundNum() > 1500 && rc.getHealth() > 10) {
+            //Lategame rush attack
+            robotState = RobotState.ATTACK_MOVE;
+            moveTargetLocation = enemyHQLocation;
+        } else if (enemies.length != 0) {
+            robotState = RobotState.ATTACK_MOVE;
+            moveTargetLocation = HQLocation;
+        } else if (buildingType != null) {
+            robotState = RobotState.MINE;
+        }
+        else if (rc.isCoreReady()) {
+            double ore = rc.senseOre(myLocation);
+            double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
+            if(rand.nextInt(100) > 100*miningProbability) {
+                robotState = RobotState.WANDER;
+            }
+        }
+    }
+
+    private static void attackMove() throws GameActionException
+    {
+        // Sensing methods go here
+        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+
+        // Vigilance
+        // Stops everything and attacks when enemies are in attack range.
+        while (enemies.length > 0) {
+            if (rc.isWeaponReady()) {
+                // basicAttack(enemies);
+                priorityAttack(enemies, attackPriorities);
+            }
+            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            rc.yield();
+        }
+
+        // Go to Enemy HQ
+        exploreRandom(enemyHQLocation);
+
+        // Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+
+    private static void switchState() {
+        switch (robotState) {
+            case WANDER:
+                switchStateFromWanderState();
+                break;
+            case MINE:
+                switchStateFromMineState();
+                break;
+        }
     }
 
     private static void loop() throws GameActionException {
@@ -30,19 +108,14 @@ public class Beaver extends MovableUnit {
             senseWhenMove(rc.getLocation(), previousDirection);
             previousDirection = Direction.NONE;
         }
-        
-        // Sensing methods go here
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-        myLocation = rc.getLocation();
-        
 
-        
+        // Update the location - do not remove this code as myLocation is referenced by other methods
+        myLocation = rc.getLocation();
+
         // Check mailbox
         switch (Request.workerState) {
         case IDLE:
-            long request = Request.checkForRequest(myLocation.x, myLocation.y, RobotPlayer.myType.ordinal());
-            if (request != 0)
-                scoreRequest(request);
+            idle();;
             break;
         case ON_JOB:
             break;
@@ -53,42 +126,11 @@ public class Beaver extends MovableUnit {
         default:
             break;
         }
-        
+
+        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+
         // Switch states
-        switch (robotState) {
-            case WANDER:
-                if (rc.isCoreReady()) {
-                    double ore = rc.senseOre(myLocation);
-                    double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
-                    if (buildingType != null) {
-                        robotState = RobotState.BUILD;
-                    }
-                    else if(rand.nextInt(100) <= 100*miningProbability) {
-                        robotState = RobotState.MINE;
-                    }
-                }
-                break;
-                
-            case MINE:
-                if (Clock.getRoundNum() > 1500 && rc.getHealth() > 10) {
-                    //Lategame rush attack
-                    robotState = RobotState.ATTACK_MOVE;
-                    moveTargetLocation = enemyHQLocation;
-                } else if (enemies.length != 0) {
-                    robotState = RobotState.ATTACK_MOVE;
-                    moveTargetLocation = HQLocation;
-                } else if (buildingType != null) {
-                    robotState = RobotState.MINE;
-                }
-                else if (rc.isCoreReady()) {
-                    double ore = rc.senseOre(myLocation);
-                    double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
-                    if(rand.nextInt(100) > 100*miningProbability) {
-                        robotState = RobotState.WANDER;
-                    }
-                }
-                break;
-        }
+        switchState();
         
         //Display state
         rc.setIndicatorString(1, "In state: " + robotState);
@@ -96,24 +138,8 @@ public class Beaver extends MovableUnit {
         // Perform action based on state
         switch (robotState) {
             case ATTACK_MOVE:
-                // Vigilance
-                // Stops everything and attacks when enemies are in attack range.
-                while (enemies.length > 0) {
-                    if (rc.isWeaponReady()) {
-                        // basicAttack(enemies);
-                        priorityAttack(enemies, attackPriorities);
-                    }
-                    enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-                    rc.yield();
-                }
-
-                // Go to Enemy HQ
-                exploreRandom(enemyHQLocation);
-
-                // Distribute supply
-                distributeSupply(suppliabilityMultiplier_Preattack);
+                attackMove();
                 break;
-                
             case WANDER:
                 // Vigilance
                 // Stops everything and attacks when enemies are in attack range.
