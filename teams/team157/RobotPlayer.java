@@ -125,19 +125,19 @@ public class RobotPlayer {
     public static int[][] map = new int[allocatedWidth][allocatedHeight];
     
     //Internal map methods
-    private static int locationToMapXIndex(MapLocation loc) {
+    public static int locationToMapXIndex(MapLocation loc) {
         return (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
     }
-    private static int locationToMapYIndex(MapLocation loc) {
+    public static int locationToMapYIndex(MapLocation loc) {
         return (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
     }
-    private static int locationToReflectedMapXIndex(MapLocation loc) {
+    public static int locationToReflectedMapXIndex(MapLocation loc) {
         return (3*allocatedWidth/2+HQLocation.x+enemyHQLocation.x-loc.x-mapx0)%allocatedWidth;
     }
-    private static int locationToReflectedMapYIndex(MapLocation loc) {
+    public static int locationToReflectedMapYIndex(MapLocation loc) {
         return (3*allocatedHeight/2+HQLocation.y+enemyHQLocation.y-loc.y-mapy0)%allocatedHeight;
     }
-    private static int mapIndexToChannel(int xidx, int yidx) {
+    public static int mapIndexToChannel(int xidx, int yidx) {
         return xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA);
     }
     
@@ -163,6 +163,16 @@ public class RobotPlayer {
     public static int getInternalMap(MapLocation loc) {
         int xidx = locationToMapXIndex(loc);
         int yidx = locationToMapYIndex(loc);
+        return map[yidx][xidx];
+    }
+    
+    /**
+     * Gets value in internal map.
+     * @param xidx x location in internal map.
+     * @param yidx y location in internal map.
+     * @return value in internal map at input location.
+     */
+    public static int getInternalMap(int xidx, int yidx) {
         return map[yidx][xidx];
     }
     
