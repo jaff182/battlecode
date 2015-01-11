@@ -12,27 +12,58 @@ import java.util.Iterator;
  */
 public class RiskMap {
 
-	private ArrayList<MapLocation> sightings;
-	private float radius = 5;
+    private ArrayList<MapLocation> buildings;
+    private ArrayList<MapLocation> units;
+    private ArrayList<Double> risks;
+    private ArrayList<Integer> times;
+    private float radius = 5;
 
-	public RiskMap()
-	{
-		this.sightings = new ArrayList<MapLocation>();
-	}
+    public RiskMap()
+    {
+        this.buildings = new ArrayList<MapLocation>();
+        this.units = new ArrayList<MapLocation>();
+        this.risks = new ArrayList<Double>();
+        this.times = new ArrayList<Integer>();
+    }
 
-	public void addSighting(MapLocation location)
-	{
-		this.sightings.add(location);
-	}
+    public void addBuilding(MapLocation location)
+    {
+        this.buildings.add(location);
+    }
 
-	public float query(MapLocation loc)
-	{
-		for (Iterator<MapLocation> i = sightings.iterator(); i.hasNext(); ) {
-			MapLocation sighting = i.next();
-			if (Measure.distance(sighting, loc) > radius) {
-				return 1;
-			}
-		}
-		return 0;
-	}
+    public void addUnit(MapLocation location)
+    {
+        this.units.add(location);
+        this.risks.add(1.0);
+    }
+
+    public void removeUnit(MapLocation location)
+    {
+        this.units.remove(location);
+    }
+
+    public void removeBuilding(MapLocation location)
+    {
+        this.buildings.remove(location);
+    }
+
+    public double query(MapLocation loc)
+    {
+        // scanning for enemy building within the radius
+        for (Iterator<MapLocation> i = buildings.iterator(); i.hasNext(); ) {
+            MapLocation building = i.next();
+            if (Measure.distance(building, loc) > radius) {
+                return 1;
+            }
+        }
+
+        // scanning for enemy unit within the radius
+        for (Iterator<MapLocation> i = units.iterator(); i.hasNext(); ) {
+                   MapLocation unit = i.next();
+                   if (Measure.distance(unit, loc) > radius) {
+                       return risks.get(units.indexOf(unit));
+                   }
+               }
+        return 0;
+    }
 }
