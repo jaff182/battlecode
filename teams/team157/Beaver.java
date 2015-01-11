@@ -116,12 +116,38 @@ public class Beaver extends MovableUnit {
                 distributeSupply(suppliabilityMultiplier_Preattack);
                 break;
                 
+            case BUILD:
+                // Vigilance
+                // Stops everything and attacks when enemies are in attack range.
+                while (enemies.length > 0) {
+                    if (rc.isWeaponReady()) {
+                        // basicAttack(enemies);
+                        priorityAttack(enemies, attackPriorities);
+                    }
+                    enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+                    rc.yield();
+                }
+                
+                // Go to build location
+                if(myLocation.distanceSquaredTo(moveTargetLocation) > 2) {
+                    explore(moveTargetLocation);
+                } else if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType)) {
+                    rc.build(myLocation.directionTo(moveTargetLocation),buildingType);
+                    robotState = RobotState.WANDER;
+                }
+
+                // Distribute supply
+                distributeSupply(suppliabilityMultiplier_Preattack);
+                break;
+            
             default:
                 throw new IllegalStateException();
         }
     }
 
     // Specific methods =======================================================
+    
+    public static RobotType buildingType = RobotType.BARRACKS;
     
     
     //Parameters ==============================================================

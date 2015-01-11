@@ -37,7 +37,7 @@ public class Structure extends RobotPlayer {
      * @throws GameActionException
      */
     public static void dispenseSupply(double[] multiplier) throws GameActionException {
-        if(2000 - Clock.getBytecodeNum() > 800) {
+        if(Clock.getBytecodesLeft() > 800) {
             //Sense nearby friendly robots
             RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myTeam);
             int targetidx = -1;
@@ -56,6 +56,8 @@ public class Structure extends RobotPlayer {
                     minsupplyratio = supplyratio;
                     targetidx = i;
                 }
+                
+                if(Clock.getBytecodesLeft() < 600) break;
             }
             
             //Replenish supply

@@ -12,4 +12,5 @@ public enum RobotState {
     HOLD_INACTIVE, // Remove supply in area (concentrating in certain units, possibly this one)
     WANDER, // Random walk, attack when needed
     MINE, // Mining mode, for beavers, miners
+    BUILD //Building mode, for beavers
 }

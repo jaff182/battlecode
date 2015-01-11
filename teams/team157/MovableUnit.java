@@ -237,7 +237,7 @@ public class MovableUnit extends RobotPlayer {
      * @throws GameActionException
      */
     public static void distributeSupply(double[] multiplier) throws GameActionException {
-        if(4000 - Clock.getBytecodeNum() >  500) {
+        if(Clock.getBytecodesLeft() > 1000) {
             //Sense nearby friendly robots
             RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myTeam);
             if(friends.length > 0) {
@@ -257,6 +257,8 @@ public class MovableUnit extends RobotPlayer {
                         minsupplyratio = supplyratio;
                         targetidx = i;
                     }
+                    
+                    if(Clock.getBytecodesLeft() < 600) break;
                 }
                 
                 //Transfer half of excess supply above mean
