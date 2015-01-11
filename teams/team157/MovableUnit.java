@@ -25,6 +25,7 @@ public class MovableUnit extends RobotPlayer {
     
     /**
      * If robot is set to move (ADVANCE, RETREAT), this is where it will go
+     * TODO: is this a dangerous behaviour?
      */
     public static MapLocation moveTargetLocation = enemyHQLocation;
     

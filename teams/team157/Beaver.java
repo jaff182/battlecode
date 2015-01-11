@@ -209,7 +209,8 @@ public class Beaver extends MovableUnit {
 //        System.out.println("Beaver atttempts to handle job  " + Request.claimJobType);
 //        System.out.println(Request.claimJobType & Request.JobType.BUILD_BUILDING_MASK);
         switch (Request.claimJobType) {
-        case (Request.JobType.MOVE): // Immediately override
+        case (Request.JobType.MOVE):
+            // Immediately override
             // TODO: unpack x, y target coordinates
             robotState = RobotState.ATTACK_MOVE;
             break;
