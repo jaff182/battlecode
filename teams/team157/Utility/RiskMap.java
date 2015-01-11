@@ -29,7 +29,7 @@ public class RiskMap {
 	{
 		for (Iterator<MapLocation> i = sightings.iterator(); i.hasNext(); ) {
 			MapLocation sighting = i.next();
-			if (loc.distanceSquaredTo(sighting) > radius*radius) {
+			if (Measure.distance(sighting, loc) > radius) {
 				return 1;
 			}
 		}

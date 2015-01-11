@@ -1,21 +1,13 @@
 package Utility;
 import battlecode.common.MapLocation;
+import team157.Utility.Measure;
 
 /**
  *
  */
 public class MiningFunctions {
 
-    protected static int distance(int x1, int y1, int x2, int y2) {
-        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
-    }
-
-    protected static int distance(MapLocation loc1, MapLocation loc2)
-    {
-        return Math.abs(loc1.x - loc2.x) + Math.abs(loc1.y - loc2.y);
-    }
-
-    public static MapLocation simpleRatio(MapLocation currentLocation, int[][] grid) {
+	public static MapLocation simpleRatio(MapLocation currentLocation, int[][] grid) {
         float maxRatio = 0;
         MapLocation maxPoint = new MapLocation(0, 0);
 
@@ -25,9 +17,9 @@ public class MiningFunctions {
         for (int i = 0; i < numRows; i++)
             for (int j = 0; j < numCols; j++)
             {
-                if ((float)grid[i][j]/distance(currentLocation.x, currentLocation.y, i, j) > maxRatio)
+                if ((float)grid[i][j]/ Measure.distance(currentLocation.x, currentLocation.y, i, j) > maxRatio)
                 {
-                    maxRatio = (float)grid[i][j]/distance(currentLocation.x, currentLocation.y, i, j);
+                    maxRatio = (float)grid[i][j]/ Measure.distance(currentLocation.x, currentLocation.y, i, j);
                     maxPoint = new MapLocation(i, j);
                 }
             }
@@ -41,9 +33,9 @@ public class MiningFunctions {
         int n = oreLocations.length;
 
         for (int i = 0; i < n; i++) {
-            if ((float)oreValues[i]/distance(currentLocation, oreLocations[i]) > maxRatio)
+            if ((float)oreValues[i]/ Measure.distance(currentLocation, oreLocations[i]) > maxRatio)
             {
-                maxRatio = (float)oreValues[i]/distance(currentLocation, oreLocations[i]);
+                maxRatio = (float)oreValues[i]/ Measure.distance(currentLocation, oreLocations[i]);
                 maxPoint = oreLocations[i];
             }
         }
