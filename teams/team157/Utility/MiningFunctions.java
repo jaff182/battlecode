@@ -1,6 +1,7 @@
 package Utility;
 import battlecode.common.MapLocation;
 import team157.Utility.Measure;
+import team157.Utility.Ore;
 
 /**
  *
@@ -41,4 +42,19 @@ public class MiningFunctions {
         }
         return maxPoint;
     }
+
+    public static MapLocation simpleRatio(MapLocation currentLocation, Ore[] ores)
+    {
+        float maxRatio = 0;
+        MapLocation maxPoint = new MapLocation(0, 0);
+        int n = ores.length;
+        for (Ore ore:ores) {
+            if ((float)ore.getValue()/ Measure.distance(currentLocation, ore.getLocation()) > maxRatio)
+            {
+                maxRatio = (float)ore.getValue()/ Measure.distance(currentLocation, ore.getLocation());
+                maxPoint = new MapLocation(ore.getLocation().x, ore.getLocation().y);
+            }
+        }
+        return maxPoint;
+}
 }
