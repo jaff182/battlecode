@@ -1,4 +1,4 @@
-package team157.Utility;
+package team157.utility;
 
 import battlecode.common.MapLocation;
 import java.util.ArrayList;

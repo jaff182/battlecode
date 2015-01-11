@@ -1,7 +1,7 @@
-package Utility;
+package team157.utility;
 import battlecode.common.MapLocation;
-import team157.Utility.Measure;
-import team157.Utility.Ore;
+import team157.utility.Measure;
+import team157.utility.Ore;
 
 /**
  *
