@@ -82,28 +82,6 @@ public class Beaver extends MovableUnit {
         }
     }
 
-    private static void attackMove() throws GameActionException
-    {
-        checkForEnemies();
-
-        // Go to Enemy HQ
-        exploreRandom(enemyHQLocation);
-
-        // Distribute supply
-        distributeSupply(suppliabilityMultiplier_Preattack);
-    }
-
-    private static void switchState() {
-        switch (robotState) {
-            case WANDER:
-                switchStateFromWanderState();
-                break;
-            case MINE:
-                switchStateFromMineState();
-                break;
-        }
-    }
-
     private static void checkMailbox() throws GameActionException
     {
         switch (Request.workerState) {
@@ -121,12 +99,39 @@ public class Beaver extends MovableUnit {
         }
     }
 
+    private static void beaverAttack() throws GameActionException
+    {
+        checkForEnemies();
+
+        // Go to Enemy HQ
+        exploreRandom(enemyHQLocation);
+
+        // Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+
     private static void beaverWander() throws GameActionException
     {
         checkForEnemies();
 
         // Go to Enemy HQ
         wander();
+
+        // Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+
+    private static void beaverBuild() throws GameActionException
+    {
+        checkForEnemies();
+
+        // Go to build location
+        if(myLocation.distanceSquaredTo(moveTargetLocation) > 2) {
+            explore(moveTargetLocation);
+        } else if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType)) {
+            rc.build(myLocation.directionTo(moveTargetLocation),buildingType);
+            robotState = RobotState.WANDER;
+        }
 
         // Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
@@ -147,7 +152,14 @@ public class Beaver extends MovableUnit {
 
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
 
-        switchState();
+        switch (robotState) {
+            case WANDER:
+                switchStateFromWanderState();
+                break;
+            case MINE:
+                switchStateFromMineState();
+                break;
+        }
         
         //Display state
         rc.setIndicatorString(1, "In state: " + robotState);
@@ -155,7 +167,7 @@ public class Beaver extends MovableUnit {
         // Perform action based on state
         switch (robotState) {
             case ATTACK_MOVE:
-                attackMove();
+                beaverAttack();
                 break;
             case WANDER:
                 // TODO: think about whether we should have our robots to wander by default
@@ -166,20 +178,8 @@ public class Beaver extends MovableUnit {
                 distributeSupply(suppliabilityMultiplier_Preattack);
                 break;
             case BUILD:
-                checkForEnemies();
-                
-                // Go to build location
-                if(myLocation.distanceSquaredTo(moveTargetLocation) > 2) {
-                    explore(moveTargetLocation);
-                } else if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType)) {
-                    rc.build(myLocation.directionTo(moveTargetLocation),buildingType);
-                    robotState = RobotState.WANDER;
-                }
-
-                // Distribute supply
-                distributeSupply(suppliabilityMultiplier_Preattack);
+                beaverBuild();
                 break;
-            
             default:
                 throw new IllegalStateException();
         }
