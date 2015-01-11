@@ -67,12 +67,11 @@ public class Beaver extends MovableUnit {
         }
     }
 
-    private static void attackMove() throws GameActionException
+    private static void checkForEnemies() throws GameActionException
     {
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
 
-        // Vigilance
-        // Stops everything and attacks when enemies are in attack range.
+        // Vigilance: stops everything and attacks when enemies are in attack range.
         while (enemies.length > 0) {
             if (rc.isWeaponReady()) {
                 // basicAttack(enemies);
@@ -81,6 +80,11 @@ public class Beaver extends MovableUnit {
             enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
             rc.yield();
         }
+    }
+
+    private static void attackMove() throws GameActionException
+    {
+        checkForEnemies();
 
         // Go to Enemy HQ
         exploreRandom(enemyHQLocation);
@@ -119,17 +123,7 @@ public class Beaver extends MovableUnit {
 
     private static void beaverWander() throws GameActionException
     {
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-
-        // Vigilance: stops everything and attacks when enemies are in attack range.
-        while (enemies.length > 0) {
-            if (rc.isWeaponReady()) {
-                // basicAttack(enemies);
-                priorityAttack(enemies, attackPriorities);
-            }
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-            rc.yield();
-        }
+        checkForEnemies();
 
         // Go to Enemy HQ
         wander();
@@ -169,22 +163,10 @@ public class Beaver extends MovableUnit {
                 break;
             case MINE:
                 if (rc.getCoreDelay()< 1) rc.mine();
-                
-                // Distribute supply
                 distributeSupply(suppliabilityMultiplier_Preattack);
                 break;
-                
             case BUILD:
-                // Vigilance
-                // Stops everything and attacks when enemies are in attack range.
-                while (enemies.length > 0) {
-                    if (rc.isWeaponReady()) {
-                        // basicAttack(enemies);
-                        priorityAttack(enemies, attackPriorities);
-                    }
-                    enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-                    rc.yield();
-                }
+                checkForEnemies();
                 
                 // Go to build location
                 if(myLocation.distanceSquaredTo(moveTargetLocation) > 2) {
