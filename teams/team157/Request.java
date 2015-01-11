@@ -1,5 +1,6 @@
 package team157;
 
+import team157.RobotPlayer.ChannelName;
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotType;
@@ -81,34 +82,42 @@ public class Request {
     }
     
     public class JobType { 
-        // 7 bits for this, use a byte to avoid blowing limit
-        private final static int BUILD_BUILDING_MASK = 0b00100000; 
+        // 7 bits for this
+        
+        // xx                             xxxxx
+        // <build flag (2 bits)>          <general instruction number>
+        
+        // leftmost 3 bits reserved
+        private final static int BUILD_BUILDING_MASK = 0b010_0000; 
         // Indicates this is a build command for buildings
-        // No other commands must set the 2nd-leftmost bit to 1
+        // The sequence of 01 for the leftmost two bits characterize this 
         //The rightmost 5 bits determine what to build, according to the robotType ordinal. Add to use
         
-        private final static int BUILD_MOVING_ROBOT_MASK = 0b01000000; 
-        // Indicates this is a build command for buildings
-        // No other commands must set the leftmost bit to 1
+        private final static int BUILD_MOVING_ROBOT_MASK = 0b100_0000; 
+        // Indicates this is a build command for moving robots
+        // The sequence of 10 for the leftmost two bits characterize this 
         //The rightmost 5 bits determine what to build, according to the robotType ordinal. Add to use
+
         
+        // You have 32 instructions using the rightmost 5 bits (with 00 for leftmost 2)
+        // Reserve 0
         private final static int MOVE = 1;
         
         private final static int SUPPLY = 2;
-
+        
     }
     
     /**
      * Base address into messaging array of a randomized data structure storing request metadata
      */
-    private static final int BASE_REQUEST_METADATA_CHANNEL = 30000;
+    private static final int BASE_REQUEST_METADATA_CHANNEL = RobotPlayer.getChannel(RobotPlayer.ChannelName.REQUESTS_METADATA_BASE);
     
     /**
      * Size of randomized data structure in channels.
      * 
      * Ideally, we would like load factor to be low, to make channel allocations faster.
      */
-    private static final int REQUEST_METADATA_SIZE = 4000; // max value of 16384
+    private static final int REQUEST_METADATA_SIZE = 7000; // max value of 16384
     
     /**
      * Gets a job id. This job id is also your relative index into the
@@ -246,9 +255,16 @@ public class Request {
      * Broadcast to all units of a given type
      * 
      * @param unitType
+     * @throws GameActionException 
      */
-    public static void broadcastToUnitType(int request, int unitType) {
-        
+    public static void broadcastToUnitType(long request, int unitType) throws GameActionException {
+        RobotPlayer.rc.broadcast(
+                RobotPlayer.getChannel(ChannelName.REQUEST_MAILBOX_BASE)
+                        + unitType, (int) (request >>> 32));
+        RobotPlayer.rc.broadcast(
+                RobotPlayer.getChannel(ChannelName.REQUEST_MAILBOX_BASE)
+                        + unitType + 20, (int) request);
+
     }
     
     /**
@@ -273,13 +289,27 @@ public class Request {
      * 
      * Zero if no requested jobs are found.
      * 
+     * 43 bytecode just to check (one mailbox)
+     * 
      * @param x
      * @param y
      * @param unitType
      * @return jobID
+     * @throws GameActionException 
      */
-    public static int checkForRequest(int x, int y, int unitType) {
+    public static long checkForRequest(int x, int y, int unitType) throws GameActionException {
+        // Only check unit mailbox for now
+        int lowBits = RobotPlayer.rc.readBroadcast(RobotPlayer
+                .getChannel(ChannelName.REQUEST_MAILBOX_BASE) + unitType + 20);
+        int requestRoundNum = (lowBits >>> 7) & 0b111_1111_1111;
+        if (Clock.getRoundNum() - requestRoundNum <= 1) { // Request is valid
+            long highBits = RobotPlayer.rc.readBroadcast(RobotPlayer
+                    .getChannel(ChannelName.REQUEST_MAILBOX_BASE) + unitType);
+            return (highBits << 32) | lowBits;
+        }
         return 0;
+        // Interesting case occurs when round number is 0 or 1. Then, we will always transmit requests.
+        // This would require corruption to occur in 2 rounds though.
     }
     
     /**
