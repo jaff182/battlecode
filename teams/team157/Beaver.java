@@ -31,10 +31,28 @@ public class Beaver extends MovableUnit {
             previousDirection = Direction.NONE;
         }
         
-        //Vigilance
-        //Stops everything and attacks when enemies are in attack range.
+        // Sensing methods go here
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
         myLocation = rc.getLocation();
+        
+
+        
+        // Check mailbox
+        switch (Request.workerState) {
+        case IDLE:
+            long request = Request.checkForRequest(myLocation.x, myLocation.y, RobotPlayer.myType.ordinal());
+            if (request != 0)
+                scoreRequest(request);
+            break;
+        case ON_JOB:
+            break;
+        case REQUESTING_JOB:
+            if (Request.isJobClaimSuccessful()) {
+                handleRequest(Request.claimRequest);
+            }
+        default:
+            break;
+        }
         
         // Switch states
         switch (robotState) {
@@ -42,7 +60,10 @@ public class Beaver extends MovableUnit {
                 if (rc.isCoreReady()) {
                     double ore = rc.senseOre(myLocation);
                     double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
-                    if(rand.nextInt(100) <= 100*miningProbability) {
+                    if (buildingType != null) {
+                        robotState = RobotState.BUILD;
+                    }
+                    else if(rand.nextInt(100) <= 100*miningProbability) {
                         robotState = RobotState.MINE;
                     }
                 }
@@ -56,7 +77,10 @@ public class Beaver extends MovableUnit {
                 } else if (enemies.length != 0) {
                     robotState = RobotState.ATTACK_MOVE;
                     moveTargetLocation = HQLocation;
-                } else if (rc.isCoreReady()) {
+                } else if (buildingType != null) {
+                    robotState = RobotState.MINE;
+                }
+                else if (rc.isCoreReady()) {
                     double ore = rc.senseOre(myLocation);
                     double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
                     if(rand.nextInt(100) > 100*miningProbability) {
@@ -147,7 +171,47 @@ public class Beaver extends MovableUnit {
 
     // Specific methods =======================================================
     
-    public static RobotType buildingType = RobotType.BARRACKS;
+    /**
+     * Check robot suitability for the request and score
+     * @param request
+     * @throws GameActionException
+     */
+    private static void scoreRequest(long request) throws GameActionException {
+        switch (Request.claimJobType) {
+        // TODO: Actual scoring
+        default:
+//            System.out.println("Beaver atttempts to claim job");
+            Request.attemptToClaimJob(0);
+        }
+    }
+
+    /**
+     * Handles a request we're committed to, and updates internal variables as it does so.
+     * @throws GameActionException 
+     */
+    private static void handleRequest(long request) throws GameActionException {
+//        System.out.println("Beaver atttempts to handle job  " + Request.claimJobType);
+//        System.out.println(Request.claimJobType & Request.JobType.BUILD_BUILDING_MASK);
+        switch (Request.claimJobType) {
+        case (Request.JobType.MOVE): // Immediately override
+            // TODO: unpack x, y target coordinates
+            robotState = RobotState.ATTACK_MOVE;
+            break;
+        default:
+            if ((Request.claimJobType & Request.JobType.BUILD_BUILDING_MASK) != 0) {
+//                System.out.println("Beaver sets buildingtype to  " + Request.getRobotType(request));
+                buildingType = RobotPlayer.robotTypes[Request.getRobotType(request)];
+            }
+            break;
+        }
+    }
+
+    /**
+     * The building to be built at moveTargetLocation
+     * 
+     * null if we aren't looking to build anything
+     */
+    public static RobotType buildingType = null;
     
     
     //Parameters ==============================================================

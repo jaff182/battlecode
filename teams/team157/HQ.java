@@ -43,7 +43,13 @@ public class HQ extends Structure {
             enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
             rc.yield();
         }
-        
+        if (rc.getTeamOre() > RobotType.BARRACKS.oreCost) {
+//            System.out.println("Sending barracks build request");
+            Request.broadcastToUnitType(
+                    Request.getConstructBuildingRequest(
+                            RobotType.BARRACKS.ordinal(), 0, 0, 10),
+                    RobotType.BEAVER.ordinal());
+        }
         
         //Spawn
         trySpawn(HQLocation.directionTo(enemyHQLocation),RobotType.BEAVER);
