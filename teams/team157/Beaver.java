@@ -101,6 +101,7 @@ public class Beaver extends MovableUnit {
 
     private static void beaverAttack() throws GameActionException
     {
+        // TODO: potentially refactor out checkForEnemies
         checkForEnemies();
 
         // Go to Enemy HQ
