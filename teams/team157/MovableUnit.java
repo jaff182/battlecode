@@ -16,7 +16,7 @@ public class MovableUnit extends RobotPlayer {
     private static int totalOffsetDir = 0;
     private static Direction obstacleDir = Direction.NORTH;
     
-    // Robot overall state ================================================================
+    // Robot overall state ====================================================
     // Only modify these variables before and after loop(), at clearly specified locations
     /**
      * State of robot. Some states are invalid in certain robots. Mark clearly which will be used.
