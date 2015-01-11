@@ -69,7 +69,6 @@ public class Beaver extends MovableUnit {
 
     private static void attackMove() throws GameActionException
     {
-        // Sensing methods go here
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
 
         // Vigilance
@@ -101,6 +100,44 @@ public class Beaver extends MovableUnit {
         }
     }
 
+    private static void checkMailbox() throws GameActionException
+    {
+        switch (Request.workerState) {
+            case IDLE:
+                idle();;
+                break;
+            case ON_JOB:
+                break;
+            case REQUESTING_JOB:
+                if (Request.isJobClaimSuccessful()) {
+                    handleRequest(Request.claimRequest);
+                }
+            default:
+                break;
+        }
+    }
+
+    private static void beaverWander() throws GameActionException
+    {
+        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+
+        // Vigilance: stops everything and attacks when enemies are in attack range.
+        while (enemies.length > 0) {
+            if (rc.isWeaponReady()) {
+                // basicAttack(enemies);
+                priorityAttack(enemies, attackPriorities);
+            }
+            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            rc.yield();
+        }
+
+        // Go to Enemy HQ
+        wander();
+
+        // Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+
     private static void loop() throws GameActionException {
         //Sense map
         //Must be before movement methods
@@ -112,24 +149,10 @@ public class Beaver extends MovableUnit {
         // Update the location - do not remove this code as myLocation is referenced by other methods
         myLocation = rc.getLocation();
 
-        // Check mailbox
-        switch (Request.workerState) {
-        case IDLE:
-            idle();;
-            break;
-        case ON_JOB:
-            break;
-        case REQUESTING_JOB:
-            if (Request.isJobClaimSuccessful()) {
-                handleRequest(Request.claimRequest);
-            }
-        default:
-            break;
-        }
+        checkMailbox();
 
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
 
-        // Switch states
         switchState();
         
         //Display state
@@ -141,24 +164,9 @@ public class Beaver extends MovableUnit {
                 attackMove();
                 break;
             case WANDER:
-                // Vigilance
-                // Stops everything and attacks when enemies are in attack range.
-                while (enemies.length > 0) {
-                    if (rc.isWeaponReady()) {
-                        // basicAttack(enemies);
-                        priorityAttack(enemies, attackPriorities);
-                    }
-                    enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-                    rc.yield();
-                }
-
-                // Go to Enemy HQ
-                wander();
-
-                // Distribute supply
-                distributeSupply(suppliabilityMultiplier_Preattack);
+                // TODO: think about whether we should have our robots to wander by default
+                beaverWander();
                 break;
-                
             case MINE:
                 if (rc.getCoreDelay()< 1) rc.mine();
                 
