@@ -37,13 +37,13 @@ public class Structure extends RobotPlayer {
      * @throws GameActionException
      */
     public static void dispenseSupply(double[] multiplier) throws GameActionException {
-        if(2000 - Clock.getBytecodeNum() >  500) {
+        if(Clock.getBytecodesLeft() > 800) {
             //Sense nearby friendly robots
             RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myTeam);
             int targetidx = -1;
             double totalsupply = 0, totalcapacity = 0;
             double targetsupplyratio = 500, minsupplyratio = targetsupplyratio;
-            //targetsupplyratio arbitrarily set to 250 for now
+            //targetsupplyratio arbitrarily set to 500 for now
             
             for(int i=0; i<friends.length; i++) {
                 //Keep track of total values to find mean later
@@ -56,6 +56,8 @@ public class Structure extends RobotPlayer {
                     minsupplyratio = supplyratio;
                     targetidx = i;
                 }
+                
+                if(Clock.getBytecodesLeft() < 600) break;
             }
             
             //Replenish supply

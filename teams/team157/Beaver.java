@@ -1,11 +1,12 @@
 package team157;
 
-import java.util.Random;
 import battlecode.common.*;
 
 public class Beaver extends MovableUnit {
 
     // General methods =========================================================
+
+    private static MapLocation myLocation;
 
     public static void start() throws GameActionException {
         init();
@@ -17,47 +18,234 @@ public class Beaver extends MovableUnit {
 
     private static void init() throws GameActionException {
         rc.setIndicatorString(0, "hello i'm a beaver.");
-        initialSense(rc.getLocation());
+        //initialSense(rc.getLocation());
     }
 
-    private static void loop() throws GameActionException {
-        
-        //Vigilance
-        //Stops everything and attacks when enemies are in attack range.
-        RobotInfo[] enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-        while(enemies.length > 0) {
-            if(rc.isWeaponReady()) {
-                //basicAttack(enemies);
-                priorityAttack(enemies,attackPriorities);
+    private static void idle() throws GameActionException
+    {
+        long request = Request.checkForRequest(myLocation.x, myLocation.y, RobotPlayer.myType.ordinal());
+        if (request != 0)
+               scoreRequest(request);
+    }
+
+    private static void switchStateFromWanderState()
+    {
+        if (rc.isCoreReady())
+        {
+            double ore = rc.senseOre(myLocation);
+            double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
+            if (buildingType != null) {
+                robotState = RobotState.BUILD;
+            }
+            else if(rand.nextInt(100) <= 100*miningProbability) {
+                robotState = RobotState.MINE;
+            }
+        }
+    }
+
+    private static void switchStateFromMineState()
+    {
+        // Sensing methods go here
+        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+
+        if (Clock.getRoundNum() > 1500 && rc.getHealth() > 10) {
+            //Lategame rush attack
+            robotState = RobotState.ATTACK_MOVE;
+            moveTargetLocation = enemyHQLocation;
+        } else if (enemies.length != 0) {
+            robotState = RobotState.ATTACK_MOVE;
+            moveTargetLocation = HQLocation;
+        } else if (buildingType != null) {
+            robotState = RobotState.MINE;
+        }
+        else if (rc.isCoreReady()) {
+            double ore = rc.senseOre(myLocation);
+            double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
+            if(rand.nextInt(100) > 100*miningProbability) {
+                robotState = RobotState.WANDER;
+            }
+        }
+    }
+
+    private static void checkForEnemies() throws GameActionException
+    {
+        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+
+        // Vigilance: stops everything and attacks when enemies are in attack range.
+        while (enemies.length > 0) {
+            if (rc.isWeaponReady()) {
+                // basicAttack(enemies);
+                priorityAttack(enemies, attackPriorities);
             }
             enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
             rc.yield();
         }
-        
-        //Go to Enemy HQ
-        exploreRandom(enemyHQLocation);
-        //rc.setIndicatorString(1, "Number of bytecodes: " + Clock.getBytecodeNum());
+    }
 
-        //Distribute supply
-        distributeSupply(suppliabilityMultiplier);
+    private static void checkMailbox() throws GameActionException
+    {
+        switch (Request.workerState) {
+            case IDLE:
+                idle();;
+                break;
+            case ON_JOB:
+                break;
+            case REQUESTING_JOB:
+                if (Request.isJobClaimSuccessful()) {
+                    handleRequest(Request.claimRequest);
+                }
+            default:
+                break;
+        }
+    }
+
+    private static void beaverAttack() throws GameActionException
+    {
+        // TODO: potentially refactor out checkForEnemies
+        checkForEnemies();
+
+        // Go to Enemy HQ
+        bug(enemyHQLocation);
+
+        // Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+
+    private static void beaverWander() throws GameActionException
+    {
+        checkForEnemies();
+
+        // Go to Enemy HQ
+        wander();
+
+        // Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+
+    private static void beaverBuild() throws GameActionException
+    {
+        checkForEnemies();
+
+        // Go to build location
+        if(myLocation.distanceSquaredTo(moveTargetLocation) > 2) {
+            bug(moveTargetLocation);
+        } else if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType)) {
+            rc.build(myLocation.directionTo(moveTargetLocation),buildingType);
+            robotState = RobotState.WANDER;
+        }
+
+        // Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+
+    private static void loop() throws GameActionException {
+        //Sense map
+        //Must be before movement methods
+        if(previousDirection != Direction.NONE) {
+            senseWhenMove(rc.getLocation(), previousDirection);
+            previousDirection = Direction.NONE;
+        }
+
+        // Update the location - do not remove this code as myLocation is referenced by other methods
+        myLocation = rc.getLocation();
+
+        checkMailbox();
+
+        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+
+        switch (robotState) {
+            case WANDER:
+                switchStateFromWanderState();
+                break;
+            case MINE:
+                switchStateFromMineState();
+                break;
+        }
+        
+        //Display state
+        rc.setIndicatorString(1, "In state: " + robotState);
+
+        // Perform action based on state
+        switch (robotState) {
+            case ATTACK_MOVE:
+                beaverAttack();
+                break;
+            case WANDER:
+                // TODO: think about whether we should have our robots to wander by default
+                beaverWander();
+                break;
+            case MINE:
+                if (rc.getCoreDelay()< 1) rc.mine();
+                distributeSupply(suppliabilityMultiplier_Preattack);
+                break;
+            case BUILD:
+                beaverBuild();
+                break;
+            default:
+                throw new IllegalStateException();
+        }
     }
 
     // Specific methods =======================================================
+    
+    /**
+     * Check robot suitability for the request and score
+     * @param request
+     * @throws GameActionException
+     */
+    private static void scoreRequest(long request) throws GameActionException {
+        switch (Request.claimJobType) {
+        // TODO: Actual scoring
+        default:
+//            System.out.println("Beaver atttempts to claim job");
+            Request.attemptToClaimJob(0);
+        }
+    }
+
+    /**
+     * Handles a request we're committed to, and updates internal variables as it does so.
+     * @throws GameActionException 
+     */
+    private static void handleRequest(long request) throws GameActionException {
+//        System.out.println("Beaver atttempts to handle job  " + Request.claimJobType);
+//        System.out.println(Request.claimJobType & Request.JobType.BUILD_BUILDING_MASK);
+        switch (Request.claimJobType) {
+        case (Request.JobType.MOVE):
+            // Immediately override
+            // TODO: unpack x, y target coordinates
+            robotState = RobotState.ATTACK_MOVE;
+            break;
+        default:
+            if ((Request.claimJobType & Request.JobType.BUILD_BUILDING_MASK) != 0) {
+//                System.out.println("Beaver sets buildingtype to  " + Request.getRobotType(request));
+                buildingType = RobotPlayer.robotTypes[Request.getRobotType(request)];
+            }
+            break;
+        }
+    }
+
+    /**
+     * The building to be built at moveTargetLocation
+     * 
+     * null if we aren't looking to build anything
+     */
+    public static RobotType buildingType = null;
     
     
     //Parameters ==============================================================
     
     /**
-     * Ranks the RobotType order in which enemy units should be attacked (so lower 
-     * means attack first). Needs to be adjusted dynamically based on defence strategy.
+     * The importance rating that enemy units of each RobotType should be attacked 
+     * (so higher means attack first). Needs to be adjusted dynamically based on 
+     * defence strategy.
      */
     private static int[] attackPriorities = {
-        1/*0:HQ*/,          0/*1:TOWER*/,       15/*2:SUPPLYDPT*/,  18/*3:TECHINST*/,
-        14/*4:BARRACKS*/,   13/*5:HELIPAD*/,    16/*6:TRNGFIELD*/,  12/*7:TANKFCTRY*/,
-        17/*8:MINERFCTRY*/, 20/*9:HNDWSHSTN*/,  11/*10:AEROLAB*/,   8/*11:BEAVER*/,
-        19/*12:COMPUTER*/,  5/*13:SOLDIER*/,    6/*14:BASHER*/,     9/*15:MINER*/,
-        7/*16:DRONE*/,      4/*17:TANK*/,       3/*18:COMMANDER*/,  10/*19:LAUNCHER*/,
-        2/*20:MISSILE*/
+        20/*0:HQ*/,         21/*1:TOWER*/,      6/*2:SUPPLYDPT*/,   3/*3:TECHINST*/,
+        7/*4:BARRACKS*/,    8/*5:HELIPAD*/,     5/*6:TRNGFIELD*/,   9/*7:TANKFCTRY*/,
+        4/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   10/*10:AEROLAB*/,   13/*11:BEAVER*/,
+        2/*12:COMPUTER*/,   16/*13:SOLDIER*/,   15/*14:BASHER*/,    12/*15:MINER*/,
+        14/*16:DRONE*/,     17/*17:TANK*/,      18/*18:COMMANDER*/, 11/*19:LAUNCHER*/,
+        19/*20:MISSILE*/
     };
     
     /**
@@ -65,11 +253,20 @@ public class Beaver extends MovableUnit {
      * which the dispenseSupply() and distributeSupply() methods allocate supply (so 
      * higher means give more supply to units of that type).
      */
-    private static double[] suppliabilityMultiplier = {
-        0/*0:HQ*/,          1/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   1/*3:TECHINST*/,
+    private static double[] suppliabilityMultiplier_Conservative = {
+        1/*0:HQ*/,          1/*1:TOWER*/,       1/*2:SUPPLYDPT*/,   1/*3:TECHINST*/,
         1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     1/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
-        1/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
-        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     1/*15:MINER*/,
+        1/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,    0/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   0/*13:SOLDIER*/,    0/*14:BASHER*/,     0.5/*15:MINER*/,
+        0/*16:DRONE*/,      0/*17:TANK*/,       0/*18:COMMANDER*/,  0/*19:LAUNCHER*/,
+        0/*20:MISSILE*/
+    };
+    
+    private static double[] suppliabilityMultiplier_Preattack = {
+        0/*0:HQ*/,          0/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     0/*15:MINER*/,
         1/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };

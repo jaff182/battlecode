@@ -1,5 +1,6 @@
 package team157;
 
+import team157.RobotPlayer.ChannelName;
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotType;
@@ -44,13 +45,12 @@ public class Request {
      * put the high bits on the first, low on the second.<br>
      * 
      * bit allocation, from left to right:<br>
+     * 3 bits -> task priority<br>
+     * 29 bits -> task info, task specific. See job documentation later for info.<br>
+     * 
      * 14 bits -> jobID<br>
      * 11 bits -> round number<br>
      * 7 bits -> task type<br>
-     * 
-     * parameters:<br>
-     * 3 bits -> task priority<br>
-     * task info, task specific. See job documentation later for info.<br>
      * 
      * 
      * requestInfo<br>
@@ -81,27 +81,35 @@ public class Request {
     }
     
     public class JobType { 
-        // 7 bits for this, use a byte to avoid blowing limit
-        private final static int BUILD_BUILDING_MASK = 0b00100000; 
+        // 7 bits for this
+        
+        // xx                             xxxxx
+        // <build flag (2 bits)>          <general instruction number>
+        
+        // leftmost 3 bits reserved
+        final static int BUILD_BUILDING_MASK = 0b010_0000; 
         // Indicates this is a build command for buildings
-        // No other commands must set the 2nd-leftmost bit to 1
+        // The sequence of 01 for the leftmost two bits characterize this 
         //The rightmost 5 bits determine what to build, according to the robotType ordinal. Add to use
         
-        private final static int BUILD_MOVING_ROBOT_MASK = 0b01000000; 
-        // Indicates this is a build command for buildings
-        // No other commands must set the leftmost bit to 1
+        final static int BUILD_MOVING_ROBOT_MASK = 0b100_0000; 
+        // Indicates this is a build command for moving robots
+        // The sequence of 10 for the leftmost two bits characterize this 
         //The rightmost 5 bits determine what to build, according to the robotType ordinal. Add to use
-        
-        private final static int MOVE = 1;
-        
-        private final static int SUPPLY = 2;
 
+        
+        // You have 32 instructions using the rightmost 5 bits (with 00 for leftmost 2)
+        // Reserve 0
+        final static int MOVE = 1;
+        
+        final static int SUPPLY = 2;
+        
     }
     
     /**
      * Base address into messaging array of a randomized data structure storing request metadata
      */
-    private static final int BASE_REQUEST_METADATA_CHANNEL = RobotPlayer.getChannel(RobotPlayer.ChannelName.REQUESTS_METADATA);
+    private static final int BASE_REQUEST_METADATA_CHANNEL = RobotPlayer.getChannel(RobotPlayer.ChannelName.REQUESTS_METADATA_BASE);
     
     /**
      * Size of randomized data structure in channels.
@@ -110,6 +118,25 @@ public class Request {
      */
     private static final int REQUEST_METADATA_SIZE = 7000; // max value of 16384
     
+    // Variables for workers =====================================
+    enum WorkerState {
+        IDLE, REQUESTING_JOB, ON_JOB
+    }
+    
+    /** 
+     * Reflects the state of all robots.
+     * 
+     * The Request library will update this state, do not write to it directly.
+     */
+    public static WorkerState workerState = WorkerState.IDLE;
+    
+    // Variables for robots in process of claim (or last request seen) ======================
+    // Robots should only request one job at a time
+    public static int claimJobID;
+    public static int claimCreatedRoundNum;
+    public static int claimJobType;
+    public static long claimRequest;
+        
     /**
      * Gets a job id. This job id is also your relative index into the
      * "request metadata" structure in the messaging array.
@@ -156,7 +183,7 @@ public class Request {
      * @return
      */
     public static int getJobID(long request) {
-        return (int)(request & 0xFC00) >>> 18;
+        return (int) (request >>> (32-14)) & 0b11_1111_1111_1111;
     }
     
     
@@ -192,11 +219,11 @@ public class Request {
      */
     public static long getConstructBuildingRequest(int buildingType, int x, int y, int fudgeAreaCircleRadius) {
         assert x <= 61 && x >= -61 && y <= 61 && y >= -61;
-        return (x << (64 - 7 - 3)) | (y << (64 - 14 - 3))
-                | (fudgeAreaCircleRadius << (64 - 21 - 3))
+        return ((long)x << (64 - 7 - 3)) | ((long)y << (64 - 14 - 3))
+                | ((long)fudgeAreaCircleRadius << (64 - 21 - 3))
                 | (getJobID() << (32 - 14))
                 | (Clock.getRoundNum() << (32 - 11 - 14))
-                | JobType.BUILD_MOVING_ROBOT_MASK | buildingType;
+                | JobType.BUILD_BUILDING_MASK | buildingType;
     }
 
     /**
@@ -246,9 +273,16 @@ public class Request {
      * Broadcast to all units of a given type
      * 
      * @param unitType
+     * @throws GameActionException 
      */
-    public static void broadcastToUnitType(int request, int unitType) {
-        
+    public static void broadcastToUnitType(long request, int unitType) throws GameActionException {
+        RobotPlayer.rc.broadcast(
+                RobotPlayer.getChannel(ChannelName.REQUEST_MAILBOX_BASE)
+                        + unitType, (int) (request >>> 32));
+        RobotPlayer.rc.broadcast(
+                RobotPlayer.getChannel(ChannelName.REQUEST_MAILBOX_BASE)
+                        + unitType + 20, (int) request);
+
     }
     
     /**
@@ -269,7 +303,9 @@ public class Request {
     }
 
     /**
-     * Gets a request for a job (if available), for units at location and type
+     * Gets a request for a job (if available), for units at location and type.
+     * 
+     * Updates claimCreatedRoundNum, claimJobID, claimJobType, claimRequest. Only works if worker is idle.
      * 
      * Zero if no requested jobs are found.
      * 
@@ -277,9 +313,46 @@ public class Request {
      * @param y
      * @param unitType
      * @return jobID
+     * @throws GameActionException 
      */
-    public static int checkForRequest(int x, int y, int unitType) {
+    public static long checkForRequest(int x, int y, int unitType)
+            throws GameActionException {
+        if (true || workerState == WorkerState.IDLE) {
+            // Only check unit mailbox for now
+            int lowBits = RobotPlayer.rc.readBroadcast(RobotPlayer
+                    .getChannel(ChannelName.REQUEST_MAILBOX_BASE)
+                    + unitType
+                    + 20);
+            claimCreatedRoundNum = (lowBits >>> 7) & 0b111_1111_1111;
+            //System.out.println(claimCreatedRoundNum);
+            if (Clock.getRoundNum() - claimCreatedRoundNum <= 1) { // Request is
+                                                                   // valid
+                long fullRequest = (long) (RobotPlayer.rc.readBroadcast(RobotPlayer
+                        .getChannel(ChannelName.REQUEST_MAILBOX_BASE)
+                        + unitType)) << 32 | lowBits;
+                claimJobID = (int) (fullRequest >>> (32-14)) & 0b11_1111_1111_1111;
+                claimJobType = (int) fullRequest & 0b111_1111;
+                claimRequest = fullRequest;
+                return fullRequest;
+            }
+            return 0;
+            // Interesting case occurs when round number is 0 or 1. Then, we
+            // will always transmit requests.
+            // This would require corruption to occur in 2 rounds though.
+        }
         return 0;
+    }
+
+    public static int getXCoordinate(long request) {
+        return (int) ((request >>> (64-3-7)) & 0b111_1111);
+    }
+    
+    public static int getYCoordinate(long request) {
+        return (int) ((request >>> (64-3-14)) & 0b111_1111);
+    }
+    
+    public static int getRobotType(long request) {
+        return (int) (request& 0b1_1111);
     }
     
     /**
@@ -338,32 +411,53 @@ public class Request {
      * Only run attemptToClaimJob if robot has higher score, and it believes it
      * can complete task
      * 
-     * @param request the request we were given earlier (not requestInfo!)
-     * @param countingID
+     * 
      * @param currentScore must be below 63
      * @return
      * @throws GameActionException 
      */
-    public static void attemptToClaimJob(long request, int countingID, int currentScore) throws GameActionException {
-        final int jobID = getJobID(request);
+    public static void attemptToClaimJob(int currentScore) throws GameActionException {
         assert currentScore < 63 && currentScore >= 0;
         final int taskInfo = (JobStatus.REQUESTING << (32 - 3))
                 | (Clock.getRoundNum() << (32 - 3 - 11))
-                | (countingID << (32 - 3 - 11 - 12)) | (currentScore);
-        System.out.println("Taskinfo" + taskInfo);
-        RobotPlayer.rc.broadcast(BASE_REQUEST_METADATA_CHANNEL + jobID,
+                | (RobotPlayer.countingID << (32 - 3 - 11 - 12)) | (currentScore);
+        RobotPlayer.rc.broadcast(BASE_REQUEST_METADATA_CHANNEL + claimJobID,
                 taskInfo);
+        Request.workerState = WorkerState.REQUESTING_JOB;
     }
     
     /**
-     * Get the status of the task.
+     * Checks whether you've won the job. Use in next turn after claiming job.
      * 
-     * Use only after task has been assigned, and up to five rounds after task
-     * fail/complete.
+     * @param jobID
+     * @return true if you've been assigned the job. False otherwise
+     * @throws GameActionException
+     */
+    public static boolean isJobClaimSuccessful() throws GameActionException {
+        int requestInfo = getRequestInfo(claimJobID);
+        final int requestStatus = requestInfo >>> (32-3);
+        final int winnerCountingID = (requestInfo >>> 6) & 0xFFF;
+        if (winnerCountingID == RobotPlayer.countingID
+                && requestStatus == JobStatus.REQUESTING) {
+            final int newRequestInfo = (JobStatus.IN_PROGRESS << (32 - 3))
+                    | (Clock.getRoundNum() << (32 - 11))
+                    | (RobotPlayer.countingID << (32-3-11-12));
+            RobotPlayer.rc.broadcast(BASE_REQUEST_METADATA_CHANNEL + claimJobID, newRequestInfo);
+            Request.workerState = WorkerState.ON_JOB;
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Requesters: Get the status of the task issued.
+     * 
+     * Use only after task has been assigned (on the third turn after
+     * requesting), and up to five rounds after task fail/complete.
      * 
      * @param jobID
      * @return a value from Request.JobStatus.* indicating task status
-     * @throws GameActionException 
+     * @throws GameActionException
      */
     public static int checkJobStatus(int jobID) throws GameActionException {
         return RobotPlayer.rc.readBroadcast(BASE_REQUEST_METADATA_CHANNEL
@@ -375,8 +469,6 @@ public class Request {
      * 
      * Call every round to report back, and check if task has been cancelled.
      * 
-     * @param jobID
-     * @param inboxID
      * @param jobStatus
      *            the status we want to broadcast (JobStatus.COMPLETE, DELAYED,
      *            IN_PROGRESS, FAILED are the only valid values)
@@ -384,14 +476,16 @@ public class Request {
      *         otherwise
      * @throws GameActionException
      */
-    public static boolean updateJobStatus(int jobID, int inboxID, int jobStatus) throws GameActionException {
+    public static boolean updateJobStatus(int jobStatus) throws GameActionException {
         final int requestInfo = RobotPlayer.rc.readBroadcast(BASE_REQUEST_METADATA_CHANNEL
-                + jobID);
+                + claimJobID);
         final int lastJobStatus = requestInfo >>> (32-3);
-        if (lastJobStatus != JobStatus.DELAYED && lastJobStatus != JobStatus.IN_PROGRESS)
+        if (lastJobStatus != JobStatus.DELAYED && lastJobStatus != JobStatus.IN_PROGRESS) {
+            Request.workerState = WorkerState.IDLE;
             return false;
-        final int newRequestInfo = (jobStatus << (32-3)) | (Clock.getRoundNum() << (32-11)) & (inboxID << (32-3-11-12));
-        RobotPlayer.rc.broadcast(BASE_REQUEST_METADATA_CHANNEL + jobID, newRequestInfo);
+        }
+        final int newRequestInfo = (jobStatus << (32-3)) | (Clock.getRoundNum() << (32-11)) & (RobotPlayer.countingID << (32-3-11-12));
+        RobotPlayer.rc.broadcast(BASE_REQUEST_METADATA_CHANNEL + claimJobID, newRequestInfo);
         return true;
     }
 }
