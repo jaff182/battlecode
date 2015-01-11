@@ -24,7 +24,7 @@ public class MovableUnit extends RobotPlayer {
      */
     public static void moveSense(Direction dir) throws GameActionException {
         rc.move(dir);
-        senseWhenMove(rc.getLocation(), dir);
+        previousDirection = dir;
     }
     
     /**
@@ -41,7 +41,9 @@ public class MovableUnit extends RobotPlayer {
                 offsetIndex++;
             }
             if (offsetIndex < 5) {
-                rc.move(directions[(dirInt+offsets[offsetIndex]+8)%8]);
+                Direction dirToMove = directions[(dirInt+offsets[offsetIndex]+8)%8];
+                rc.move(dirToMove);
+                previousDirection = dirToMove;
             }
         }
     }
@@ -62,7 +64,7 @@ public class MovableUnit extends RobotPlayer {
             if (offsetIndex < 5) {
                 Direction dirToMove = directions[(dirInt+offsets[offsetIndex]+8)%8];
                 rc.move(dirToMove);
-                senseWhenMove(myLocation, dirToMove);
+                previousDirection = dirToMove;
             }
         }
     }
@@ -79,7 +81,9 @@ public class MovableUnit extends RobotPlayer {
                 offsetIndex++;
             }
             if (offsetIndex < 8) {
-                rc.move(directions[(dirInt+offsets[offsetIndex]+8)%8]);
+                Direction dirToMove = directions[(dirInt+offsets[offsetIndex]+8)%8];
+                rc.move(dirToMove);
+                previousDirection = dirToMove;
             }
         }
     }
@@ -154,15 +158,18 @@ public class MovableUnit extends RobotPlayer {
     //Move and sense ==========================================================
     
     //Sensing variables    
-    // Ex = Ny, Ey = Nx, Sx = Nx, Wx = Sy, Wy = Nx
-    private final static int[] senseNx = {-4, 4,-3, 3,-2,-1, 0, 1, 2};
-    private final static int[] senseNy = { 3, 3, 4, 4, 5, 5, 5, 5, 5};
-    private final static int[] senseSy = {-3,-3,-4,-4,-5,-5,-5,-5,-5};
-    // NEx = NWy, SEx = NEy, SWx = SEy, SWy = NWx
-    private final static int[] senseNWx = {-5,-5,-5,-5,-5,-4,-4,-3,-3,-2,-1, 0, 1};
-    private final static int[] senseNWy = {-1, 0, 1, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5};
-    private final static int[] senseNEy = { 5, 5, 5, 5, 5, 4, 4, 3, 3, 2, 1, 0,-1};
-    private final static int[] senseSEy = { 1, 0,-1,-2,-3,-3,-4,-4,-5,-5,-5,-5,-5};
+    // Wx = Ny, Ey = Nx, Sx = Nx, Ex = Sy, Wy = Nx
+    private final static int[] senseNx = { 0, 1,-1, 2,-2, 3,-3, 4,-4};
+    private final static int[] senseNy = {-5,-5,-5,-5,-5,-4,-4,-3,-3};
+    private final static int[] senseSy = { 5, 5, 5, 5, 5, 4, 4, 3, 3};
+    // NEx = SEy, SEx = SWy, SWx = NWy, NEy = NWx
+    private final static int[] senseNWx = {-4,-4,-3,-5,-3,-5,-2,-5,-1,-5, 0,-5, 1};
+    private final static int[] senseNWy = {-4,-3,-4,-3,-5,-2,-5,-1,-5, 0,-5, 1,-5};
+    private final static int[] senseSEx = { 4, 4, 3, 5, 3, 5, 2, 5, 1, 5, 0, 5,-1};
+    private final static int[] senseSEy = { 4, 3, 4, 3, 5, 2, 5, 1, 5, 0, 5,-1, 5};
+    
+    //Previously moved direction
+    public static Direction previousDirection = Direction.NONE;
     
     /**
      * Update internal and radio map after moving once in specified direction.
@@ -171,51 +178,39 @@ public class MovableUnit extends RobotPlayer {
      * @throws GameActionException
      */
     public static void senseWhenMove(MapLocation robotLoc, Direction dir) throws GameActionException {
-        switch (dir) {
-        // Ex = Ny, Ey = Nx, Sx = Nx, Wx = Sy, Wy = Nx
-        // NEx = NWy, SEx = NEy, SWx = SEy, SWy = NWx
-        case NORTH: 
-            for (int i=0; i<9; i++) {
-                senseMap(robotLoc.add(senseNx[i], senseNy[i]));
+        int i = 0;
+        if(dir.ordinal()%2 == 0) {
+            while(i < 9 && Clock.getBytecodesLeft() > 3000) {
+                switch (dir) {
+                    // Wx = Ny, Ey = Nx, Sx = Nx, Ex = Sy, Wy = Nx
+                    case NORTH: senseMap(robotLoc.add(senseNx[i], senseNy[i])); break;
+                    case EAST: senseMap(robotLoc.add(senseSy[i], senseNx[i])); break;
+                    case SOUTH: senseMap(robotLoc.add(senseNx[i], senseSy[i])); break;
+                    case WEST: senseMap(robotLoc.add(senseNy[i], senseNx[i])); break;
+                    default: break;
+                }
+                i++;
             }
-            break;
-        case EAST:
-            for (int i=0; i<9; i++) {
-                senseMap(robotLoc.add(senseNy[i], senseNx[i]));
-            } 
-            break;
-        case SOUTH:
-            for (int i=0; i<9; i++) {
-                senseMap(robotLoc.add(senseNx[i], senseSy[i]));
-            } 
-            break;
-        case WEST:
-            for (int i=0; i<9; i++) {
-                senseMap(robotLoc.add(senseSy[i], senseNx[i]));
+        } else {
+            while(i < 13 && Clock.getBytecodesLeft() > 3000) {
+                switch (dir) {
+                    // NEx = SEy, SEx = SWy, SWx = NWy, NEy = NWx
+                    case NORTH_WEST:
+                        senseMap(robotLoc.add(senseNWx[i], senseNWy[i]));
+                        break;
+                    case NORTH_EAST:
+                        senseMap(robotLoc.add(senseSEy[i], senseNWx[i]));
+                        break;
+                    case SOUTH_EAST:
+                        senseMap(robotLoc.add(senseSEx[i], senseSEy[i]));
+                        break;
+                    case SOUTH_WEST:
+                        senseMap(robotLoc.add(senseNWy[i], senseSEx[i]));
+                        break;
+                    default: break;
+                }
+                i++;
             }
-            break;
-        case NORTH_WEST:
-            for (int i=0; i<13; i++) {
-                senseMap(robotLoc.add(senseNWx[i], senseNWy[i]));
-            } 
-            break;
-        case NORTH_EAST:
-            for (int i=0; i<13; i++) {
-                senseMap(robotLoc.add(senseNWy[i], senseNEy[i]));
-            } 
-            break;
-        case SOUTH_EAST:
-            for (int i=0; i<13; i++) {
-                senseMap(robotLoc.add(senseNEy[i], senseSEy[i]));
-            } 
-            break;
-        case SOUTH_WEST:
-            for (int i=0; i<13; i++) {
-                senseMap(robotLoc.add(senseSEy[i], senseNWx[i]));
-            }
-            break;
-        default:
-            break; 
         }
     }
     
@@ -231,7 +226,7 @@ public class MovableUnit extends RobotPlayer {
      * @throws GameActionException
      */
     public static void distributeSupply(double[] multiplier) throws GameActionException {
-        if(2000 - Clock.getBytecodeNum() >  500) {
+        if(4000 - Clock.getBytecodeNum() >  500) {
             //Sense nearby friendly robots
             RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myTeam);
             if(friends.length > 0) {

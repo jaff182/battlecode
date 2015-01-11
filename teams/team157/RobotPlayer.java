@@ -51,19 +51,13 @@ public class RobotPlayer {
         
         try {
             
-            //internal map
+            //Internal map
             //This year's implementation randomizes offsets to the x,y coordinates
             //Coordinate offsets at map[60][60]
             mapx0 = (HQLocation.x+enemyHQLocation.x)/2;
             mapy0 = (HQLocation.y+enemyHQLocation.y)/2;
-            if(HQLocation.x != enemyHQLocation.x &&
-                HQLocation.y != enemyHQLocation.y) {
-                //rotational symmetry
-                symmetry = 3;
-            } else {
-                //Get from radio
-                symmetry = rc.readBroadcast(getChannel(ChannelName.MAP_SYMMETRY));
-            }
+            //Get symmetry from radio
+            symmetry = rc.readBroadcast(getChannel(ChannelName.MAP_SYMMETRY));
             
             //set countingID for messaging (WARNING, ASSUMES MESSAGING ARRAY IS INITIALIZED TO ZERO)
             if(myType != RobotType.MISSILE) {
@@ -118,27 +112,32 @@ public class RobotPlayer {
     /**
      * Internal map is toroidal and approximately centered at midpoint of HQs.
      * Map representation modulo 6:
-     *  0: unknown,  1: nonvoid,  2: enemy HQ,  3: HQ,  4: void,  5: out of map
+     *  0: unknown,  1: normal,  2: enemy HQ,  3: HQ,  4: void,  5: out of map
      *
      *  (ordinal values for terrain tiles: 2: unknown, 1: void, 3: offmap, 0: normal)
      */
     public static int[][] map = new int[allocatedWidth][allocatedHeight];
     
     //Internal map methods
-    private static int locationToMapXIndex(MapLocation loc) {
-        return (3*allocatedWidth/2+loc.x-mapx0)%allocatedWidth;
+    private static int locationToMapXIndex(int locX) {
+        //return (3*allocatedWidth/2+locX-mapx0)%allocatedWidth;
+        return (183+locX-mapx0)%122;
     }
-    private static int locationToMapYIndex(MapLocation loc) {
-        return (3*allocatedHeight/2+loc.y-mapy0)%allocatedHeight;
+    private static int locationToMapYIndex(int locY) {
+        //return (3*allocatedHeight/2+locY-mapy0)%allocatedHeight;
+        return (183+locY-mapy0)%122;
     }
-    private static int locationToReflectedMapXIndex(MapLocation loc) {
-        return (3*allocatedWidth/2+HQLocation.x+enemyHQLocation.x-loc.x-mapx0)%allocatedWidth;
+    private static int locationToReflectedMapXIndex(int locX) {
+        //return (3*allocatedWidth/2+HQLocation.x+enemyHQLocation.x-locX-mapx0)%allocatedWidth;
+        return (183+HQLocation.x+enemyHQLocation.x-locX-mapx0)%122;
     }
-    private static int locationToReflectedMapYIndex(MapLocation loc) {
-        return (3*allocatedHeight/2+HQLocation.y+enemyHQLocation.y-loc.y-mapy0)%allocatedHeight;
+    private static int locationToReflectedMapYIndex(int locY) {
+        //return (3*allocatedHeight/2+HQLocation.y+enemyHQLocation.y-locY-mapy0)%allocatedHeight;
+        return (183+HQLocation.y+enemyHQLocation.y-locY-mapy0)%122;
     }
     private static int mapIndexToChannel(int xidx, int yidx) {
-        return xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA);
+        //return xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA);
+        return xidx*122+yidx+getChannel(ChannelName.MAP_DATA);
     }
     
     /**
@@ -147,11 +146,11 @@ public class RobotPlayer {
      * @param value Value to be set.
      */
     public static void setInternalMap(MapLocation loc, int value) {
-        int xidx = locationToMapXIndex(loc);
-        int yidx = locationToMapYIndex(loc);
+        int xidx = locationToMapXIndex(loc.x);
+        int yidx = locationToMapYIndex(loc.y);
         map[yidx][xidx] = value;
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc);
+        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
+        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
         if(symmetry%4 != 0) map[yidx][xidx] = value;
     }
     
@@ -161,8 +160,8 @@ public class RobotPlayer {
      * @return map value
      */
     public static int getInternalMap(MapLocation loc) {
-        int xidx = locationToMapXIndex(loc);
-        int yidx = locationToMapYIndex(loc);
+        int xidx = locationToMapXIndex(loc.x);
+        int yidx = locationToMapYIndex(loc.y);
         return map[yidx][xidx];
     }
     
@@ -172,12 +171,12 @@ public class RobotPlayer {
      * @throws GameActionException
      */
     public static void updateInternalMap(MapLocation loc) throws GameActionException {
-        int xidx = locationToMapXIndex(loc);
-        int yidx = locationToMapYIndex(loc);
+        int xidx = locationToMapXIndex(loc.x);
+        int yidx = locationToMapYIndex(loc.y);
         int value = rc.readBroadcast(mapIndexToChannel(xidx,yidx));
         map[yidx][xidx] = value;
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc);
+        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
+        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
         if(symmetry%4 != 0) map[yidx][xidx] = value;
     }
     
@@ -188,11 +187,11 @@ public class RobotPlayer {
      * @throws GameActionException
      */
     public static void setRadioMap(MapLocation loc, int value) throws GameActionException {
-        int xidx = locationToMapXIndex(loc);
-        int yidx = locationToMapYIndex(loc);
+        int xidx = locationToMapXIndex(loc.x);
+        int yidx = locationToMapYIndex(loc.y);
         rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc);
+        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
+        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
         if(symmetry%4 != 0) rc.broadcast(mapIndexToChannel(xidx,yidx), value);
     }
     
@@ -203,8 +202,8 @@ public class RobotPlayer {
      * @throws GameActionException
      */
     public static int getRadioMap(MapLocation loc) throws GameActionException {
-        int xidx = locationToMapXIndex(loc);
-        int yidx = locationToMapYIndex(loc);
+        int xidx = locationToMapXIndex(loc.x);
+        int yidx = locationToMapYIndex(loc.y);
         return rc.readBroadcast(mapIndexToChannel(xidx,yidx));
     }
     
@@ -214,9 +213,28 @@ public class RobotPlayer {
      * @throws GameActionException
      */
     public static void updateRadioMap(MapLocation loc) throws GameActionException {
-        int xidx = locationToMapXIndex(loc);
-        int yidx = locationToMapYIndex(loc);
+        int xidx = locationToMapXIndex(loc.x);
+        int yidx = locationToMapYIndex(loc.y);
         rc.broadcast(mapIndexToChannel(xidx,yidx), map[yidx][xidx]);
+    }
+    
+    /**
+     * Set both internal and radio maps
+     * @param loc MapLocation to set value
+     * @param value Value to be set
+     * @throws GameActionException
+     */
+    public static void setMaps(MapLocation loc, int value) throws GameActionException {
+        int xidx = locationToMapXIndex(loc.x);
+        int yidx = locationToMapYIndex(loc.y);
+        map[yidx][xidx] = value;
+        rc.broadcast(mapIndexToChannel(xidx,yidx), value);
+        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
+        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
+        if(symmetry%4 != 0) {
+            map[yidx][xidx] = value;
+            rc.broadcast(mapIndexToChannel(xidx,yidx), value);
+        }
     }
     
     /**
@@ -230,25 +248,6 @@ public class RobotPlayer {
         MapLocation[] sensingLoc = MapLocation.getAllMapLocationsWithinRadiusSq(robotLoc, sightRange);
         for (MapLocation loc: sensingLoc) {
             senseMap(loc);
-        }
-    }
-    
-    /**
-     * Set both internal and radio maps
-     * @param loc MapLocation to set value
-     * @param value Value to be set
-     * @throws GameActionException
-     */
-    public static void setMaps(MapLocation loc, int value) throws GameActionException {
-        int xidx = locationToMapXIndex(loc);
-        int yidx = locationToMapYIndex(loc);
-        map[yidx][xidx] = value;
-        rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc);
-        if(symmetry%4 != 0) {
-            map[yidx][xidx] = value;
-            rc.broadcast(mapIndexToChannel(xidx,yidx), value);
         }
     }
     
@@ -280,9 +279,35 @@ public class RobotPlayer {
     public static void printInternalMap() {
         for (int[] line: map) {
             for (int i: line) {
-                System.out.print(i + " ");
+                switch(i) {
+                    case 0: System.out.print("?"); break; //unknown
+                    case 1: System.out.print(" "); break; //normal
+                    case 2: System.out.print("X"); break; //enemy HQ
+                    case 3: System.out.print("O"); break; //HQ
+                    case 4: System.out.print("."); break; //void
+                    case 5: System.out.print("#"); break; //out of map
+                }
             }
-            System.out.println(" ");
+            System.out.println("");
+        }
+    }
+    
+    /**
+     * Print radio map to console.
+     */
+    public static void printRadioMap() throws GameActionException {
+        for (int yidx=0; yidx<allocatedHeight; yidx++) {
+            for (int xidx=0; xidx<allocatedWidth; xidx++) {
+                switch(rc.readBroadcast(mapIndexToChannel(xidx,yidx))) {
+                    case 0: System.out.print("?"); break; //unknown
+                    case 1: System.out.print(" "); break; //normal
+                    case 2: System.out.print("X"); break; //enemy HQ
+                    case 3: System.out.print("O"); break; //HQ
+                    case 4: System.out.print("."); break; //void
+                    case 5: System.out.print("#"); break; //out of map
+                }
+            }
+            System.out.println("");
         }
     }
     
@@ -369,21 +394,30 @@ public class RobotPlayer {
      * @throws GameActionException
      */
     public static void priorityAttack(RobotInfo[] enemies, int[] atkorder) throws GameActionException {
-        int targetidx = -1, targettype = 21;
+        //Initiate
+        int targetidx = -1, targettype = 1;
         double minhp = 100000;
         
+        //Check for weakest of highest priority enemy type
         for(int i=0; i<enemies.length; i++) {
             int type = enemies[i].type.ordinal();
-            if(atkorder[type] < targettype) {
-                targettype = atkorder[type];
-                minhp = enemies[i].health;
-                targetidx = i;
-            } else if(atkorder[type] == targettype && enemies[i].health < minhp) {
-                minhp = enemies[i].health;
-                targetidx = i;
+            myLocation = rc.getLocation();
+            if(myLocation.distanceSquaredTo(enemies[i].location) <= attackRange) {
+                
+                if(atkorder[type] > targettype) {
+                    //More important enemy to attack
+                    targettype = atkorder[type];
+                    minhp = enemies[i].health;
+                    targetidx = i;
+                } else if(atkorder[type] == targettype && enemies[i].health < minhp) {
+                    //Same priority enemy but lower health
+                    minhp = enemies[i].health;
+                    targetidx = i;
+                }
             }
         }
         if (targetidx != -1) {
+            //Attack selected target
             rc.attackLocation(enemies[targetidx].location);
         }
     }

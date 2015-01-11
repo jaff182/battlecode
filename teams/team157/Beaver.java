@@ -17,10 +17,18 @@ public class Beaver extends MovableUnit {
 
     private static void init() throws GameActionException {
         rc.setIndicatorString(0, "hello i'm a beaver.");
-        initialSense(rc.getLocation());
+        //initialSense(rc.getLocation());
+        
+        
     }
 
     private static void loop() throws GameActionException {
+        //Sense map
+        //Must be before movement methods
+        if(previousDirection != Direction.NONE) {
+            senseWhenMove(rc.getLocation(), previousDirection);
+            previousDirection = Direction.NONE;
+        }
         
         //Vigilance
         //Stops everything and attacks when enemies are in attack range.
@@ -34,12 +42,12 @@ public class Beaver extends MovableUnit {
             rc.yield();
         }
         
+        
         //Go to Enemy HQ
         exploreRandom(enemyHQLocation);
-        //rc.setIndicatorString(1, "Number of bytecodes: " + Clock.getBytecodeNum());
-
+        
         //Distribute supply
-        distributeSupply(suppliabilityMultiplier);
+        distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
     // Specific methods =======================================================
@@ -48,16 +56,17 @@ public class Beaver extends MovableUnit {
     //Parameters ==============================================================
     
     /**
-     * Ranks the RobotType order in which enemy units should be attacked (so lower 
-     * means attack first). Needs to be adjusted dynamically based on defence strategy.
+     * The importance rating that enemy units of each RobotType should be attacked 
+     * (so higher means attack first). Needs to be adjusted dynamically based on 
+     * defence strategy.
      */
     private static int[] attackPriorities = {
-        1/*0:HQ*/,          0/*1:TOWER*/,       15/*2:SUPPLYDPT*/,  18/*3:TECHINST*/,
-        14/*4:BARRACKS*/,   13/*5:HELIPAD*/,    16/*6:TRNGFIELD*/,  12/*7:TANKFCTRY*/,
-        17/*8:MINERFCTRY*/, 20/*9:HNDWSHSTN*/,  11/*10:AEROLAB*/,   8/*11:BEAVER*/,
-        19/*12:COMPUTER*/,  5/*13:SOLDIER*/,    6/*14:BASHER*/,     9/*15:MINER*/,
-        7/*16:DRONE*/,      4/*17:TANK*/,       3/*18:COMMANDER*/,  10/*19:LAUNCHER*/,
-        2/*20:MISSILE*/
+        20/*0:HQ*/,         21/*1:TOWER*/,      6/*2:SUPPLYDPT*/,   3/*3:TECHINST*/,
+        7/*4:BARRACKS*/,    8/*5:HELIPAD*/,     5/*6:TRNGFIELD*/,   9/*7:TANKFCTRY*/,
+        4/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   10/*10:AEROLAB*/,   13/*11:BEAVER*/,
+        2/*12:COMPUTER*/,   16/*13:SOLDIER*/,   15/*14:BASHER*/,    12/*15:MINER*/,
+        14/*16:DRONE*/,     17/*17:TANK*/,      18/*18:COMMANDER*/, 11/*19:LAUNCHER*/,
+        19/*20:MISSILE*/
     };
     
     /**
@@ -65,11 +74,20 @@ public class Beaver extends MovableUnit {
      * which the dispenseSupply() and distributeSupply() methods allocate supply (so 
      * higher means give more supply to units of that type).
      */
-    private static double[] suppliabilityMultiplier = {
-        0/*0:HQ*/,          1/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   1/*3:TECHINST*/,
+    private static double[] suppliabilityMultiplier_Conservative = {
+        1/*0:HQ*/,          1/*1:TOWER*/,       1/*2:SUPPLYDPT*/,   1/*3:TECHINST*/,
         1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     1/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
-        1/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
-        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     1/*15:MINER*/,
+        1/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,    0/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   0/*13:SOLDIER*/,    0/*14:BASHER*/,     0.5/*15:MINER*/,
+        0/*16:DRONE*/,      0/*17:TANK*/,       0/*18:COMMANDER*/,  0/*19:LAUNCHER*/,
+        0/*20:MISSILE*/
+    };
+    
+    private static double[] suppliabilityMultiplier_Preattack = {
+        0/*0:HQ*/,          0/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     0/*15:MINER*/,
         1/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };
