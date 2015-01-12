@@ -84,7 +84,7 @@ public class Beaver extends MiningUnit {
         buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
         if(buildingType != null) {
             robotState = RobotState.BUILD;
-            moveTargetLocation = null;
+            moveTargetLocation = myLocation;
             //need to add response
         } else if (rc.isCoreReady()) {
             //Mine
@@ -102,7 +102,7 @@ public class Beaver extends MiningUnit {
         buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
         if(buildingType != null) {
             robotState = RobotState.BUILD;
-            moveTargetLocation = null;
+            moveTargetLocation = myLocation;
             //need to add response
         } else if(Clock.getRoundNum() > 250 //Leave enough time for exploration
             && rc.readBroadcast(getChannel(ChannelName.MF_BUILDER_ID)) == rc.getID()
