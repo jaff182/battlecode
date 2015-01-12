@@ -2,6 +2,7 @@ package team157;
 
 import java.util.Random;
 
+import team157.Utility.RobotCount;
 import battlecode.common.*;
 
 public class RobotPlayer {
@@ -48,7 +49,6 @@ public class RobotPlayer {
         myTeam = rc.getTeam();
         enemyTeam = myTeam.opponent();
         
-        
         try {
             
             //Internal map
@@ -64,6 +64,10 @@ public class RobotPlayer {
                 countingID = rc.readBroadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER));
                 rc.broadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER), countingID+1);
             }
+            
+            // init
+            team157.Utility.LastAttackedLocationsReport.init();
+            
             
             //RobotType specific methods --------------------------------------
             switch(myType) {
@@ -343,9 +347,9 @@ public class RobotPlayer {
      */
     public enum ChannelName {
         MAP_SYMMETRY, MAP_DATA,
-        ORE_LEVEL,ORE_XLOCATION,ORE_YLOCATION,MF_BUILDER_ID,
+        ORE_LEVEL,ORE_XLOCATION,ORE_YLOCATION,MF_BUILDER_ID, 
         BARRACKS, TECHINST, HELIPAD, MINERFACTORY,
-        SEQ_UNIT_NUMBER, 
+        SEQ_UNIT_NUMBER, UNIT_COUNT_BASE,
         REQUEST_MAILBOX_BASE, REQUESTS_METADATA_BASE
     }
     
@@ -361,10 +365,7 @@ public class RobotPlayer {
      * 0 - type of symmetry of map (rotational, type)<br>
      * 1 to allocatedWidth*allocatedHeight - global shared map data<br>
      * 16001 - number of units produced since start of game by you (including towers, HQ) <br>
-     * 16002-16010 - number of buildings of different types currently built
-     * (read on even round number, write on odd rounds)<br>
-     * 16012-16020 - number of buildings of different types currently built
-     * (read on odd round number, write on even rounds)<br>
+     * 16002-16020 - robots that exist now
      * 16100-16140 - request system unit type mailboxes. each unit uses 2 channels.
      * 17000-23999 - request system metadata
      * 
@@ -400,6 +401,8 @@ public class RobotPlayer {
                 return 15800;
             case SEQ_UNIT_NUMBER:
                 return 16001;
+            case UNIT_COUNT_BASE:
+                return 16002;
             case REQUEST_MAILBOX_BASE:
                 return 16100;
             case REQUESTS_METADATA_BASE:
@@ -467,6 +470,20 @@ public class RobotPlayer {
             assert robotTypes[i].ordinal() == i : robotTypes[i];
         }
         System.out.println("RobotType Ordinal Test passed.");
+    }
+    
+    
+    /**
+     * Code that runs at the start of every loop (shared by every robot).
+     * 
+     * Note that this code runs in buildings too.
+     * 
+     * May not run in missile.
+     * @throws GameActionException 
+     */
+    public static void sharedLoopCode() throws GameActionException {
+        // Update global counts of robots - do not remove
+        RobotCount.report();
     }
     
     
