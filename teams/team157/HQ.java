@@ -4,17 +4,33 @@ import java.util.Random;
 
 import team157.Utility.LastAttackedLocationsReport;
 import team157.Utility.Waypoints;
+
 import battlecode.common.*;
 
 public class HQ extends Structure {
     
     //General methods =========================================================
-    
+
+    private final static RobotType[] buildOrder1 = {
+            RobotType.BARRACKS, RobotType.BARRACKS,
+            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
+            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
+            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD
+    };
+
+    private enum HqState {
+       BUILD_BUILDING, BUILD_UNIT
+    }
+
+    private static HqState state = HqState.BUILD_BUILDING;
+    private static int numBuilding = 0;
+
     public static void start() throws GameActionException {
         init();
         while(true) {
             loop();
-            rc.yield(); //Yield the round
+            //Yield the round
+            rc.yield();
         }
     }
     
@@ -24,8 +40,7 @@ public class HQ extends Structure {
         //Initiate radio map
         setMaps(HQLocation,3);
         setMaps(enemyHQLocation,2);
-        if(HQLocation.x != enemyHQLocation.x &&
-            HQLocation.y != enemyHQLocation.y) {
+        if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
             symmetry = 3;
             rc.broadcast(getChannel(ChannelName.MAP_SYMMETRY),3);
@@ -33,36 +48,70 @@ public class HQ extends Structure {
         
         LastAttackedLocationsReport.init();
     }
-    
-    private static void loop() throws GameActionException {
-        
-        //Vigilance
-        //Stops everything and attacks when enemies are in attack range.
-        RobotInfo[] enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-        while(enemies.length > 0) {
-            if(rc.isWeaponReady()) {
-                //basicAttack(enemies);
-                priorityAttack(enemies,attackPriorities);
+
+    // TODO: consider to refactor this method
+    private static void checkForEnemies() throws GameActionException
+    {
+        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+
+        // Vigilance: stops everything and attacks when enemies are in attack range.
+        while (enemies.length > 0) {
+            if (rc.isWeaponReady()) {
+                // basicAttack(enemies);
+                priorityAttack(enemies, attackPriorities);
             }
             enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
             rc.yield();
         }
-        if (rc.getTeamOre() > RobotType.BARRACKS.oreCost) {
-//            System.out.println("Sending barracks build request");
-//            Request.broadcastToUnitType(
-//                    Request.getConstructBuildingRequest(
-//                            RobotType.BARRACKS.ordinal(), 0, 0, 10),
-//                    RobotType.BEAVER.ordinal());
+    }
+
+    // TODO:  Just for thought - modify this method so that we can reserve some minimum amounts of emergency fund.
+    private static boolean hasFunds(double cost)
+    {
+        return rc.getTeamOre() > cost;
+    }
+
+    private static RobotType getNextBuilding()
+    {
+        if (numBuilding < buildOrder1.length)
+        {
+            return buildOrder1[numBuilding];
+        }
+        // We want to build as many supply depots as possible, whenever we have funds
+        return RobotType.SUPPLYDEPOT;
+    }
+
+    // TODO: @Josiah I need your help to figure out how to communicate.
+    // Also, where do I need to put the building?
+    // Should the beaver decide, or should HQ decide?
+    private static void build(RobotType building) throws GameActionException
+    {
+        Request.broadcastToUnitType(
+            Request.getConstructBuildingRequest(
+            building.ordinal(), 0, 0, 10),
+            RobotType.BEAVER.ordinal()
+        );
+
+        numBuilding += 1;
+    }
+    
+    private static void loop() throws GameActionException {
+        checkForEnemies();
+
+        RobotType nextBuilding = getNextBuilding();
+
+        // In the future we can add some probabilistic constants so that we can switch between buildings and units
+        if (state == HqState.BUILD_BUILDING && hasFunds(nextBuilding.oreCost))
+        {
+            System.out.println("Sending barracks build request");
+            build(nextBuilding);
         }
         
-        //Spawn
-        trySpawn(HQLocation.directionTo(enemyHQLocation),RobotType.BEAVER);
+        trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
         
-        //Dispense supply
         dispenseSupply(suppliabilityMultiplier);
-        
         //if(Clock.getRoundNum() == 1500) printRadioMap();
-        
+
         Waypoints.refreshLocalCache();
     }
     
