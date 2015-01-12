@@ -45,10 +45,10 @@ public class HQ extends Structure {
         }
         if (rc.getTeamOre() > RobotType.BARRACKS.oreCost) {
 //            System.out.println("Sending barracks build request");
-            Request.broadcastToUnitType(
-                    Request.getConstructBuildingRequest(
-                            RobotType.BARRACKS.ordinal(), 0, 0, 10),
-                    RobotType.BEAVER.ordinal());
+//            Request.broadcastToUnitType(
+//                    Request.getConstructBuildingRequest(
+//                            RobotType.BARRACKS.ordinal(), 0, 0, 10),
+//                    RobotType.BEAVER.ordinal());
         }
         
         //Spawn

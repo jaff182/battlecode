@@ -99,7 +99,7 @@ public class MiningUnit extends MovableUnit {
                     int dirInt = myLocation.directionTo(loc).ordinal();
                     if(dirInt < 8) {
                         //Add forces
-                        double force = -1000/myLocation.distanceSquaredTo(loc);
+                        double force = -10000;
                         attraction[dirInt] += force;
                         attraction[(dirInt+1)%8] += force;
                         attraction[(dirInt+7)%8] += force;
@@ -107,10 +107,23 @@ public class MiningUnit extends MovableUnit {
                 }
             }
             
+            //Sum forces from enemy towers
+            for(MapLocation loc : enemyTowers) {
+                int dirInt = myLocation.directionTo(loc).ordinal();
+                int distance = myLocation.distanceSquaredTo(loc);
+                if(dirInt < 8 && distance < 26) {
+                    //Add forces
+                    double force = -100000;
+                    attraction[dirInt] += force;
+                    attraction[(dirInt+1)%8] += force;
+                    attraction[(dirInt+7)%8] += force;
+                }
+            }
+            
             //Find direction with most ore
             int[] bestDirInts = {-1,-1,-1,-1,-1,-1,-1,-1};
             int maxCount = 0;
-            double bestAttraction = -1000000;
+            double bestAttraction = -10000000;
             for(int dirInt=0; dirInt<8; dirInt++) {
                 if(rc.canMove(directions[dirInt])) {
                     if(attraction[dirInt] > bestAttraction) {

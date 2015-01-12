@@ -36,7 +36,7 @@ public class Beaver extends MiningUnit {
             double ore = rc.senseOre(myLocation);
             double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
             if (buildingType != null) {
-                robotState = RobotState.BUILD;
+                //robotState = RobotState.BUILD;
             }
             else if(rand.nextDouble() <= miningProbability) {
                 robotState = RobotState.MINE;
@@ -117,7 +117,7 @@ public class Beaver extends MiningUnit {
         checkForEnemies();
         
         //Hill climb ore distribution while being repelled from other units
-        RobotInfo[] friends = rc.senseNearbyRobots(sightRange, myTeam);
+        RobotInfo[] friends = rc.senseNearbyRobots(8, myTeam);
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
         goTowardsOre(friends,enemies);
 
