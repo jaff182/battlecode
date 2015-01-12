@@ -1,11 +1,24 @@
 package team157;
 
-import java.util.Random;
 import battlecode.common.*;
 
 public class HQ extends Structure {
     
     //General methods =========================================================
+
+    private final static RobotType[] buildOrder1 = {
+            RobotType.BARRACKS, RobotType.BARRACKS,
+            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
+            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
+            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD
+    };
+
+    private enum HqState {
+       BUILD_BUILDING, BUILD_UNIT
+    }
+
+    private static HqState state = HqState.BUILD_BUILDING;
+    private static int numBuilding = 0;
 
     public static void start() throws GameActionException {
         init();
@@ -44,16 +57,47 @@ public class HQ extends Structure {
             rc.yield();
         }
     }
+
+    // TODO:  Just for thought - modify this method so that we can reserve some minimum amounts of emergency fund.
+    private static boolean hasFunds(double cost)
+    {
+        return rc.getTeamOre() > cost;
+    }
+
+    private static RobotType getNextBuilding()
+    {
+        if (numBuilding < buildOrder1.length)
+        {
+            return buildOrder1[numBuilding];
+        }
+        // We want to build as many supply depots as possible, whenever we have funds
+        return RobotType.SUPPLYDEPOT;
+    }
+
+    // TODO: @Josiah I need your help to figure out how to communicate.
+    // Also, where do I need to put the building?
+    // Should the beaver decide, or should HQ decide?
+    private static void build(RobotType building) throws GameActionException
+    {
+        Request.broadcastToUnitType(
+            Request.getConstructBuildingRequest(
+            building.ordinal(), 0, 0, 10),
+            RobotType.BEAVER.ordinal()
+        );
+
+        numBuilding += 1;
+    }
     
     private static void loop() throws GameActionException {
         checkForEnemies();
 
-        if (rc.getTeamOre() > RobotType.BARRACKS.oreCost) {
-//            System.out.println("Sending barracks build request");
-//            Request.broadcastToUnitType(
-//                    Request.getConstructBuildingRequest(
-//                            RobotType.BARRACKS.ordinal(), 0, 0, 10),
-//                    RobotType.BEAVER.ordinal());
+        RobotType nextBuilding = getNextBuilding();
+
+        // In the future we can add some probabilistic constants so that we can switch between buildings and units
+        if (state == HqState.BUILD_BUILDING && hasFunds(nextBuilding.oreCost))
+        {
+            System.out.println("Sending barracks build request");
+            build(nextBuilding);
         }
         
         trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
