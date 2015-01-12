@@ -73,6 +73,7 @@ public class Beaver extends MiningUnit {
                 int locX = rc.readBroadcast(getChannel(ChannelName.ORE_XLOCATION));
                 int locY = rc.readBroadcast(getChannel(ChannelName.ORE_YLOCATION));
                 MapLocation loc = new MapLocation(locX,locY);
+                
                 //int distance = myLocation.distanceSquaredTo(loc);
                 if(true) {
                     //Claim building job
@@ -214,7 +215,7 @@ public class Beaver extends MiningUnit {
     {
         checkForEnemies();
         
-        updateMyLocation();
+        myLocation = rc.getLocation();
         int distance = myLocation.distanceSquaredTo(moveTargetLocation);
         
         // Go closer to build location.
@@ -225,6 +226,7 @@ public class Beaver extends MiningUnit {
             Direction dirToBuild = myLocation.directionTo(moveTargetLocation);
             if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType) 
                 && rc.canBuild(dirToBuild,buildingType)) {
+                //System.out.println("BUILD!!!");
                 rc.build(dirToBuild,buildingType);
                 robotState = RobotState.WANDER;
             }
