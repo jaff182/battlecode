@@ -36,6 +36,7 @@ public class Beaver extends MiningUnit {
             double ore = rc.senseOre(myLocation);
             double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
             if (buildingType != null) {
+                // TODO: how does beaver transition into a BUILD state?
                 //robotState = RobotState.BUILD;
             }
             else if(rand.nextDouble() <= miningProbability) {
@@ -108,7 +109,6 @@ public class Beaver extends MiningUnit {
         // Go to Enemy HQ
         bug(enemyHQLocation);
 
-        // Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
@@ -121,7 +121,6 @@ public class Beaver extends MiningUnit {
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
         goTowardsOre(friends,enemies);
 
-        // Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
@@ -129,7 +128,8 @@ public class Beaver extends MiningUnit {
     {
         checkForEnemies();
 
-        // Go to build location
+        // Go closer to build location.
+        // When the beaver is there, we cans start building immediately
         if(myLocation.distanceSquaredTo(moveTargetLocation) > 2) {
             bug(moveTargetLocation);
         } else if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType)) {
@@ -137,7 +137,15 @@ public class Beaver extends MiningUnit {
             robotState = RobotState.WANDER;
         }
 
-        // Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+
+    private static void beaverMine() throws GameActionException
+    {
+        if (rc.getCoreDelay()< 1)
+        {
+            rc.mine();
+        }
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
@@ -178,8 +186,7 @@ public class Beaver extends MiningUnit {
                 beaverWander();
                 break;
             case MINE:
-                if (rc.getCoreDelay()< 1) rc.mine();
-                distributeSupply(suppliabilityMultiplier_Preattack);
+                beaverMine();
                 break;
             case BUILD:
                 beaverBuild();
