@@ -119,7 +119,7 @@ public class HQ extends Structure {
             }
             // Fall through, evidently our message was not received.
         case NO_PENDING_REQUEST:
-                if (hasFunds(building.oreCost)) {
+                if (hasFunds(building.oreCost) && numberOfBeavers != 0) {
                     BeaversBuildRequest.pleaseBuildABuilding(building, numberOfBeavers, rand.nextInt(numberOfBeavers));
                     buildingRequestState = BuildingRequestState.REQUESTING_BUILDING;
                 }
