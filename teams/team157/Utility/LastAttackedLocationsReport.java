@@ -2,6 +2,8 @@ package team157.Utility;
 
 import team157.RobotPlayer;
 import battlecode.common.*;
+import team157.Channels;
+
 
 public class LastAttackedLocationsReport {
     /**
@@ -20,11 +22,11 @@ public class LastAttackedLocationsReport {
      * The report() method should be called every round by every unit reporting.
      */
     
-    final static int BASE_CHANNEL = 30001;
-    final static int NUMBER_OF_STORED_EVENTS = 5;
+    final static int BASE_CHANNEL = Channels.LAST_ATTACKED_COORDINATES+1;
+    final static int NUMBER_OF_STORED_EVENTS = 10;
     final static int NUMBER_OF_CHANNELS_USED = NUMBER_OF_STORED_EVENTS*2; //one for x, y
     
-    final static int NUMBER_OF_EVENTS_THAT_HAVE_OCCURRED_CHANNEL = 30000;
+    final static int NUMBER_OF_EVENTS_THAT_HAVE_OCCURRED_CHANNEL = Channels.LAST_ATTACKED_COORDINATES;
     public static int numberOfEventsThatHaveOccurred = 0; // Updates every time you add/read, number of events globally
     
     static double hpLastRound;
