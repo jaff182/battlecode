@@ -83,7 +83,7 @@ public class MiningUnit extends MovableUnit {
                     int dirInt = myLocation.directionTo(loc).ordinal();
                     if(dirInt < 8) {
                         //Add forces
-                        double force = -1000/myLocation.distanceSquaredTo(loc);
+                        double force = -500/myLocation.distanceSquaredTo(loc);
                         attraction[dirInt] += force;
                         attraction[(dirInt+1)%8] += force;
                         attraction[(dirInt+7)%8] += force;
@@ -111,9 +111,9 @@ public class MiningUnit extends MovableUnit {
             for(MapLocation loc : enemyTowers) {
                 int dirInt = myLocation.directionTo(loc).ordinal();
                 int distance = myLocation.distanceSquaredTo(loc);
-                if(dirInt < 8 && distance < 26) {
+                if(dirInt < 8 && distance <= 36) {
                     //Add forces
-                    double force = -100000;
+                    double force = -100000000;
                     attraction[dirInt] += force;
                     attraction[(dirInt+1)%8] += force;
                     attraction[(dirInt+7)%8] += force;
