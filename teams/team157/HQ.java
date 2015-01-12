@@ -2,9 +2,7 @@ package team157;
 
 import java.util.Random;
 
-import team157.Utility.RobotCount;
-import team157.Utility.LastAttackedLocationsReport;
-import team157.Utility.Waypoints;
+import team157.Utility.*;
 import battlecode.common.*;
 
 public class HQ extends Structure {
@@ -46,7 +44,7 @@ public class HQ extends Structure {
             rc.broadcast(getChannel(ChannelName.MAP_SYMMETRY),3);
         }
         
-        LastAttackedLocationsReport.init();
+        team157.Utility.LastAttackedLocationsReport.init();
     }
 
     // TODO: consider to refactor this method

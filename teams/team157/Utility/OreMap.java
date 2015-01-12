@@ -1,4 +1,4 @@
-package team157.utility;
+package team157.Utility;
 
 import battlecode.common.MapLocation;
 
@@ -56,6 +56,6 @@ public class OreMap {
 
     public MapLocation getBestOreLocation(MapLocation currentLocation)
     {
-        return team157.utility.MiningFunctions.simpleRatio(currentLocation, ores);
+        return team157.Utility.MiningFunctions.simpleRatio(currentLocation, ores);
     }
 }
