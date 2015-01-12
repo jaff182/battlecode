@@ -119,11 +119,11 @@ public class RobotPlayer {
     public static int[][] map = new int[allocatedWidth][allocatedHeight];
     
     //Internal map methods
-    private static int locationToMapXIndex(int locX) {
+    public static int locationToMapXIndex(int locX) {
         //return (3*allocatedWidth/2+locX-mapx0)%allocatedWidth;
         return (183+locX-mapx0)%122;
     }
-    private static int locationToMapYIndex(int locY) {
+    public static int locationToMapYIndex(int locY) {
         //return (3*allocatedHeight/2+locY-mapy0)%allocatedHeight;
         return (183+locY-mapy0)%122;
     }
@@ -162,6 +162,16 @@ public class RobotPlayer {
     public static int getInternalMap(MapLocation loc) {
         int xidx = locationToMapXIndex(loc.x);
         int yidx = locationToMapYIndex(loc.y);
+        return map[yidx][xidx];
+    }
+    
+    /**
+     * Gets value in internal map.
+     * @param xidx x location in internal map.
+     * @param yidx y location in internal map.
+     * @return value in internal map at input location.
+     */
+    public static int getInternalMap(int xidx, int yidx) {
         return map[yidx][xidx];
     }
     

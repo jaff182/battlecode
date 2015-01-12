@@ -1,4 +1,4 @@
-package team157.Utility;
+package team157.utility;
 
 import battlecode.common.MapLocation;
 import java.util.ArrayList;
@@ -11,6 +11,10 @@ import java.util.Iterator;
  * Building sighting: remain constant
  */
 public class RiskMap {
+
+    // TODO: reimplement this using arrays;
+    private final int maxBuildings = 8;
+    private final int maxUnits = 50;
 
     private ArrayList<MapLocation> buildings;
     private ArrayList<MapLocation> units;

@@ -1,5 +1,6 @@
 package team157;
 
+import java.util.HashMap;
 import java.util.Random;
 
 import battlecode.common.*;
@@ -12,10 +13,53 @@ public class MovableUnit extends RobotPlayer {
     
     // For pathing
     private static PathingState pathingState = PathingState.BUGGING;
-    private static int turnClockwise;
-    private static int totalOffsetDir = 0;
-    private static Direction obstacleDir = Direction.NORTH;
+    private static boolean turnClockwise = rand.nextBoolean();
+    private static double startDistance; //distance squared before hugging
+    private static Direction startTargetDir; //target direction before hugging.
+    private static Direction previousDir; //previous direction in hugging
+    private static int[] prohibitedDir = new int[2];
+    private static final int noDir = 8;
+    private static boolean goneAround = false;
     
+    public static HashMap<Integer, Direction> intToDirection;
+    static {
+        intToDirection = new HashMap<Integer, Direction>();
+        intToDirection.put(Direction.NORTH.ordinal(), Direction.NORTH);
+        intToDirection.put(Direction.NORTH_EAST.ordinal(), Direction.NORTH_EAST);
+        intToDirection.put(Direction.EAST.ordinal(), Direction.EAST);
+        intToDirection.put(Direction.SOUTH_EAST.ordinal(), Direction.SOUTH_EAST);
+        intToDirection.put(Direction.SOUTH.ordinal(), Direction.SOUTH);
+        intToDirection.put(Direction.SOUTH_WEST.ordinal(), Direction.SOUTH_WEST);
+        intToDirection.put(Direction.WEST.ordinal(), Direction.WEST);
+        intToDirection.put(Direction.NORTH_WEST.ordinal(), Direction.NORTH_WEST);
+        intToDirection.put(Direction.NONE.ordinal(), Direction.NONE);
+        intToDirection.put(Direction.OMNI.ordinal(), Direction.OMNI);
+    }
+    
+    private static final boolean[][][] blockedDirs; 
+    static {
+        blockedDirs = new boolean[10][10][10];
+        for (Direction d: Direction.values()) {
+            if (d == Direction.NONE || d == Direction.OMNI || d.isDiagonal())
+                continue;
+            for (Direction b: Direction.values()) {
+                // Blocking a dir that is the first prohibited dir, or one
+                // rotation to the side
+                blockedDirs[d.ordinal()][b.ordinal()][d.ordinal()] = true;
+                blockedDirs[d.ordinal()][b.ordinal()][d.rotateLeft().ordinal()] = true;
+                blockedDirs[d.ordinal()][b.ordinal()][d.rotateRight().ordinal()] = true;
+                // b is diagonal, ignore it
+                if (!b.isDiagonal() && b != Direction.NONE && b != Direction.OMNI) {
+                    // Blocking a dir that is the second prohibited dir, or one
+                    // rotation to the side
+                    blockedDirs[d.ordinal()][b.ordinal()][b.ordinal()] = true;
+                    blockedDirs[d.ordinal()][b.ordinal()][b.rotateLeft().ordinal()] = true;
+                    blockedDirs[d.ordinal()][b.ordinal()][b.rotateRight().ordinal()] = true;
+                }
+            }
+        }
+    }
+
     // Robot overall state ====================================================
     // Only modify these variables before and after loop(), at clearly specified locations
     /**
@@ -25,6 +69,7 @@ public class MovableUnit extends RobotPlayer {
     
     /**
      * If robot is set to move (ADVANCE, RETREAT), this is where it will go
+     * TODO: is this a dangerous behaviour?
      */
     public static MapLocation moveTargetLocation = enemyHQLocation;
     
@@ -81,6 +126,89 @@ public class MovableUnit extends RobotPlayer {
     }
     
     /**
+     * Return preferred direction to move in given input Direction, based on mapStats.
+     * @param x x coordinate of robot position in internal map
+     * @param y y coordinate of robot position in internal map
+     * @param targetDir desired direction to move in.
+     * @return preferred direction to move in, or null if cannot move into 3 forward directions.
+     * @throws GameActionException
+     */
+    private static Direction chooseForwardDir(int x, int y, Direction targetDir) throws GameActionException {
+        Direction leftDir = targetDir.rotateLeft();
+        Direction rightDir = targetDir.rotateRight();
+        Direction[] directions = new Direction[3];
+        directions[0] = targetDir;
+        boolean turnLeft = mapStats(x,y,leftDir) < mapStats(x,y,rightDir);
+        directions[1] = (turnLeft ? leftDir : rightDir);
+        directions[2] = (turnLeft ? rightDir : leftDir);
+
+        for (int i = 0; i<3; i++) {
+            if (rc.canMove(directions[i])) {
+                return directions[i];
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Return preferred backward direction to move in given input Direction, based on mapStats.
+     * @param x x coordinate of robot position in internal map
+     * @param y y coordinate of robot position in internal map
+     * @param targetDir desired direction to move in.
+     * @return preferred non-forward direction to move in, or null if cannot move into any of the non-forward directions.
+     * @throws GameActionException
+     */
+    private static Direction chooseBackwardDir(int x, int y, Direction targetDir) throws GameActionException {
+        Direction oppDir = targetDir.opposite();
+        Direction leftDir = oppDir.rotateLeft();
+        Direction rightDir = oppDir.rotateRight();
+        Direction left2Dir = leftDir.rotateLeft();
+        Direction right2Dir = rightDir.rotateRight();
+        Direction[] directions = new Direction[5];
+        directions[4] = targetDir;
+        if (mapStats(x,y,leftDir) < mapStats(x,y,rightDir)) {
+            directions[0] = left2Dir;
+            directions[1] = leftDir;
+            directions[2] = right2Dir;
+            directions[3] = rightDir;
+        } else {
+            directions[0] = right2Dir;
+            directions[1] = rightDir;
+            directions[2] = left2Dir;
+            directions[3] = leftDir;
+        }
+
+        for (int i = 0; i<5; i++) {
+            if (rc.canMove(directions[i])) {
+                return directions[i];
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * TODO: need to prevent looping
+     * Pathing to input target using statistics from internal map.
+     * @param target target location
+     * @throws GameActionException
+     */
+    public static void exploreWithStats(MapLocation target) throws GameActionException {
+        if(rc.isCoreReady()) {
+            myLocation = rc.getLocation();
+            int x = locationToMapXIndex(myLocation.x);
+            int y = locationToMapYIndex(myLocation.y);
+            Direction targetDir = myLocation.directionTo(target);
+            Direction forwardDir = chooseForwardDir(x, y, targetDir);
+            Direction backwardDir = chooseBackwardDir(x, y, targetDir);
+            if (forwardDir != null) {
+                rc.move(forwardDir);
+            } else if (backwardDir != null) {
+                rc.move(backwardDir);
+            }
+        }
+    }
+    
+    /**
      * Move around randomly.
      * @throws GameActionException
      */
@@ -100,73 +228,241 @@ public class MovableUnit extends RobotPlayer {
     }
     
     /**
+     * Return direction to bug in.
+     * @param target location of target.
+     * @return next direction to move in, robot should be able to move in this direction.
+     * @throws GameActionException
+     */
+    public static Direction bugDirection(MapLocation target) throws GameActionException {
+        myLocation = rc.getLocation();
+        Direction targetDir = myLocation.directionTo(target);
+        
+        if (targetDir == Direction.NONE || targetDir == Direction.OMNI){
+            return null;
+        }
+        
+        if (pathingState == PathingState.HUGGING){
+            if (myLocation.distanceSquaredTo(target) <= startDistance 
+                    && rc.canMove(targetDir)) {
+                        // closer to target than at the start of hugging
+                        pathingState = PathingState.BUGGING;
+                        prohibitedDir = new int[]{noDir, noDir};
+                        goneAround = false;
+                    }
+        }
+        
+        switch(pathingState) {
+        case BUGGING:
+            rc.setIndicatorString(1,"bug " + targetDir);
+            
+            int x = locationToMapXIndex(myLocation.x);
+            int y = locationToMapYIndex(myLocation.y);
+            Direction forwardDir = chooseForwardDir(x, y, targetDir);
+            if (forwardDir!= null) {
+                return forwardDir;
+            } 
+            pathingState = PathingState.HUGGING;
+            startDistance = myLocation.distanceSquaredTo(target);
+            startTargetDir = targetDir;
+            
+        case HUGGING:
+            rc.setIndicatorString(1, "HUG " + targetDir);
+            if (goneAround && (targetDir == startTargetDir.rotateLeft().rotateLeft() ||
+                    targetDir == startTargetDir.rotateRight().rotateRight())) {
+                prohibitedDir[0] = noDir;
+            }
+            if (targetDir == startTargetDir.opposite()) {
+                prohibitedDir[0] = noDir;
+                goneAround = true;
+            }
+            Direction nextDir = hug(targetDir, false);
+            if (nextDir == null) {
+                nextDir = targetDir;
+            }
+            return nextDir;
+        default:
+            break;
+        }
+        return null;
+    }
+    
+    /**
      * Basic bugging around obstacles
      * @param target
      * @throws GameActionException
      */
     public static void bug(MapLocation target) throws GameActionException {
         if (rc.isCoreReady()) {
-            if (pathingState == PathingState.BUGGING) {
-                Direction targetDir = rc.getLocation().directionTo(target);
-                rc.setIndicatorString(1,"bug " + targetDir);
-                if (rc.canMove(targetDir)) {
-                    // target is not blocked
-                    moveSense(targetDir);
-                } else {
-                    // target is blocked, move clockwise/counterclockwise around obstacle
-                    pathingState = PathingState.HUGGING;
-                    totalOffsetDir = 0;
-                    obstacleDir = targetDir;
-                    
-                    // Choose direction to hug in
-                    int dirInt = targetDir.ordinal();
-                    int offsetIndex = rand.nextInt(5);
-                    while (offsetIndex < 8 && !rc.canMove(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
-                        offsetIndex++;
-                    }
-                    if (offsetIndex < 8) {
-                        int offset = offsets[offsetIndex];
-                        turnClockwise = offset/Math.abs(offset);
-                        hug(obstacleDir, turnClockwise);
-                    }
-                }
-            } else {
-                if (rc.canMove(obstacleDir)) {
-                    moveSense(obstacleDir);
-                    pathingState = PathingState.BUGGING;
-                } else if (Math.abs(totalOffsetDir) > 24) { //TODO
-                    pathingState = PathingState.BUGGING;
-                    //System.out.println("bug around");
-                } else {
-                    hug(obstacleDir, turnClockwise);
-                }
+            Direction nextDir = bugDirection(target);
+            if (nextDir != null && rc.canMove(nextDir)) {
+                previousDir = nextDir;
+                moveSense(nextDir);
             }
         }
     }
     
     /**
-     * Helper method to bug, hugs around obstacle in obstacleDir.
-     * @param obstacleDir direction of obstacle
-     * @param turnClockwise 1 if robot should go clockwise around obstacle, -1 if robot should go counterclockwise.
+     * Returns rotated direction in clockwise direction if turnClockwise is true,
+     * or rotated direction in counter-clockwise direction otherwise.
+     * @param dir direction.
+     * @return rotated direction.
+     */
+    private static Direction turn(Direction dir) {
+        return (turnClockwise ? dir.rotateRight() : dir.rotateLeft());
+    }
+    
+    /**
+     * Helper method to bug, hugs around obstacle.
+     * @param targetDir direction of target
+     * @param tried true if hug attempted in opposite direction, false otherwise.
+     * @return next direction to move in.
      * @throws GameActionException
      */
-    private static void hug(Direction obstacleDir, int turnClockwise) throws GameActionException {
-        rc.setIndicatorString(1, "HUG " + obstacleDir);
-        int ordinalOffset = turnClockwise;
-        Direction nextDir = obstacleDir;
-        while (Math.abs(ordinalOffset) < 8 && !rc.canMove(nextDir)) {
-            ordinalOffset += turnClockwise;
-            nextDir = directions[(obstacleDir.ordinal()+ordinalOffset+8)%8];
+    private static Direction hug(Direction targetDir, boolean tried) throws GameActionException {    
+        if (movePossible(targetDir)) {
+            return targetDir;
         }
-        if (Math.abs(ordinalOffset) < 8) {
-            moveSense(nextDir);
-            obstacleDir = directions[(nextDir.ordinal()-turnClockwise+8)%8];
-            totalOffsetDir += ordinalOffset;
+        Direction tryDir = turn(targetDir);
+        for (int i = 0; i < 8 && !movePossible(tryDir); i++) {
+            tryDir = turn(tryDir);
         }
+        
+        // If the loop failed (found no directions or encountered the map edge)
+        if (!movePossible(tryDir)) {
+            turnClockwise = !turnClockwise;
+            if (tried) {
+                // hugging has been tried in both directions
+                if (prohibitedDir[0] != noDir && prohibitedDir[1] != noDir) {
+                    // We were prohibiting certain directions before.
+                    // try again allowing those directions
+                    prohibitedDir[1] = noDir;
+                    return hug(targetDir, false);
+                } else {
+                    // Complete failure. Reset the state and start over.
+                    pathingState = PathingState.BUGGING;
+                    prohibitedDir = new int[]{noDir, noDir};
+                    goneAround = false;
+                    
+                    return null;
+                }
+            }
+            // hug the other direction
+            return hug(targetDir, true);
+        }
+        
+        // store past two cardinal directions that were used in hugging to make
+        // sure that these directions are not used again.
+        if (tryDir != previousDir && !tryDir.isDiagonal()) {
+            if (turn(turn(intToDirection.get(prohibitedDir[0]))) == tryDir) {
+                prohibitedDir[0] = tryDir.opposite().ordinal();
+                prohibitedDir[1] = noDir;
+            } else {
+                prohibitedDir[1] = prohibitedDir[0];
+                prohibitedDir[0] = tryDir.opposite().ordinal();
+            }
+        }
+        return tryDir;
     }
+    
+    /**
+     * Returns true if robot can move in input direction, return false otherwise.
+     * @param dir target direction
+     * @return true if robot can move in dir, false otherwise.
+     */
+    private static boolean movePossible(Direction dir) {
+        if (blockedDirs[prohibitedDir[0]][prohibitedDir[1]][dir.ordinal()]) {
+            return false;
+        }
+        if (rc.canMove(dir)) {
+            return true;
+        }
+        return false;
+    }
+
+
     
     
     //Move and sense ==========================================================
+    
+    /**
+     * Return map statistics over 6 squares in given direction from input.
+     * @param x x coordinate of location in internal map
+     * @param y y coordinate of location in internal map
+     * @param dir direction from location
+     * @return sum of values in internal map in input direction.
+     */
+    private static int mapStats(int x, int y, Direction dir) {
+        int sum = 0;
+        switch(dir) {
+        case NORTH:
+            sum += getInternalMap(x,y-1)
+                + getInternalMap(x-1,y-1)
+                + getInternalMap(x+1,y-1)
+                + getInternalMap(x,y-2)
+                + getInternalMap(x-1,y-2)
+                + getInternalMap(x+1,y-2);
+            break;
+        case EAST:
+            sum += getInternalMap(x+1,y-1)
+                + getInternalMap(x+1,y)
+                + getInternalMap(x+1,y+1)
+                + getInternalMap(x+2,y-1)
+                + getInternalMap(x+2,y)
+                + getInternalMap(x+2,y+1);
+            break;
+        case SOUTH:
+            sum += getInternalMap(x,y+1)
+            + getInternalMap(x-1,y+1)
+            + getInternalMap(x+1,y+1)
+            + getInternalMap(x,y+2)
+            + getInternalMap(x-1,y+2)
+            + getInternalMap(x+1,y+2);
+            break;
+        case WEST:
+            sum += getInternalMap(x-1,y-1)
+                + getInternalMap(x-1,y)
+                + getInternalMap(x-1,y+1)
+                + getInternalMap(x-2,y-1)
+                + getInternalMap(x-2,y)
+                + getInternalMap(x-2,y+1);
+            break;
+        case NORTH_EAST:
+            sum += getInternalMap(x,y-1)
+                + getInternalMap(x+1,y-1)
+                + getInternalMap(x+2,y-1)
+                + getInternalMap(x+1,y)
+                + getInternalMap(x+1,y-2)
+                + getInternalMap(x+2,y-2);
+            break;
+        case SOUTH_EAST:
+            sum += getInternalMap(x,y+1)
+                + getInternalMap(x+1,y+1)
+                + getInternalMap(x+2,y+1)
+                + getInternalMap(x+1,y)
+                + getInternalMap(x+1,y+2)
+                + getInternalMap(x+2,y+2);
+            break;
+        case NORTH_WEST:
+            sum += getInternalMap(x,y-1)
+                + getInternalMap(x-1,y-1)
+                + getInternalMap(x-2,y-1)
+                + getInternalMap(x-1,y)
+                + getInternalMap(x-1,y-2)
+                + getInternalMap(x-2,y-2);
+            break;
+        case SOUTH_WEST:
+            sum += getInternalMap(x,y+1)
+                + getInternalMap(x-1,y+1)
+                + getInternalMap(x-2,y+1)
+                + getInternalMap(x-1,y)
+                + getInternalMap(x-1,y+2)
+                + getInternalMap(x-2,y+2);
+            break;
+        default:
+            break;
+        }
+        return sum;
+    }
     
     //Sensing variables    
     // Wx = Ny, Ey = Nx, Sx = Nx, Ex = Sy, Wy = Nx
