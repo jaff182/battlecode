@@ -2,7 +2,8 @@ package team157;
 
 import java.util.Random;
 
-import team157.Utility.Waypoints;
+import team157.Utility.RobotCount;
+import team157.utility.Waypoints;
 import battlecode.common.*;
 
 public class Drone extends MovableUnit {
@@ -28,6 +29,10 @@ public class Drone extends MovableUnit {
     private static void loop() throws GameActionException {
         // Update the location - do not remove this code as myLocation is referenced by other methods
         myLocation = rc.getLocation();
+        
+        // Update global counts of robots - do not remove
+        RobotCount.report();
+        
         setTarget();
         
         switch (robotState) {

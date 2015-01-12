@@ -2,9 +2,9 @@ package team157;
 
 import java.util.Random;
 
-import team157.Utility.LastAttackedLocationsReport;
-import team157.Utility.Waypoints;
-
+import team157.Utility.RobotCount;
+import team157.utility.LastAttackedLocationsReport;
+import team157.utility.Waypoints;
 import battlecode.common.*;
 
 public class HQ extends Structure {
@@ -113,6 +113,10 @@ public class HQ extends Structure {
         //if(Clock.getRoundNum() == 1500) printRadioMap();
 
         Waypoints.refreshLocalCache();
+
+        // Clean up robot count data for next round -- do not remove, do not
+        // attempt to use RobotCount after this line before the next turn.
+        RobotCount.reset();
     }
     
     //Specific methods =========================================================
