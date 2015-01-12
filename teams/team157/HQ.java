@@ -15,12 +15,20 @@ public class HQ extends Structure {
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD
     };
-
-    private enum HqState {
-       BUILD_BUILDING, BUILD_UNIT
+    
+    /**
+     * Keeps track of whether HQ has requested a beaver to build a building (and
+     * hasn't gotten a response)
+     * 
+     * @author Josiah
+     *
+     */
+    private enum BuildingRequestState {
+        REQUESTING_BUILDING, NO_PENDING_REQUEST
     }
+    
+    private static BuildingRequestState buildingRequestState = BuildingRequestState.NO_PENDING_REQUEST;
 
-    private static HqState state = HqState.BUILD_BUILDING;
     private static int numBuilding = 0;
 
     public static void start() throws GameActionException {
@@ -69,7 +77,7 @@ public class HQ extends Structure {
     // TODO:  Just for thought - modify this method so that we can reserve some minimum amounts of emergency fund.
     private static boolean hasFunds(double cost)
     {
-        return rc.getTeamOre() > cost;
+        return rc.getTeamOre() > cost*1.5;
     }
 
     private static RobotType getNextBuilding()
@@ -82,18 +90,42 @@ public class HQ extends Structure {
         return RobotType.SUPPLYDEPOT;
     }
 
-    // TODO: @Josiah I need your help to figure out how to communicate.
-    // Also, where do I need to put the building?
-    // Should the beaver decide, or should HQ decide?
+    /**
+     * Maintains the HQ build queue. Run once per turn, with current building on
+     * build queue.
+     * 
+     * This function must advance the build queue for you automatically. Do not
+     * attempt to do so outside. Increments numBuilding when acknowledgement is
+     * received from beaver.
+     * 
+     * building must be the building corresponding to numBuilding. Note that
+     * unlinking building from numBuilding outside this function may cause
+     * unexpected consequences.
+     * 
+     * 
+     * @param building
+     *            IMPORTANT: READ CAVEATS ABOVE
+     * @throws GameActionException
+     */
     private static void build(RobotType building) throws GameActionException
     {
-        Request.broadcastToUnitType(
-            Request.getConstructBuildingRequest(
-            building.ordinal(), 0, 0, 10),
-            RobotType.BEAVER.ordinal()
-        );
+        int numberOfBeavers = RobotCount.read(RobotType.BEAVER);
+        switch (buildingRequestState) {
+        case REQUESTING_BUILDING:
+            if (BeaversBuildRequest.wasMyBuildMessageReceived()) {
+                numBuilding += 1;
+                buildingRequestState = BuildingRequestState.NO_PENDING_REQUEST;
+                return;
+            }
+            // Fall through, evidently our message was not received.
+        case NO_PENDING_REQUEST:
+                if (hasFunds(building.oreCost)) {
+                    BeaversBuildRequest.pleaseBuildABuilding(building, numberOfBeavers, rand.nextInt(numberOfBeavers));
+                    buildingRequestState = BuildingRequestState.REQUESTING_BUILDING;
+                }
+                break;
+        }
 
-        numBuilding += 1;
     }
     
     private static void loop() throws GameActionException {
@@ -110,11 +142,7 @@ public class HQ extends Structure {
         RobotType nextBuilding = getNextBuilding();
 
         // In the future we can add some probabilistic constants so that we can switch between buildings and units
-        if (state == HqState.BUILD_BUILDING && hasFunds(nextBuilding.oreCost))
-        {
-            System.out.println("Sending barracks build request");
-            build(nextBuilding);
-        }
+        build(nextBuilding); // Read javadoc of build for caveats
         
         if (RobotCount.read(RobotType.BEAVER) < 15)
             trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
