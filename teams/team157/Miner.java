@@ -21,8 +21,7 @@ public class Miner extends MiningUnit {
     }
     
     private static void loop() throws GameActionException {
-        
-        myLocation = rc.getLocation();
+        updateMyLocation();
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -62,7 +61,8 @@ public class Miner extends MiningUnit {
     private static void switchStateFromMineState() throws GameActionException {
         // Sensing methods go here
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-        myLocation = rc.getLocation();
+
+        updateMyLocation();
 
         if (enemies.length != 0) {
             robotState = RobotState.ATTACK_MOVE;

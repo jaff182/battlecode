@@ -8,8 +8,6 @@ import battlecode.common.*;
 public class Drone extends MovableUnit {
     
     //General methods =========================================================
-    
-    private static MapLocation myLocation;
     private static MapLocation target = RobotPlayer.enemyHQLocation;
     
     public static void start() throws GameActionException {
@@ -26,8 +24,7 @@ public class Drone extends MovableUnit {
     
     
     private static void loop() throws GameActionException {
-        // Update the location - do not remove this code as myLocation is referenced by other methods
-        myLocation = rc.getLocation();
+        updateMyLocation();
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();

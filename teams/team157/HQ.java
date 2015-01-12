@@ -44,7 +44,10 @@ public class HQ extends Structure {
             rc.broadcast(getChannel(ChannelName.MAP_SYMMETRY),3);
         }
         
-        team157.Utility.LastAttackedLocationsReport.init();
+        // Init LastAttackedLocations
+        team157.Utility.LastAttackedLocationsReport.HQinit();
+        
+        team157.Utility.LastAttackedLocationsReport.everyRobotInit();
     }
 
     // TODO: consider to refactor this method
@@ -109,11 +112,12 @@ public class HQ extends Structure {
         // In the future we can add some probabilistic constants so that we can switch between buildings and units
         if (state == HqState.BUILD_BUILDING && hasFunds(nextBuilding.oreCost))
         {
-            //System.out.println("Sending barracks build request");
-            build(nextBuilding);
+//            System.out.println("Sending barracks build request");
+     //       build(nextBuilding);
         }
         
-        trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
+        if (RobotCount.read(RobotType.BEAVER) < 15)
+            trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
         
         dispenseSupply(suppliabilityMultiplier);
         //if(Clock.getRoundNum() == 1500) printRadioMap();

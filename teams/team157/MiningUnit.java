@@ -15,7 +15,9 @@ public class MiningUnit extends MovableUnit {
         if(rc.isCoreReady()) {
             double[] oreLevels = new double[8];
             double totalOre = 0;
-            myLocation = rc.getLocation();
+
+            updateMyLocation();
+
             MapLocation[] sensingLoc = MapLocation.getAllMapLocationsWithinRadiusSq(myLocation, 8);
             //Sum contributions
             for(MapLocation loc : sensingLoc) {
@@ -56,7 +58,9 @@ public class MiningUnit extends MovableUnit {
     public static void goTowardsOre(RobotInfo[] friends, RobotInfo[] enemies) throws GameActionException {
         if(rc.isCoreReady()) {
             double[] attraction = new double[8];
-            myLocation = rc.getLocation();
+
+            updateMyLocation();
+
             MapLocation[] sensingLoc = MapLocation.getAllMapLocationsWithinRadiusSq(myLocation, 8);
             
             //TODO test this!

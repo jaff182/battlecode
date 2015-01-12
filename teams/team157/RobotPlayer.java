@@ -2,7 +2,7 @@ package team157;
 
 import java.util.Random;
 
-import team157.Utility.RobotCount;
+import team157.Utility.*;
 import battlecode.common.*;
 
 public class RobotPlayer {
@@ -43,7 +43,7 @@ public class RobotPlayer {
         enemyHQLocation = rc.senseEnemyHQLocation();
         myTowers = rc.senseTowerLocations();
         enemyTowers = rc.senseEnemyTowerLocations();
-        myLocation = rc.getLocation();
+        updateMyLocation();
         
         //get teams
         myTeam = rc.getTeam();
@@ -65,8 +65,8 @@ public class RobotPlayer {
                 rc.broadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER), countingID+1);
             }
             
-            // init
-            team157.Utility.LastAttackedLocationsReport.init();
+            // Init the reporting system for enemy attacks
+            LastAttackedLocationsReport.everyRobotInit();
             
             
             //RobotType specific methods --------------------------------------
@@ -349,12 +349,13 @@ public class RobotPlayer {
         MAP_SYMMETRY, MAP_DATA,
         ORE_LEVEL,ORE_XLOCATION,ORE_YLOCATION,MF_BUILDER_ID, 
         BARRACKS, TECHINST, HELIPAD, MINERFACTORY,
-        SEQ_UNIT_NUMBER, UNIT_COUNT_BASE,
+        SEQ_UNIT_NUMBER, UNIT_COUNT_BASE, LAST_ATTACKED_COORDINATES,
         REQUEST_MAILBOX_BASE, REQUESTS_METADATA_BASE
     }
     
     /**
-     * Deprecated. Please update javadoc here still though until code has been replaced.
+     * Deprecated. Please update javadoc here still though until code has been
+     * replaced.
      * 
      * Use Channels.* to read and declare the channel directly.
      * 
@@ -368,10 +369,13 @@ public class RobotPlayer {
      * Allocations:<br>
      * 0 - type of symmetry of map (rotational, type)<br>
      * 1 to allocatedWidth*allocatedHeight - global shared map data<br>
-     * 16001 - number of units produced since start of game by you (including towers, HQ) <br>
-     * 16002-16023 - robots that exist now
-     * 16100-16140 - request system unit type mailboxes. each unit uses 2 channels.
-     * 17000-23999 - request system metadata
+     * 16001 - number of units produced since start of game by you (including
+     * towers, HQ) <br>
+     * 16002-16023 - robots that exist now 16030-16050 - The last attacks that
+     * have occurred, by x, y coordinates. count at 16030, pairs start from
+     * 16031 onwards. <br>
+     * 16100-16140 - request system unit type mailboxes. each unit uses 2
+     * channels. 17000-23999 - request system metadata
      * 
      * @param channelName
      *            the friendly name for the particular index into array (ie
@@ -407,6 +411,8 @@ public class RobotPlayer {
                 return Channels.SEQ_UNIT_NUMBER;
             case UNIT_COUNT_BASE:
                 return Channels.UNIT_COUNT_BASE;
+            case LAST_ATTACKED_COORDINATES:
+                return Channels.LAST_ATTACKED_COORDINATES;
             case REQUEST_MAILBOX_BASE:
                 return 16100;
             case REQUESTS_METADATA_BASE:
@@ -489,7 +495,13 @@ public class RobotPlayer {
     public static void sharedLoopCode() throws GameActionException {
         // Update global counts of robots - do not remove
         RobotCount.report();
+        
+        // Report any drops in HP
+        LastAttackedLocationsReport.report();
+
     }
     
-    
+    public static void updateMyLocation() {
+        myLocation = rc.getLocation();
+    }
 }

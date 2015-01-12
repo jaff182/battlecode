@@ -61,7 +61,8 @@ public class Beaver extends MiningUnit {
     {
         // Sensing methods go here
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-        myLocation = rc.getLocation();
+
+        updateMyLocation();
 
         //Hard coded building a minerfactory
         //TODO: Improve reporting and task claiming robustness
@@ -80,10 +81,11 @@ public class Beaver extends MiningUnit {
                     buildingType = RobotType.MINERFACTORY;
                 }
                 
-        } else if (Clock.getRoundNum() > 1500 && rc.getHealth() > 10) {
-            //Lategame rush attack
-            robotState = RobotState.ATTACK_MOVE;
-            moveTargetLocation = enemyHQLocation;
+        } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10) {
+            //Lategame handwash station attack
+            robotState = RobotState.BUILD;
+            moveTargetLocation = myLocation;
+            buildingType = RobotType.HANDWASHSTATION;
         } else if (enemies.length != 0) {
             robotState = RobotState.ATTACK_MOVE;
             moveTargetLocation = HQLocation;
@@ -186,8 +188,9 @@ public class Beaver extends MiningUnit {
     private static void beaverMine() throws GameActionException {
         checkForEnemies();
         
+        updateMyLocation();
+
         //Report mining conditions
-        myLocation = rc.getLocation();
         double ore = rc.senseOre(myLocation);
         if(ore > rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL))) {
                 rc.broadcast(getChannel(ChannelName.ORE_LEVEL),(int)ore);
@@ -211,7 +214,7 @@ public class Beaver extends MiningUnit {
     {
         checkForEnemies();
         
-        myLocation = rc.getLocation();
+        updateMyLocation();
         int distance = myLocation.distanceSquaredTo(moveTargetLocation);
         
         // Go closer to build location.
@@ -239,8 +242,7 @@ public class Beaver extends MiningUnit {
             previousDirection = Direction.NONE;
         }
 
-        // Update the location - do not remove this code as myLocation is referenced by other methods
-        myLocation = rc.getLocation();
+        updateMyLocation();
 
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
