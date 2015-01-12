@@ -44,7 +44,7 @@ public class Beaver extends MiningUnit {
             if (buildingType != null) {
                 //if(rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL)) > 300) {
                     // TODO: how does beaver transition into a BUILD state?
-                    //robotState = RobotState.BUILD;
+                    robotState = RobotState.BUILD;
                 //}
             } else {
                 //Mine
@@ -120,7 +120,7 @@ public class Beaver extends MiningUnit {
     {
         switch (Request.workerState) {
             case IDLE:
-                idle();;
+                idle();
                 break;
             case ON_JOB:
                 break;
@@ -219,7 +219,7 @@ public class Beaver extends MiningUnit {
         
         // Go closer to build location.
         // When the beaver is there, we cans start building immediately
-        if(distance == 0) bug(HQLocation); //move next to build spot
+        if(distance == 0) explore(HQLocation); //move next to build spot
         else if(distance > 2) bug(moveTargetLocation); //travel to build spot
         else {
             Direction dirToBuild = myLocation.directionTo(moveTargetLocation);

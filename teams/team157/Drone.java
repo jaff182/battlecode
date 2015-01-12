@@ -9,6 +9,10 @@ public class Drone extends MovableUnit {
     
     //General methods =========================================================
     private static MapLocation target = RobotPlayer.enemyHQLocation;
+    private static MapLocation[] tempEnemyLoc;
+    private static int numberOfEnemies = 0;
+    private static RobotInfo[] enemies;
+    
     
     public static void start() throws GameActionException {
         init();
@@ -24,7 +28,7 @@ public class Drone extends MovableUnit {
     
     
     private static void loop() throws GameActionException {
-        updateMyLocation();
+        myLocation = rc.getLocation();
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -67,8 +71,9 @@ public class Drone extends MovableUnit {
     
     private static void checkForEnemies() throws GameActionException
     {
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-
+        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        numberOfEnemies = enemies.length;
+            
         // Vigilance: stops everything and attacks when enemies are in attack range.
         while (enemies.length > 0) {
             if (rc.isWeaponReady()) {
@@ -79,6 +84,20 @@ public class Drone extends MovableUnit {
             rc.yield();
         }
     }
+
+    private static void droneRetreat() throws GameActionException {
+        tempEnemyLoc = new MapLocation[numberOfEnemies];
+        MapLocation enemyLoc;
+        int i = 0;
+        while(i < numberOfEnemies) {
+            enemyLoc = enemies[i].location;
+            tempEnemyLoc[i] = enemyLoc;
+            setInternalMap(enemyLoc, 4);
+        }
+        if (rc.isCoreReady()) {
+            rc.move(chooseAvoidanceDir(myLocation));
+        }
+    }
     
     private static void droneMoveAttack(MapLocation target) throws GameActionException
     {
@@ -86,7 +105,11 @@ public class Drone extends MovableUnit {
 
         switch(robotState) {
         case UNSWARM:
-            droneUnswarmPathing(target);
+            if (numberOfEnemies > 1) {
+                droneRetreat();
+            } else {
+                droneUnswarmPathing(target);
+            } 
             break;
         case SWARM:
             droneSwarmPathing(target);
