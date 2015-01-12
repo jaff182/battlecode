@@ -21,7 +21,8 @@ public class Computer extends MovableUnit {
     }
     
     private static void loop() throws GameActionException {
-        
+        // Code that runs in every robot (including buildings, excepting missiles)
+        sharedLoopCode();
         
     }
     

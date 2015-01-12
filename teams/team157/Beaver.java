@@ -199,6 +199,9 @@ public class Beaver extends MiningUnit {
         // Update the location - do not remove this code as myLocation is referenced by other methods
         myLocation = rc.getLocation();
 
+        // Code that runs in every robot (including buildings, excepting missiles)
+        sharedLoopCode();
+        
         checkMailbox();
 
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);

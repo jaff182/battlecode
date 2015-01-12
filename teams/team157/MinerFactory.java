@@ -21,6 +21,9 @@ public class MinerFactory extends Structure {
     }
     
     private static void loop() throws GameActionException {
+        // Code that runs in every robot (including buildings, excepting missiles)
+        sharedLoopCode();
+        
         //Spawn
         trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.MINER);
         

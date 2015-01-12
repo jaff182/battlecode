@@ -96,7 +96,12 @@ public class HQ extends Structure {
     }
     
     private static void loop() throws GameActionException {
+        // Code that runs in every robot (including buildings, excepting missiles)
+        sharedLoopCode();
+        
         checkForEnemies();
+        
+        
 
         RobotType nextBuilding = getNextBuilding();
 
