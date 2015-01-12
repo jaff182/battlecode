@@ -137,6 +137,7 @@ public class Beaver extends MiningUnit {
             }
         }
     }
+
     
     //State methods ===========================================================
     

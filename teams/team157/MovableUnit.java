@@ -21,6 +21,10 @@ public class MovableUnit extends RobotPlayer {
     private static final int noDir = 8;
     private static boolean goneAround = false;
     
+    private static final Direction[] movableDirections = {Direction.NORTH, Direction.NORTH_EAST,
+        Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST,
+        Direction.WEST, Direction.NORTH_WEST};
+    
     public static Direction[] intToDirection =
             {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST,
             Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST,
@@ -175,6 +179,29 @@ public class MovableUnit extends RobotPlayer {
             }
         }
         return null;
+    }
+    
+    /**
+     * Return preferred enemy/obstacle avoidance direction based on mapStats.
+     * @param x x coordinate of robot position in internal map
+     * @param y y coordinate of robot position in internal map
+     * @return preferred avoidance direction to move in, or Direction.NONE if cannot move into any of the non-forward directions.
+     * @throws GameActionException
+     */
+    public static Direction chooseAvoidanceDir(MapLocation myLoc) throws GameActionException {
+        int x = RobotPlayer.locationToMapXIndex(myLoc.x);
+        int y = RobotPlayer.locationToMapYIndex(myLoc.y);
+        int maxStat = 500;
+        Direction bestDir = Direction.NONE;
+        int statsInDir;
+        for (Direction dir: movableDirections) {
+            statsInDir = mapStats(x,y,dir);
+            if (statsInDir < maxStat && movePossible(dir)) {
+                bestDir = dir;
+                maxStat = statsInDir;
+            }
+        }
+        return bestDir;
     }
     
     /**

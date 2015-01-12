@@ -61,7 +61,6 @@ public class MiningUnit extends MovableUnit {
             double[] attraction = new double[8];
             
             MapLocation[] sensingLoc = MapLocation.getAllMapLocationsWithinRadiusSq(myLocation, 8);
-            
             //TODO test this!
             // repel from direction previously came from
             if (pathingPreviousDir != Direction.NONE && pathingPreviousDir!= Direction.OMNI) {
