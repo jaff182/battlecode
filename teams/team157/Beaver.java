@@ -113,7 +113,7 @@ public class Beaver extends MiningUnit {
                     //Claim building job
                     robotState = RobotState.BUILD;
                     moveTargetLocation = loc;
-                    buildingType = RobotType.MINERFACTORY;
+                    buildingType = RobotType.HELIPAD;
                 }
                 
         } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10) {
