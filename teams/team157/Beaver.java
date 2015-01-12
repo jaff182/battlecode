@@ -2,11 +2,28 @@ package team157;
 
 import java.util.Random;
 import battlecode.common.*;
+import team157.Utility.*;
 
 public class Beaver extends MiningUnit {
 
+    //Global variables =========================================================
+    
+    /**
+     * The building to be built at moveTargetLocation
+     * 
+     * null if we aren't looking to build anything
+     */
+    public static RobotType buildingType = null;
+    
+    /**
+    private static boolean stuck = false;
+    private static MapLocation stuckLocation = myLocation;
+    private static int stuckDistanceSquared = 9;
+    private static MapLocation unstuckLocation;
+    **/
+    
     // General methods =========================================================
-
+    
     public static void start() throws GameActionException {
         init();
         while (true) {
@@ -16,71 +33,103 @@ public class Beaver extends MiningUnit {
     }
 
     private static void init() throws GameActionException {
-        rc.setIndicatorString(0, "hello i'm a beaver.");
+        robotState = RobotState.WANDER;
         //initialSense(rc.getLocation());
     }
+    
+    
+    private static void loop() throws GameActionException {
+        //Update location
+        myLocation = rc.getLocation();
+        
+        //Sense map
+        //Must be before movement methods
+        if(previousDirection != Direction.NONE) {
+            senseWhenMove(myLocation, previousDirection);
+            previousDirection = Direction.NONE;
+        }
+        
+        // Code that runs in every robot (including buildings, excepting missiles)
+        sharedLoopCode();
+        checkMailbox();
 
-    private static void idle() throws GameActionException
-    {
-        long request = Request.checkForRequest(myLocation.x, myLocation.y, RobotPlayer.myType.ordinal());
-        if (request != 0)
-               scoreRequest(request);
+        //Sense nearby units
+        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        
+        //State machine -------------------------------------------------------
+        //Switch states
+        switch (robotState) {
+            case WANDER: switchStateFromWanderState(); break;
+            case MINE: switchStateFromMineState(); break;
+        }
+        
+        //Display state
+        rc.setIndicatorString(1, "In state: " + robotState);
+
+        // Perform action based on state
+        switch (robotState) {
+            case ATTACK_MOVE: beaverAttack(); break;
+            case WANDER: beaverWander(); break;
+            case MINE: beaverMine(); break;
+            case BUILD: beaverBuild(); break;
+            default: throw new IllegalStateException();
+        }
     }
-
-    private static void switchStateFromWanderState() throws GameActionException
-    {
-        if (rc.isCoreReady())
-        {
-            if (buildingType != null) {
-                // TODO: how does beaver transition into a BUILD state?
-                //robotState = RobotState.BUILD;
-            } else {
-                //Mine
-                double ore = rc.senseOre(myLocation);
-                double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
-                if(rand.nextDouble() <= miningProbability) {
-                    robotState = RobotState.MINE;
-                }
+    
+    
+    //State switching =========================================================
+    
+    private static void switchStateFromWanderState() throws GameActionException {
+        //check if need to build stuff
+        buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
+        if(buildingType != null) {
+            robotState = RobotState.BUILD;
+            moveTargetLocation = myLocation;
+            //need to add response
+        } else if (rc.isCoreReady()) {
+            //Mine
+            double ore = rc.senseOre(myLocation);
+            double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
+            if(rand.nextDouble() <= miningProbability) {
+                robotState = RobotState.MINE;
             }
         }
     }
 
-    private static void switchStateFromMineState() throws GameActionException
-    {
-        // Sensing methods go here
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-
-        updateMyLocation();
-
-        //Hard coded building a minerfactory
-        //TODO: Improve reporting and task claiming robustness
-        //Temporary, will be improved on later
-        if(Clock.getRoundNum() > 250 //Leave enough time for exploration
+    private static void switchStateFromMineState() throws GameActionException {
+        
+        //check if need to build stuff
+        buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
+        if(buildingType != null) {
+            robotState = RobotState.BUILD;
+            moveTargetLocation = myLocation;
+            //need to add response
+        } else if(Clock.getRoundNum() > 250 //Leave enough time for exploration
             && rc.readBroadcast(getChannel(ChannelName.MF_BUILDER_ID)) == rc.getID()
             && rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL)) > 0) {
+                //Hard coded building a minerfactory
+                //TODO: Improve reporting and task claiming robustness
+                //Temporary, will be improved on later
                 int locX = rc.readBroadcast(getChannel(ChannelName.ORE_XLOCATION));
                 int locY = rc.readBroadcast(getChannel(ChannelName.ORE_YLOCATION));
                 MapLocation loc = new MapLocation(locX,locY);
-                //int distance = myLocation.distanceSquaredTo(loc);
-                if(true) {
-                    //Claim building job
-                    robotState = RobotState.BUILD;
-                    moveTargetLocation = loc;
-                    buildingType = RobotType.MINERFACTORY;
-                }
+                
+                //Claim building job
+                robotState = RobotState.BUILD;
+                moveTargetLocation = loc;
+                buildingType = RobotType.HELIPAD;
                 
         } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10) {
             //Lategame handwash station attack
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
             buildingType = RobotType.HANDWASHSTATION;
-        } else if (enemies.length != 0) {
-            robotState = RobotState.ATTACK_MOVE;
-            moveTargetLocation = HQLocation;
-        } else if (buildingType != null) {
-            robotState = RobotState.MINE;
-        }
-        else if (rc.isCoreReady()) {
+//        } else if (enemies.length != 0) {
+//            //Avoid enemies
+//            robotState = RobotState.ATTACK_MOVE;
+//            moveTargetLocation = HQLocation;
+        } else if (rc.isCoreReady()) {
+            //Transition to wandering around if ore level is too low
             double ore = rc.senseOre(myLocation);
             double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
             if(rand.nextDouble() > miningProbability) {
@@ -89,66 +138,67 @@ public class Beaver extends MiningUnit {
         }
     }
 
-    private static void checkForEnemies() throws GameActionException
-    {
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-
-        // Vigilance: stops everything and attacks when enemies are in attack range.
-        while (enemies.length > 0) {
-            if (rc.isWeaponReady()) {
-                // basicAttack(enemies);
-                priorityAttack(enemies, attackPriorities);
-            }
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-            rc.yield();
-        }
-    }
-
-    private static void checkMailbox() throws GameActionException
-    {
-        switch (Request.workerState) {
-            case IDLE:
-                idle();;
-                break;
-            case ON_JOB:
-                break;
-            case REQUESTING_JOB:
-                if (Request.isJobClaimSuccessful()) {
-                    handleRequest(Request.claimRequest);
-                }
-            default:
-                break;
-        }
-    }
-
-    private static void beaverAttack() throws GameActionException
-    {
-        // TODO: potentially refactor out checkForEnemies
+    
+    //State methods ===========================================================
+    
+    private static void beaverAttack() throws GameActionException {
+        //Vigilance
         checkForEnemies();
 
         // Go to Enemy HQ
         bug(enemyHQLocation);
-
+        
+        //Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
-    private static void beaverWander() throws GameActionException
-    {
+    private static void beaverWander() throws GameActionException {
+        //Vigilance
         checkForEnemies();
+        
+        /**
+        rc.setIndicatorString(0, "Stuck " + stuck);
+        if (stuck && myLocation.distanceSquaredTo(stuckLocation) < 5*stuckDistanceSquared) {
+            bug(unstuckLocation);
+        } else {
+            if (stuck) {
+                stuck = false;
+            }
+            if (Clock.getRoundNum()%5 == 0) {
+                if (myLocation.distanceSquaredTo(stuckLocation) < stuckDistanceSquared + 10) {
+                    stuck = true;
+                    unstuckLocation = myLocation.add(directions[rand.nextInt(8)], 10);
+                    bug(unstuckLocation);
+                    return;
+                } else {
+                    stuckLocation = myLocation;
+                    stuck = false;
+                }
+            }  
+            
+            //Hill climb ore distribution while being repelled from other units
+            RobotInfo[] friends = rc.senseNearbyRobots(8, myTeam);
+            RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+            goTowardsOre(friends,enemies);
+        }
+        **/
         
         //Hill climb ore distribution while being repelled from other units
-        RobotInfo[] friends = rc.senseNearbyRobots(8, myTeam);
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-        goTowardsOre(friends,enemies);
-
+        friends = rc.senseNearbyRobots(8, myTeam);
+        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        goTowardsOre();
+        
+        //Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
+        
     }
+    
 
     private static void beaverMine() throws GameActionException {
+        //Vigilance
         checkForEnemies();
         
-        updateMyLocation();
-
+        //Hard coded minerfactory building
         //Report mining conditions
         double ore = rc.senseOre(myLocation);
         if(ore > rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL))) {
@@ -165,80 +215,73 @@ public class Beaver extends MiningUnit {
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
-    private static void beaverBuild() throws GameActionException
-    {
+    
+    /**
+     * Move towards moveTargetLocation and builds if it is nearby.
+     * @throws GameActionException
+     */
+    private static void beaverBuild() throws GameActionException {
+        //Vigilance
         checkForEnemies();
         
-        updateMyLocation();
-        int distance = myLocation.distanceSquaredTo(moveTargetLocation);
-        
-        // Go closer to build location.
-        // When the beaver is there, we cans start building immediately
-        if(distance == 0) explore(HQLocation); //move next to build spot
-        else if(distance > 2) bug(moveTargetLocation); //travel to build spot
-        else {
-            Direction dirToBuild = myLocation.directionTo(moveTargetLocation);
-            if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType) 
-                && rc.canBuild(dirToBuild,buildingType)) {
-                rc.build(dirToBuild,buildingType);
-                robotState = RobotState.WANDER;
+        if(moveTargetLocation == null) {
+            // Go closer to build location.
+            // When the beaver is there, we cans start building immediately
+            int distance = myLocation.distanceSquaredTo(moveTargetLocation);
+            if(distance == 0) bug(HQLocation); //move next to build spot
+            else if(distance > 2) bug(moveTargetLocation); //travel to build spot
+            else {
+                Direction dirToBuild = myLocation.directionTo(moveTargetLocation);
+                if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType) 
+                    && rc.canBuild(dirToBuild,buildingType)) {
+                    //Can build building
+                    rc.build(dirToBuild,buildingType);
+                    robotState = RobotState.WANDER;
+                }
             }
+        } else {
+            tryBuild(myLocation.directionTo(enemyHQLocation),buildingType);
         }
-
+        
+        //Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
+
+    //Other methods ===========================================================
     
-    private static void loop() throws GameActionException {
-        //Sense map
-        //Must be before movement methods
-        if(previousDirection != Direction.NONE) {
-            senseWhenMove(rc.getLocation(), previousDirection);
-            previousDirection = Direction.NONE;
-        }
-
-        updateMyLocation();
-
-        // Code that runs in every robot (including buildings, excepting missiles)
-        sharedLoopCode();
+    private static void idle() throws GameActionException {
+        long request = Request.checkForRequest(myLocation.x, myLocation.y, RobotPlayer.myType.ordinal());
+        if (request != 0)
+               scoreRequest(request);
+    }
+    
+    // Vigilance: stops everything and attacks when enemies are in attack range.
+    private static void checkForEnemies() throws GameActionException {
         
-        checkMailbox();
-
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-
-        switch (robotState) {
-            case WANDER:
-                switchStateFromWanderState();
-                break;
-            case MINE:
-                switchStateFromMineState();
-                break;
-        }
-        
-        //Display state
-        rc.setIndicatorString(1, "In state: " + robotState);
-
-        // Perform action based on state
-        switch (robotState) {
-            case ATTACK_MOVE:
-                beaverAttack();
-                break;
-            case WANDER:
-                // TODO: think about whether we should have our robots to wander by default
-                beaverWander();
-                break;
-            case MINE:
-                beaverMine();
-                break;
-            case BUILD:
-                beaverBuild();
-                break;
-            default:
-                throw new IllegalStateException();
+        while (enemies.length > 0) {
+            if (rc.isWeaponReady()) {
+                // basicAttack(enemies);
+                priorityAttack(enemies, attackPriorities);
+            }
+            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            rc.yield();
         }
     }
 
-    // Specific methods =======================================================
+    private static void checkMailbox() throws GameActionException {
+        switch (Request.workerState) {
+            case IDLE: idle(); break;
+            case ON_JOB: break;
+            case REQUESTING_JOB:
+                if (Request.isJobClaimSuccessful()) {
+                    handleRequest(Request.claimRequest);
+                }
+                break;
+            default: break;
+        }
+    }
+    
     
     /**
      * Check robot suitability for the request and score
@@ -255,7 +298,8 @@ public class Beaver extends MiningUnit {
     }
 
     /**
-     * Handles a request we're committed to, and updates internal variables as it does so.
+     * Handles a request we're committed to, and updates internal variables as it 
+     * does so.
      * @throws GameActionException 
      */
     private static void handleRequest(long request) throws GameActionException {
@@ -275,13 +319,7 @@ public class Beaver extends MiningUnit {
             break;
         }
     }
-
-    /**
-     * The building to be built at moveTargetLocation
-     * 
-     * null if we aren't looking to build anything
-     */
-    public static RobotType buildingType = null;
+    
     
     
     //Parameters ==============================================================
@@ -333,7 +371,7 @@ public class Beaver extends MiningUnit {
      * @throws GameActionException
      */
     public static void tryBuild(Direction dir0, RobotType robotType) throws GameActionException {
-        if(rc.isCoreReady() && rc.getTeamOre() >= robotType.oreCost) {
+        if(rc.isCoreReady() && rc.hasBuildRequirements(robotType)) {
             int dirint0 = dir0.ordinal();
             for(int offset : offsets) {
                 int dirint = (dirint0+offset+8)%8;
