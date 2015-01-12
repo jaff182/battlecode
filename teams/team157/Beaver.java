@@ -34,8 +34,10 @@ public class Beaver extends MiningUnit {
         if (rc.isCoreReady())
         {
             if (buildingType != null) {
-                // TODO: how does beaver transition into a BUILD state?
-                //robotState = RobotState.BUILD;
+                if(rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL)) > 300) {
+                    // TODO: how does beaver transition into a BUILD state?
+                    robotState = RobotState.BUILD;
+                }
             } else {
                 //Mine
                 double ore = rc.senseOre(myLocation);
@@ -164,6 +166,10 @@ public class Beaver extends MiningUnit {
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
+    /**
+     * Move towards moveTargetLocation and builds if it is nearby.
+     * @throws GameActionException
+     */
     private static void beaverBuild() throws GameActionException
     {
         checkForEnemies();

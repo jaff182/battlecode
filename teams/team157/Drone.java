@@ -52,7 +52,8 @@ public class Drone extends MovableUnit {
      * @throws GameActionException
      */
     private static void setTarget() throws GameActionException {
-        //Waypoints.refreshLocalCache();
+        Waypoints.refreshLocalCache();
+        // target = Waypoints.waypoints[0];
         if (Waypoints.numberOfAttackWaypoints > 0) {
             target = Waypoints.waypoints[rand.nextInt(Waypoints.numberOfAttackWaypoints)];
         } else if (Waypoints.numberOfWaypoints > 1) {
