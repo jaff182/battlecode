@@ -1,10 +1,9 @@
 package team157;
 
 import java.util.Random;
-
 import battlecode.common.*;
 
-public class Beaver extends MovableUnit {
+public class Beaver extends MiningUnit {
 
     // General methods =========================================================
 
@@ -31,8 +30,8 @@ public class Beaver extends MovableUnit {
             previousDirection = Direction.NONE;
         }
         
-        //Vigilance
-        //Stops everything and attacks when enemies are in attack range.
+        //Sense nearby units
+        RobotInfo[] friends = rc.senseNearbyRobots(sightRange, myTeam);
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
         myLocation = rc.getLocation();
         
@@ -84,7 +83,7 @@ public class Beaver extends MovableUnit {
                 }
 
                 // Go to Enemy HQ
-                exploreRandom(enemyHQLocation);
+                bug(enemyHQLocation);
 
                 // Distribute supply
                 distributeSupply(suppliabilityMultiplier_Preattack);
@@ -103,7 +102,7 @@ public class Beaver extends MovableUnit {
                 }
 
                 // Go to Enemy HQ
-                wander();
+                goTowardsOre(friends,enemies);
 
                 // Distribute supply
                 distributeSupply(suppliabilityMultiplier_Preattack);
