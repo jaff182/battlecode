@@ -110,10 +110,11 @@ public class HQ extends Structure {
         if (state == HqState.BUILD_BUILDING && hasFunds(nextBuilding.oreCost))
         {
             System.out.println("Sending barracks build request");
-            build(nextBuilding);
+     //       build(nextBuilding);
         }
         
-        trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
+        if (RobotCount.read(RobotType.BEAVER) < 15)
+            trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
         
         dispenseSupply(suppliabilityMultiplier);
         //if(Clock.getRoundNum() == 1500) printRadioMap();

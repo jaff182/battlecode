@@ -70,10 +70,11 @@ public class Beaver extends MiningUnit {
                     buildingType = RobotType.MINERFACTORY;
                 }
                 
-        } else if (Clock.getRoundNum() > 1500 && rc.getHealth() > 10) {
-            //Lategame rush attack
-            robotState = RobotState.ATTACK_MOVE;
-            moveTargetLocation = enemyHQLocation;
+        } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10) {
+            //Lategame handwash station attack
+            robotState = RobotState.BUILD;
+            moveTargetLocation = myLocation;
+            buildingType = RobotType.HANDWASHSTATION;
         } else if (enemies.length != 0) {
             robotState = RobotState.ATTACK_MOVE;
             moveTargetLocation = HQLocation;
