@@ -243,7 +243,7 @@ public class MovableUnit extends RobotPlayer {
         
         switch(pathingState) {
         case BUGGING:
-            rc.setIndicatorString(1,"bug " + targetDir);
+            rc.setIndicatorString(0,"bug " + targetDir);
             
             int x = locationToMapXIndex(myLocation.x);
             int y = locationToMapYIndex(myLocation.y);
@@ -256,7 +256,7 @@ public class MovableUnit extends RobotPlayer {
             startTargetDir = targetDir;
             
         case HUGGING:
-            rc.setIndicatorString(1, "HUG " + targetDir);
+            rc.setIndicatorString(0, "HUG " + targetDir);
             if (goneAround && (targetDir == startTargetDir.rotateLeft().rotateLeft() ||
                     targetDir == startTargetDir.rotateRight().rotateRight())) {
                 prohibitedDir[0] = noDir;

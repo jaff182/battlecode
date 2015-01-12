@@ -7,7 +7,15 @@ public class Beaver extends MiningUnit {
 
     // General methods =========================================================
 
-    private static MapLocation myLocation;
+    private static MapLocation myLocation = rc.getLocation();
+
+    
+    /**
+    private static boolean stuck = false;
+    private static MapLocation stuckLocation = myLocation;
+    private static int stuckDistanceSquared = 9;
+    private static MapLocation unstuckLocation;
+    **/
 
     public static void start() throws GameActionException {
         init();
@@ -18,7 +26,7 @@ public class Beaver extends MiningUnit {
     }
 
     private static void init() throws GameActionException {
-        rc.setIndicatorString(0, "hello i'm a beaver.");
+        robotState = RobotState.WANDER;
         //initialSense(rc.getLocation());
     }
 
@@ -34,10 +42,10 @@ public class Beaver extends MiningUnit {
         if (rc.isCoreReady())
         {
             if (buildingType != null) {
-                if(rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL)) > 300) {
+                //if(rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL)) > 300) {
                     // TODO: how does beaver transition into a BUILD state?
-                    robotState = RobotState.BUILD;
-                }
+                    //robotState = RobotState.BUILD;
+                //}
             } else {
                 //Mine
                 double ore = rc.senseOre(myLocation);
@@ -138,13 +146,42 @@ public class Beaver extends MiningUnit {
     {
         checkForEnemies();
         
+        /**
+        rc.setIndicatorString(0, "Stuck " + stuck);
+        if (stuck && myLocation.distanceSquaredTo(stuckLocation) < 5*stuckDistanceSquared) {
+            bug(unstuckLocation);
+        } else {
+            if (stuck) {
+                stuck = false;
+            }
+            if (Clock.getRoundNum()%5 == 0) {
+                if (myLocation.distanceSquaredTo(stuckLocation) < stuckDistanceSquared + 10) {
+                    stuck = true;
+                    unstuckLocation = myLocation.add(directions[rand.nextInt(8)], 10);
+                    bug(unstuckLocation);
+                    return;
+                } else {
+                    stuckLocation = myLocation;
+                    stuck = false;
+                }
+            }  
+            
+            //Hill climb ore distribution while being repelled from other units
+            RobotInfo[] friends = rc.senseNearbyRobots(8, myTeam);
+            RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+            goTowardsOre(friends,enemies);
+        }
+        **/
+        
         //Hill climb ore distribution while being repelled from other units
         RobotInfo[] friends = rc.senseNearbyRobots(8, myTeam);
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
         goTowardsOre(friends,enemies);
-
+        
         distributeSupply(suppliabilityMultiplier_Preattack);
+        
     }
+    
 
     private static void beaverMine() throws GameActionException {
         checkForEnemies();
@@ -179,7 +216,7 @@ public class Beaver extends MiningUnit {
         
         // Go closer to build location.
         // When the beaver is there, we cans start building immediately
-        if(distance == 0) explore(HQLocation); //move next to build spot
+        if(distance == 0) bug(HQLocation); //move next to build spot
         else if(distance > 2) bug(moveTargetLocation); //travel to build spot
         else {
             Direction dirToBuild = myLocation.directionTo(moveTargetLocation);

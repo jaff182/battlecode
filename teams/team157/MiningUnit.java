@@ -1,10 +1,12 @@
 package team157;
 
 import java.util.Random;
+
 import battlecode.common.*;
 
 public class MiningUnit extends MovableUnit {
     
+    private static Direction pathingPreviousDir = Direction.NONE;
     /**
      * Move around randomly, drifting towards higher ore.
      * @throws GameActionException
@@ -56,6 +58,18 @@ public class MiningUnit extends MovableUnit {
             double[] attraction = new double[8];
             myLocation = rc.getLocation();
             MapLocation[] sensingLoc = MapLocation.getAllMapLocationsWithinRadiusSq(myLocation, 8);
+            
+            //TODO test this!
+            // repel from direction previously came from
+            if (pathingPreviousDir != Direction.NONE && pathingPreviousDir!= Direction.OMNI) {
+                //System.out.println(pathingPreviousDir);
+                attraction[pathingPreviousDir.opposite().ordinal()] -= 10000;
+            }
+            /**
+            for (double i : attraction) {
+                System.out.print(i + " ");
+            }
+            **/
             
             //Sum forces from map
             for(MapLocation loc : sensingLoc) {
@@ -142,7 +156,9 @@ public class MiningUnit extends MovableUnit {
                 Direction dirToMove = directions[bestDirInts[rand.nextInt(maxCount)]];
                 rc.move(dirToMove);
                 previousDirection = dirToMove;
+                pathingPreviousDir = dirToMove;
             }
+
         }
     }
     
