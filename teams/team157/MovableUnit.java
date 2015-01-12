@@ -21,20 +21,10 @@ public class MovableUnit extends RobotPlayer {
     private static final int noDir = 8;
     private static boolean goneAround = false;
     
-    public static HashMap<Integer, Direction> intToDirection;
-    static {
-        intToDirection = new HashMap<Integer, Direction>();
-        intToDirection.put(Direction.NORTH.ordinal(), Direction.NORTH);
-        intToDirection.put(Direction.NORTH_EAST.ordinal(), Direction.NORTH_EAST);
-        intToDirection.put(Direction.EAST.ordinal(), Direction.EAST);
-        intToDirection.put(Direction.SOUTH_EAST.ordinal(), Direction.SOUTH_EAST);
-        intToDirection.put(Direction.SOUTH.ordinal(), Direction.SOUTH);
-        intToDirection.put(Direction.SOUTH_WEST.ordinal(), Direction.SOUTH_WEST);
-        intToDirection.put(Direction.WEST.ordinal(), Direction.WEST);
-        intToDirection.put(Direction.NORTH_WEST.ordinal(), Direction.NORTH_WEST);
-        intToDirection.put(Direction.NONE.ordinal(), Direction.NONE);
-        intToDirection.put(Direction.OMNI.ordinal(), Direction.OMNI);
-    }
+    public static Direction[] intToDirection =
+            {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST,
+            Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST,
+            Direction.NORTH_WEST, Direction.NONE, Direction.OMNI};
     
     private static final boolean[][][] blockedDirs; 
     static {
@@ -353,7 +343,7 @@ public class MovableUnit extends RobotPlayer {
         // store past two cardinal directions that were used in hugging to make
         // sure that these directions are not used again.
         if (tryDir != previousDir && !tryDir.isDiagonal()) {
-            if (turn(turn(intToDirection.get(prohibitedDir[0]))) == tryDir) {
+            if (turn(turn(intToDirection[prohibitedDir[0]])) == tryDir) {
                 prohibitedDir[0] = tryDir.opposite().ordinal();
                 prohibitedDir[1] = noDir;
             } else {
