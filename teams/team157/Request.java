@@ -136,6 +136,10 @@ public class Request {
     public static int claimCreatedRoundNum;
     public static int claimJobType;
     public static long claimRequest;
+    
+    //Coordinate conversion functions and stored variables ======================
+    // Output must be from 0 to 255
+    
         
     /**
      * Gets a job id. This job id is also your relative index into the

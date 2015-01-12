@@ -1,4 +1,4 @@
-package team157.utility;
+package team157.Utility;
 
 import team157.RobotPlayer;
 import battlecode.common.*;
