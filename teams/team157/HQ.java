@@ -100,9 +100,9 @@ public class HQ extends Structure {
         checkForEnemies();
         
         //Debug
-        for (RobotType robotType: RobotType.values()) {
-            System.out.println("The number of " + robotType + " is " + RobotCount.read(robotType));
-        }
+        //for (RobotType robotType: RobotType.values()) {
+        //    System.out.println("The number of " + robotType + " is " + RobotCount.read(robotType));
+        //}
 
         RobotType nextBuilding = getNextBuilding();
 

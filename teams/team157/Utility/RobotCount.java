@@ -41,7 +41,7 @@ public class RobotCount {
      * @throws GameActionException 
      */
     public static int read(RobotType robotType) throws GameActionException {
-        return RobotPlayer.rc.readBroadcast(BASE_CHANNEL+RobotPlayer.myType.ordinal());
+        return RobotPlayer.rc.readBroadcast(BASE_CHANNEL+robotType.ordinal());
     }
     
     /**
@@ -55,7 +55,6 @@ public class RobotCount {
      */
     public static void reset() throws GameActionException {
         int length = RobotPlayer.robotTypes.length;
-        System.out.println("Length is " + length);
         for (int i=0; i!=length; ++i)
             RobotPlayer.rc.broadcast(BASE_CHANNEL+i, 0);
     }
