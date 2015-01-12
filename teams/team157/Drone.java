@@ -30,8 +30,8 @@ public class Drone extends MovableUnit {
         // Update the location - do not remove this code as myLocation is referenced by other methods
         myLocation = rc.getLocation();
         
-        // Update global counts of robots - do not remove
-        RobotCount.report();
+        // Code that runs in every robot (including buildings, excepting missiles)
+        sharedLoopCode();
         
         setTarget();
         

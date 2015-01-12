@@ -478,7 +478,8 @@ public class RobotPlayer {
      * 
      * Note that this code runs in buildings too.
      * 
-     * May not run in missile.
+     * Does not run in missile and towers.
+     * 
      * @throws GameActionException 
      */
     public static void sharedLoopCode() throws GameActionException {

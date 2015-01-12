@@ -24,6 +24,9 @@ public class Miner extends MiningUnit {
         
         myLocation = rc.getLocation();
         
+        // Code that runs in every robot (including buildings, excepting missiles)
+        sharedLoopCode();
+        
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
 
         switch (robotState) {
