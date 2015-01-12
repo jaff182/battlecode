@@ -55,12 +55,11 @@ public class MiningUnit extends MovableUnit {
     }
     
     
-    public static void goTowardsOre(RobotInfo[] friends, RobotInfo[] enemies) throws GameActionException {
+    public static void goTowardsOre() throws GameActionException {
         if(rc.isCoreReady()) {
+            //Attractive force towards each direction
             double[] attraction = new double[8];
-
-            updateMyLocation();
-
+            
             MapLocation[] sensingLoc = MapLocation.getAllMapLocationsWithinRadiusSq(myLocation, 8);
             
             //TODO test this!

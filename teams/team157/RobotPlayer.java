@@ -428,6 +428,10 @@ public class RobotPlayer {
     
     //Attack ==================================================================
     
+    //RobotInfo array of nearby units
+    public static RobotInfo[] enemies;
+    public static RobotInfo[] friends;
+    
     /**
      * Basic attack on the first of detected nearby enemies
      * @param enemies RobotInfo array of enemies in attack range
