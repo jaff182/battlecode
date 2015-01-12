@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 
 import team157.Utility.RobotCount;
-import team157.utility.Waypoints;
+import team157.Utility.Waypoints;
 import battlecode.common.*;
 
 public class Drone extends MovableUnit {

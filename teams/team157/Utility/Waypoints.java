@@ -1,8 +1,8 @@
-package team157.utility;
+package team157.Utility;
 
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
-import team157.utility.LastAttackedLocationsReport;
+import team157.Utility.LastAttackedLocationsReport;
 import team157.RobotPlayer;
 
 public class Waypoints {
