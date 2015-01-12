@@ -112,8 +112,8 @@ public class HQ extends Structure {
         // In the future we can add some probabilistic constants so that we can switch between buildings and units
         if (state == HqState.BUILD_BUILDING && hasFunds(nextBuilding.oreCost))
         {
-//            System.out.println("Sending barracks build request");
-     //       build(nextBuilding);
+            System.out.println("Sending barracks build request");
+            build(nextBuilding);
         }
         
         if (RobotCount.read(RobotType.BEAVER) < 15)
