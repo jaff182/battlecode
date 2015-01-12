@@ -80,7 +80,8 @@ public class MovableUnit extends RobotPlayer {
      */
     public static void explore(MapLocation target) throws GameActionException {
         if(rc.isCoreReady()) {
-            myLocation = rc.getLocation();
+            updateMyLocation();
+
             int dirInt = myLocation.directionTo(target).ordinal();
             int offsetIndex = 0;
             while (offsetIndex < 5 && !rc.canMove(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
@@ -101,7 +102,7 @@ public class MovableUnit extends RobotPlayer {
      */
     public static void exploreRandom(MapLocation target) throws GameActionException {
         if(rc.isCoreReady()) {
-            myLocation = rc.getLocation();
+            updateMyLocation();
             int dirInt = myLocation.directionTo(target).ordinal() + rand.nextInt(5)-2;
             int offsetIndex = 0;
             while (offsetIndex < 5 && !rc.canMove(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
@@ -184,7 +185,7 @@ public class MovableUnit extends RobotPlayer {
      */
     public static void exploreWithStats(MapLocation target) throws GameActionException {
         if(rc.isCoreReady()) {
-            myLocation = rc.getLocation();
+            updateMyLocation();
             int x = locationToMapXIndex(myLocation.x);
             int y = locationToMapYIndex(myLocation.y);
             Direction targetDir = myLocation.directionTo(target);
@@ -224,7 +225,8 @@ public class MovableUnit extends RobotPlayer {
      * @throws GameActionException
      */
     public static Direction bugDirection(MapLocation target) throws GameActionException {
-        myLocation = rc.getLocation();
+        updateMyLocation();
+
         Direction targetDir = myLocation.directionTo(target);
         
         if (targetDir == Direction.NONE || targetDir == Direction.OMNI){

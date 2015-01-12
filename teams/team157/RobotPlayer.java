@@ -43,7 +43,7 @@ public class RobotPlayer {
         enemyHQLocation = rc.senseEnemyHQLocation();
         myTowers = rc.senseTowerLocations();
         enemyTowers = rc.senseEnemyTowerLocations();
-        myLocation = rc.getLocation();
+        updateMyLocation();
         
         //get teams
         myTeam = rc.getTeam();
@@ -491,5 +491,7 @@ public class RobotPlayer {
         RobotCount.report();
     }
     
-    
+    public static void updateMyLocation() {
+        myLocation = rc.getLocation();
+    }
 }

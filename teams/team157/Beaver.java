@@ -7,8 +7,6 @@ public class Beaver extends MiningUnit {
 
     // General methods =========================================================
 
-    private static MapLocation myLocation;
-
     public static void start() throws GameActionException {
         init();
         while (true) {
@@ -51,7 +49,8 @@ public class Beaver extends MiningUnit {
     {
         // Sensing methods go here
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-        myLocation = rc.getLocation();
+
+        updateMyLocation();
 
         //Hard coded building a minerfactory
         //TODO: Improve reporting and task claiming robustness
@@ -148,8 +147,9 @@ public class Beaver extends MiningUnit {
     private static void beaverMine() throws GameActionException {
         checkForEnemies();
         
+        updateMyLocation();
+
         //Report mining conditions
-        myLocation = rc.getLocation();
         double ore = rc.senseOre(myLocation);
         if(ore > rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL))) {
                 rc.broadcast(getChannel(ChannelName.ORE_LEVEL),(int)ore);
@@ -169,7 +169,7 @@ public class Beaver extends MiningUnit {
     {
         checkForEnemies();
         
-        myLocation = rc.getLocation();
+        updateMyLocation();
         int distance = myLocation.distanceSquaredTo(moveTargetLocation);
         
         // Go closer to build location.
@@ -197,8 +197,7 @@ public class Beaver extends MiningUnit {
             previousDirection = Direction.NONE;
         }
 
-        // Update the location - do not remove this code as myLocation is referenced by other methods
-        myLocation = rc.getLocation();
+        updateMyLocation();
 
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
