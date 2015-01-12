@@ -2,7 +2,7 @@ package team157;
 
 import java.util.Random;
 
-import team157.Utility.RobotCount;
+import team157.Utility.*;
 import battlecode.common.*;
 
 public class RobotPlayer {
@@ -65,8 +65,8 @@ public class RobotPlayer {
                 rc.broadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER), countingID+1);
             }
             
-            // init
-            team157.Utility.LastAttackedLocationsReport.init();
+            // Init the reporting system for enemy attacks
+            LastAttackedLocationsReport.everyRobotInit();
             
             
             //RobotType specific methods --------------------------------------
@@ -370,6 +370,7 @@ public class RobotPlayer {
      * 1 to allocatedWidth*allocatedHeight - global shared map data<br>
      * 16001 - number of units produced since start of game by you (including towers, HQ) <br>
      * 16002-16023 - robots that exist now
+     * 16030-16049 - The last attacks that have occurred, by x, y coordinates
      * 16100-16140 - request system unit type mailboxes. each unit uses 2 channels.
      * 17000-23999 - request system metadata
      * 
@@ -489,6 +490,10 @@ public class RobotPlayer {
     public static void sharedLoopCode() throws GameActionException {
         // Update global counts of robots - do not remove
         RobotCount.report();
+        
+        // Report any drops in HP
+        LastAttackedLocationsReport.report();
+
     }
     
     public static void updateMyLocation() {
