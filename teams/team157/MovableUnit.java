@@ -557,11 +557,11 @@ public class MovableUnit extends RobotPlayer {
                     if(Clock.getBytecodesLeft() < 600) break;
                 }
                 
-                //Transfer half of excess supply above mean
+                //Transfer excess supply above mean
                 double meansupply = totalsupply/totalcapacity*mycapacity;
                 if(targetidx != -1 && rc.getSupplyLevel() > meansupply) {
                     MapLocation loc = friends[targetidx].location;
-                    rc.transferSupplies((int)(rc.getSupplyLevel()-meansupply)/2,loc);
+                    rc.transferSupplies((int)(rc.getSupplyLevel()-meansupply),loc);
                 }
             }
         }

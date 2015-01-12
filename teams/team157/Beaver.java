@@ -29,27 +29,47 @@ public class Beaver extends MiningUnit {
                scoreRequest(request);
     }
 
-    private static void switchStateFromWanderState()
+    private static void switchStateFromWanderState() throws GameActionException
     {
         if (rc.isCoreReady())
         {
-            double ore = rc.senseOre(myLocation);
-            double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
             if (buildingType != null) {
                 //robotState = RobotState.BUILD;
-            }
-            else if(rand.nextDouble() <= miningProbability) {
-                robotState = RobotState.MINE;
+            } else {
+                //Mine
+                double ore = rc.senseOre(myLocation);
+                double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
+                if(rand.nextDouble() <= miningProbability) {
+                    robotState = RobotState.MINE;
+                }
             }
         }
     }
 
-    private static void switchStateFromMineState()
+    private static void switchStateFromMineState() throws GameActionException
     {
         // Sensing methods go here
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        myLocation = rc.getLocation();
 
-        if (Clock.getRoundNum() > 1500 && rc.getHealth() > 10) {
+        //Hard coded building a minerfactory
+        //TODO: Improve reporting and task claiming robustness
+        //Temporary, will be improved on later
+        if(Clock.getRoundNum() > 250 //Leave enough time for exploration
+            && rc.readBroadcast(getChannel(ChannelName.MF_BUILDER_ID)) == rc.getID()
+            && rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL)) > 0) {
+                int locX = rc.readBroadcast(getChannel(ChannelName.ORE_XLOCATION));
+                int locY = rc.readBroadcast(getChannel(ChannelName.ORE_YLOCATION));
+                MapLocation loc = new MapLocation(locX,locY);
+                //int distance = myLocation.distanceSquaredTo(loc);
+                if(true) {
+                    //Claim building job
+                    robotState = RobotState.BUILD;
+                    moveTargetLocation = loc;
+                    buildingType = RobotType.MINERFACTORY;
+                }
+                
+        } else if (Clock.getRoundNum() > 1500 && rc.getHealth() > 10) {
             //Lategame rush attack
             robotState = RobotState.ATTACK_MOVE;
             moveTargetLocation = enemyHQLocation;
@@ -125,14 +145,37 @@ public class Beaver extends MiningUnit {
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
+    private static void beaverMine() throws GameActionException {
+        checkForEnemies();
+        
+        //Report mining conditions
+        myLocation = rc.getLocation();
+        double ore = rc.senseOre(myLocation);
+        if(ore > rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL))) {
+                rc.broadcast(getChannel(ChannelName.ORE_LEVEL),(int)ore);
+                rc.broadcast(getChannel(ChannelName.ORE_XLOCATION),myLocation.x);
+                rc.broadcast(getChannel(ChannelName.ORE_YLOCATION),myLocation.y);
+                rc.broadcast(getChannel(ChannelName.MF_BUILDER_ID),rc.getID());
+        }
+        
+        //Mine
+        if (rc.getCoreDelay()< 1) rc.mine();
+        
+        //Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+    
     private static void beaverBuild() throws GameActionException
     {
         checkForEnemies();
-
+        
+        myLocation = rc.getLocation();
+        int distance = myLocation.distanceSquaredTo(moveTargetLocation);
+        
         // Go to build location
-        if(myLocation.distanceSquaredTo(moveTargetLocation) > 2) {
-            bug(moveTargetLocation);
-        } else if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType)) {
+        if(distance == 0) explore(HQLocation); //move next to build spot
+        else if(distance > 2) bug(moveTargetLocation); //travel to build spot
+        else if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType)) {
             rc.build(myLocation.directionTo(moveTargetLocation),buildingType);
             robotState = RobotState.WANDER;
         }
@@ -178,8 +221,7 @@ public class Beaver extends MiningUnit {
                 beaverWander();
                 break;
             case MINE:
-                if (rc.getCoreDelay()< 1) rc.mine();
-                distributeSupply(suppliabilityMultiplier_Preattack);
+                beaverMine();
                 break;
             case BUILD:
                 beaverBuild();

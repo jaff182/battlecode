@@ -336,6 +336,7 @@ public class RobotPlayer {
      */
     public enum ChannelName {
         MAP_SYMMETRY, MAP_DATA,
+        ORE_LEVEL,ORE_XLOCATION,ORE_YLOCATION,MF_BUILDER_ID,
         BARRACKS, TECHINST, HELIPAD, MINERFACTORY,
         SEQ_UNIT_NUMBER, 
         REQUEST_MAILBOX_BASE, REQUESTS_METADATA_BASE
@@ -371,6 +372,17 @@ public class RobotPlayer {
                 return 0;
             case MAP_DATA:
                 return 1; //allocatedWidth*allocatedHeight channels
+            
+            //Hard code building a minerfactory
+            case ORE_LEVEL:
+                return 15000;
+            case ORE_XLOCATION:
+                return 15001;
+            case ORE_YLOCATION:
+                return 15002;
+            case MF_BUILDER_ID:
+                return 15003;
+            
             case BARRACKS:
                 return 15500;
             case TECHINST:

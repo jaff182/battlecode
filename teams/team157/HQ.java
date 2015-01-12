@@ -57,6 +57,8 @@ public class HQ extends Structure {
         //Dispense supply
         dispenseSupply(suppliabilityMultiplier);
         
+        //if(Clock.getRoundNum() == 1500) printRadioMap();
+        
     }
     
     //Specific methods =========================================================
