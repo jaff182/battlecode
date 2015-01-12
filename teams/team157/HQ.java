@@ -101,7 +101,8 @@ public class HQ extends Structure {
      * building must be the building corresponding to numBuilding. Note that
      * unlinking building from numBuilding outside this function may cause
      * unexpected consequences.
-     * 
+     *
+     * TODO: refactor the build order into a dedicated build queue to encaspulate information
      * 
      * @param building
      *            IMPORTANT: READ CAVEATS ABOVE

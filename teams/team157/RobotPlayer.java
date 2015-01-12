@@ -504,8 +504,8 @@ public class RobotPlayer {
         RobotCount.report();
         
         // Report any drops in HP
+        // TODO: I'm not entirely sure whether you can do this without creating an instance
         LastAttackedLocationsReport.report();
-
     }
     
     public static void updateMyLocation() {
