@@ -6,12 +6,13 @@ import battlecode.common.*;
 public class HQ extends Structure {
     
     //General methods =========================================================
-    
+
     public static void start() throws GameActionException {
         init();
         while(true) {
             loop();
-            rc.yield(); //Yield the round
+            //Yield the round
+            rc.yield();
         }
     }
     
@@ -21,28 +22,32 @@ public class HQ extends Structure {
         //Initiate radio map
         setMaps(HQLocation,3);
         setMaps(enemyHQLocation,2);
-        if(HQLocation.x != enemyHQLocation.x &&
-            HQLocation.y != enemyHQLocation.y) {
+        if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
             symmetry = 3;
             rc.broadcast(getChannel(ChannelName.MAP_SYMMETRY),3);
         }
-        
     }
-    
-    private static void loop() throws GameActionException {
-        
-        //Vigilance
-        //Stops everything and attacks when enemies are in attack range.
-        RobotInfo[] enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-        while(enemies.length > 0) {
-            if(rc.isWeaponReady()) {
-                //basicAttack(enemies);
-                priorityAttack(enemies,attackPriorities);
+
+    // TODO: consider to refactor this method
+    private static void checkForEnemies() throws GameActionException
+    {
+        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+
+        // Vigilance: stops everything and attacks when enemies are in attack range.
+        while (enemies.length > 0) {
+            if (rc.isWeaponReady()) {
+                // basicAttack(enemies);
+                priorityAttack(enemies, attackPriorities);
             }
             enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
             rc.yield();
         }
+    }
+    
+    private static void loop() throws GameActionException {
+        checkForEnemies();
+
         if (rc.getTeamOre() > RobotType.BARRACKS.oreCost) {
 //            System.out.println("Sending barracks build request");
 //            Request.broadcastToUnitType(
@@ -51,14 +56,10 @@ public class HQ extends Structure {
 //                    RobotType.BEAVER.ordinal());
         }
         
-        //Spawn
-        trySpawn(HQLocation.directionTo(enemyHQLocation),RobotType.BEAVER);
+        trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
         
-        //Dispense supply
         dispenseSupply(suppliabilityMultiplier);
-        
         //if(Clock.getRoundNum() == 1500) printRadioMap();
-        
     }
     
     //Specific methods =========================================================
