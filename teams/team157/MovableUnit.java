@@ -191,7 +191,7 @@ public class MovableUnit extends RobotPlayer {
     public static Direction chooseAvoidanceDir(MapLocation myLoc) throws GameActionException {
         int x = RobotPlayer.locationToMapXIndex(myLoc.x);
         int y = RobotPlayer.locationToMapYIndex(myLoc.y);
-        int maxStat = 200;
+        int maxStat = 500;
         Direction bestDir = Direction.NONE;
         int statsInDir;
         for (Direction dir: movableDirections) {

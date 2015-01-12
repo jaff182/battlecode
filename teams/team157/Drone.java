@@ -148,11 +148,11 @@ public class Drone extends MovableUnit {
         // set all locations within sight range of tower and hq as void in internal map
         for (MapLocation tower: rc.senseEnemyTowerLocations()) {
             for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 35)) {
-                RobotPlayer.setInternalMap(inSightOfTower, 4);
+                RobotPlayer.setInternalMap(inSightOfTower, 10);
             }
         }
         for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(rc.senseEnemyHQLocation(),35)) {
-            RobotPlayer.setInternalMap(inSightOfHQ, 4);
+            RobotPlayer.setInternalMap(inSightOfHQ, 10);
         }
     }
     
