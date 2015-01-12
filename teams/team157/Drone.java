@@ -9,6 +9,7 @@ public class Drone extends MovableUnit {
     //General methods =========================================================
     
     private static MapLocation myLocation;
+    private static MapLocation target;
     
     public static void start() throws GameActionException {
         init();
@@ -18,16 +19,31 @@ public class Drone extends MovableUnit {
         }
     }
     
-    private static void init() throws GameActionException {
-        rc.setIndicatorString(0,"hello i'm a drone.");
-        
+    private static void init() throws GameActionException {  
+        robotState = RobotState.UNSWARM;
     }
     
     
     private static void loop() throws GameActionException {
+        // Update the location - do not remove this code as myLocation is referenced by other methods
+        myLocation = rc.getLocation();
+        switch (robotState) {
+            case UNSWARM:
+                switchStateFromUnswarmState();
+                break;
+            case SWARM:
+                switchStateFromSwarmState();
+                break;
+            default:
+                throw new IllegalStateException();
+        }
         
-        
+        //Display state
+        rc.setIndicatorString(1, "In state: " + robotState);
+
+        droneMoveAttack(target);
     }
+    
     
     private static void checkForEnemies() throws GameActionException
     {
@@ -44,12 +60,23 @@ public class Drone extends MovableUnit {
         }
     }
     
+    private static void droneMoveAttack(MapLocation target) throws GameActionException
+    {
+        checkForEnemies();
+
+        // Go to Enemy HQ
+        droneExplore(target);
+
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+    
     /**
      * Switches state to swarm state when >4 friendly units within sensing radius.
      */
     private static void switchStateFromUnswarmState() {
         if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length > 4) {
             robotState = RobotState.SWARM;
+            initAttackState(target);
         }
     }
     
@@ -59,6 +86,7 @@ public class Drone extends MovableUnit {
     private static void switchStateFromSwarmState() {
         if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length < 5) {
             robotState = RobotState.UNSWARM;
+            initUnswarmState();
         }
     }
     
@@ -95,8 +123,6 @@ public class Drone extends MovableUnit {
      */
     private static void droneExplore(MapLocation target) throws GameActionException {
         if(rc.isCoreReady()) {
-            myLocation = rc.getLocation();
-            
             // stay at distance >= 7 squares from target if not attacking yet.
             if(robotState == RobotState.UNSWARM && myLocation.distanceSquaredTo(target) < 49) {
                 return;
@@ -110,7 +136,6 @@ public class Drone extends MovableUnit {
             if (offsetIndex < 5) {
                 Direction dirToMove = directions[(dirInt+offsets[offsetIndex]+8)%8];
                 rc.move(dirToMove);
-                previousDirection = dirToMove;
             }
         }
     }
@@ -146,6 +171,30 @@ public class Drone extends MovableUnit {
         14/*16:DRONE*/,     17/*17:TANK*/,      18/*18:COMMANDER*/, 11/*19:LAUNCHER*/,
         19/*20:MISSILE*/
     };
+    
+    /**
+     * Multipliers for the effective supply capacity for friendly unit robotTypes, by 
+     * which the dispenseSupply() and distributeSupply() methods allocate supply (so 
+     * higher means give more supply to units of that type).
+     */
+    private static double[] suppliabilityMultiplier_Conservative = {
+        1/*0:HQ*/,          1/*1:TOWER*/,       1/*2:SUPPLYDPT*/,   1/*3:TECHINST*/,
+        1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     1/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
+        1/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,    0/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   0/*13:SOLDIER*/,    0/*14:BASHER*/,     0.5/*15:MINER*/,
+        0/*16:DRONE*/,      0/*17:TANK*/,       0/*18:COMMANDER*/,  0/*19:LAUNCHER*/,
+        0/*20:MISSILE*/
+    };
+    
+    private static double[] suppliabilityMultiplier_Preattack = {
+        0/*0:HQ*/,          0/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     0/*15:MINER*/,
+        1/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
+        0/*20:MISSILE*/
+    };
+    
     
     
 }
