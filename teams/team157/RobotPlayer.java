@@ -191,6 +191,13 @@ public class RobotPlayer {
     }
     
     /**
+     * Resets internal map.
+     */
+    public static void resetInternalMap() {
+        map = new int[allocatedWidth][allocatedHeight];
+    }
+    
+    /**
      * Sets value in radio map
      * @param loc MapLocation to set value.
      * @param value Value to be set.
