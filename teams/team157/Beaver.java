@@ -34,6 +34,7 @@ public class Beaver extends MiningUnit {
         if (rc.isCoreReady())
         {
             if (buildingType != null) {
+                // TODO: how does beaver transition into a BUILD state?
                 //robotState = RobotState.BUILD;
             } else {
                 //Mine
@@ -128,7 +129,6 @@ public class Beaver extends MiningUnit {
         // Go to Enemy HQ
         bug(enemyHQLocation);
 
-        // Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
@@ -141,7 +141,6 @@ public class Beaver extends MiningUnit {
         RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
         goTowardsOre(friends,enemies);
 
-        // Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
@@ -172,18 +171,23 @@ public class Beaver extends MiningUnit {
         myLocation = rc.getLocation();
         int distance = myLocation.distanceSquaredTo(moveTargetLocation);
         
-        // Go to build location
+        // Go closer to build location.
+        // When the beaver is there, we cans start building immediately
         if(distance == 0) explore(HQLocation); //move next to build spot
         else if(distance > 2) bug(moveTargetLocation); //travel to build spot
-        else if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType)) {
-            rc.build(myLocation.directionTo(moveTargetLocation),buildingType);
-            robotState = RobotState.WANDER;
+        else {
+            Direction dirToBuild = myLocation.directionTo(moveTargetLocation);
+            if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType) 
+                && rc.canBuild(dirToBuild,buildingType)) {
+                rc.build(dirToBuild,buildingType);
+                robotState = RobotState.WANDER;
+            }
         }
 
-        // Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
-
+    
+    
     private static void loop() throws GameActionException {
         //Sense map
         //Must be before movement methods
