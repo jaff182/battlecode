@@ -349,7 +349,7 @@ public class RobotPlayer {
         MAP_SYMMETRY, MAP_DATA,
         ORE_LEVEL,ORE_XLOCATION,ORE_YLOCATION,MF_BUILDER_ID, 
         BARRACKS, TECHINST, HELIPAD, MINERFACTORY,
-        SEQ_UNIT_NUMBER, UNIT_COUNT_BASE, LAST_ATTACKED_COORDINATES,
+        SEQ_UNIT_NUMBER, UNIT_COUNT_BASE, LAST_ATTACKED_COORDINATES, BEAVER_BUILD_REQUEST,
         REQUEST_MAILBOX_BASE, REQUESTS_METADATA_BASE
     }
     
@@ -371,9 +371,10 @@ public class RobotPlayer {
      * 1 to allocatedWidth*allocatedHeight - global shared map data<br>
      * 16001 - number of units produced since start of game by you (including
      * towers, HQ) <br>
-     * 16002-16023 - robots that exist now 16030-16050 - The last attacks that
-     * have occurred, by x, y coordinates. count at 16030, pairs start from
-     * 16031 onwards. <br>
+     * 16002-16023 - number of robots that exist now<br>
+     * 16030-16050 - The last attacks that have occurred, by x, y coordinates.
+     * count at 16030, pairs start from 16031 onwards. <br>
+     * 16051-16060 - beaver build request system<br>
      * 16100-16140 - request system unit type mailboxes. each unit uses 2
      * channels. 17000-23999 - request system metadata
      * 
@@ -413,6 +414,8 @@ public class RobotPlayer {
                 return Channels.UNIT_COUNT_BASE;
             case LAST_ATTACKED_COORDINATES:
                 return Channels.LAST_ATTACKED_COORDINATES;
+            case BEAVER_BUILD_REQUEST:
+                return Channels.BEAVER_BUILD_REQUEST;
             case REQUEST_MAILBOX_BASE:
                 return 16100;
             case REQUESTS_METADATA_BASE:
@@ -424,6 +427,10 @@ public class RobotPlayer {
     
     
     //Attack ==================================================================
+    
+    //RobotInfo array of nearby units
+    public static RobotInfo[] enemies;
+    public static RobotInfo[] friends;
     
     /**
      * Basic attack on the first of detected nearby enemies
