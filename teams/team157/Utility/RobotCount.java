@@ -2,6 +2,7 @@ package team157.Utility;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotType;
+import team157.Channels;
 import team157.RobotPlayer;
 
 public class RobotCount {
@@ -13,7 +14,7 @@ public class RobotCount {
      * Other robots accessing this array using read() will get corrupt values
      * 
      */
-    public final static int BASE_CHANNEL = RobotPlayer.getChannel(RobotPlayer.ChannelName.UNIT_COUNT_BASE);
+    public final static int BASE_CHANNEL = Channels.UNIT_COUNT_BASE;
     
     /**
      * All robots should call report() once per turn, to report in that they
@@ -26,6 +27,7 @@ public class RobotCount {
      */
     public static void report() throws GameActionException {
         int count = RobotPlayer.rc.readBroadcast(BASE_CHANNEL+RobotPlayer.myType.ordinal());
+
         RobotPlayer.rc.broadcast(BASE_CHANNEL+RobotPlayer.myType.ordinal(), count+1);
     }
     
@@ -53,7 +55,8 @@ public class RobotCount {
      */
     public static void reset() throws GameActionException {
         int length = RobotPlayer.robotTypes.length;
-        for (int i=0; i!=length; --i)
+        System.out.println("Length is " + length);
+        for (int i=0; i!=length; ++i)
             RobotPlayer.rc.broadcast(BASE_CHANNEL+i, 0);
     }
 }

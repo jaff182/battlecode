@@ -354,6 +354,10 @@ public class RobotPlayer {
     }
     
     /**
+     * Deprecated. Please update javadoc here still though until code has been replaced.
+     * 
+     * Use Channels.* to read and declare the channel directly.
+     * 
      * Gets the index into the messaging array.
      * 
      * The messaging array is a size-65536 array of ints that can be broadcasted
@@ -365,7 +369,7 @@ public class RobotPlayer {
      * 0 - type of symmetry of map (rotational, type)<br>
      * 1 to allocatedWidth*allocatedHeight - global shared map data<br>
      * 16001 - number of units produced since start of game by you (including towers, HQ) <br>
-     * 16002-16020 - robots that exist now
+     * 16002-16023 - robots that exist now
      * 16100-16140 - request system unit type mailboxes. each unit uses 2 channels.
      * 17000-23999 - request system metadata
      * 
@@ -400,9 +404,9 @@ public class RobotPlayer {
             case MINERFACTORY:
                 return 15800;
             case SEQ_UNIT_NUMBER:
-                return 16001;
+                return Channels.SEQ_UNIT_NUMBER;
             case UNIT_COUNT_BASE:
-                return 16002;
+                return Channels.UNIT_COUNT_BASE;
             case REQUEST_MAILBOX_BASE:
                 return 16100;
             case REQUESTS_METADATA_BASE:
