@@ -233,7 +233,7 @@ public class MovableUnit extends RobotPlayer {
         
         if (pathingState == PathingState.HUGGING){
             if (myLocation.distanceSquaredTo(target) <= startDistance 
-                    && rc.canMove(targetDir)) {
+                    && movePossible(targetDir)) {
                         // closer to target than at the start of hugging
                         pathingState = PathingState.BUGGING;
                         prohibitedDir = new int[]{noDir, noDir};
@@ -361,6 +361,9 @@ public class MovableUnit extends RobotPlayer {
      */
     private static boolean movePossible(Direction dir) {
         if (blockedDirs[prohibitedDir[0]][prohibitedDir[1]][dir.ordinal()]) {
+            return false;
+        }
+        if (getInternalMap(myLocation.add(dir)) > 1 ) {
             return false;
         }
         if (rc.canMove(dir)) {

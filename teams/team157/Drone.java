@@ -2,6 +2,7 @@ package team157;
 
 import java.util.Random;
 
+import team157.Utility.Waypoints;
 import battlecode.common.*;
 
 public class Drone extends MovableUnit {
@@ -9,7 +10,7 @@ public class Drone extends MovableUnit {
     //General methods =========================================================
     
     private static MapLocation myLocation;
-    private static MapLocation target;
+    private static MapLocation target = RobotPlayer.enemyHQLocation;
     
     public static void start() throws GameActionException {
         init();
@@ -27,6 +28,8 @@ public class Drone extends MovableUnit {
     private static void loop() throws GameActionException {
         // Update the location - do not remove this code as myLocation is referenced by other methods
         myLocation = rc.getLocation();
+        setTarget();
+        
         switch (robotState) {
             case UNSWARM:
                 switchStateFromUnswarmState();
@@ -40,8 +43,23 @@ public class Drone extends MovableUnit {
         
         //Display state
         rc.setIndicatorString(1, "In state: " + robotState);
-
+        
         droneMoveAttack(target);
+    }
+    
+    /**
+     * Set target based on waypoints.
+     * @throws GameActionException
+     */
+    private static void setTarget() throws GameActionException {
+        //Waypoints.refreshLocalCache();
+        if (Waypoints.numberOfAttackWaypoints > 0) {
+            target = Waypoints.waypoints[rand.nextInt(Waypoints.numberOfAttackWaypoints)];
+        } else if (Waypoints.numberOfWaypoints > 1) {
+            target = Waypoints.waypoints[rand.nextInt(Waypoints.numberOfWaypoints - 1)];
+        } else if (Waypoints.numberOfWaypoints == 1) {
+            target = Waypoints.waypoints[0];
+        } 
     }
     
     
@@ -64,8 +82,16 @@ public class Drone extends MovableUnit {
     {
         checkForEnemies();
 
-        // Go to Enemy HQ
-        droneExplore(target);
+        switch(robotState) {
+        case UNSWARM:
+            droneUnswarmPathing(target);
+            break;
+        case SWARM:
+            droneSwarmPathing(target);
+            break;
+        default:
+            throw new IllegalStateException();
+        }
 
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
@@ -117,27 +143,25 @@ public class Drone extends MovableUnit {
     
     /**
      * Drone pathing to input target, avoiding enemy tower and hq, staying at distance
-     * >= 7 squares from target if in unswarm state.
+     * >= 7 squares from target.
      * @param target target location.
      * @throws GameActionException
      */
-    private static void droneExplore(MapLocation target) throws GameActionException {
-        if(rc.isCoreReady()) {
-            // stay at distance >= 7 squares from target if not attacking yet.
-            if(robotState == RobotState.UNSWARM && myLocation.distanceSquaredTo(target) < 49) {
-                return;
-            }
-            
-            int dirInt = myLocation.directionTo(target).ordinal();
-            int offsetIndex = 0;
-            while (offsetIndex < 5 && !droneMovePossible(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
-                offsetIndex++;
-            }
-            if (offsetIndex < 5) {
-                Direction dirToMove = directions[(dirInt+offsets[offsetIndex]+8)%8];
-                rc.move(dirToMove);
-            }
+    private static void droneUnswarmPathing(MapLocation target) throws GameActionException {
+        // stay at distance >= 7 squares from target if not attacking yet.
+        if(myLocation.distanceSquaredTo(target) < 49) {
+            return;
         }
+        bug(target);
+    }
+    
+    /**
+     * Drone swarm pathing to input target.
+     * @param target target location
+     * @throws GameActionException
+     */
+    private static void droneSwarmPathing(MapLocation target) throws GameActionException {
+        bug(target);
     }
     
     /**

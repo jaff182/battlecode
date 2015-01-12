@@ -30,6 +30,7 @@ public class LastAttackedLocationsReport {
         rc = RobotPlayer.rc;
         rc.broadcast(BASE_CHANNEL+NUMBER_OF_CHANNELS_USED-1, Integer.MAX_VALUE);
         rc.broadcast(BASE_CHANNEL+NUMBER_OF_CHANNELS_USED-2, Integer.MAX_VALUE);
+        rc.broadcast(NUMBER_OF_EVENTS_THAT_HAVE_OCCURRED_CHANNEL, 0);
     }
 
     /**

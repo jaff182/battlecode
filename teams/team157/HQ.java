@@ -1,6 +1,9 @@
 package team157;
 
 import java.util.Random;
+
+import team157.Utility.LastAttackedLocationsReport;
+import team157.Utility.Waypoints;
 import battlecode.common.*;
 
 public class HQ extends Structure {
@@ -28,6 +31,7 @@ public class HQ extends Structure {
             rc.broadcast(getChannel(ChannelName.MAP_SYMMETRY),3);
         }
         
+        LastAttackedLocationsReport.init();
     }
     
     private static void loop() throws GameActionException {
@@ -59,6 +63,7 @@ public class HQ extends Structure {
         
         //if(Clock.getRoundNum() == 1500) printRadioMap();
         
+        Waypoints.refreshLocalCache();
     }
     
     //Specific methods =========================================================

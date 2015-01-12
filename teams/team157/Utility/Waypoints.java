@@ -25,6 +25,8 @@ public class Waypoints {
 
     
     public static MapLocation waypoints[] = new MapLocation[MAX_NUMBER_OF_WAYPOINTS];
+    public static int numberOfWaypoints = 0;
+    public static int numberOfAttackWaypoints = 0;
     
     public static MapLocation bestEnemyOreLocation = null;
     
@@ -64,11 +66,13 @@ public class Waypoints {
                 else
                     break;
             }
+            numberOfAttackWaypoints = i+1;
             if (bestEnemyOreLocation != null) {
                 waypoints[i] = bestEnemyOreLocation;
                 ++i;
             }
             waypoints[i] = RobotPlayer.enemyHQLocation;
+            numberOfWaypoints = i+1;
         }
     }
     
