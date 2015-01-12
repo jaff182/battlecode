@@ -11,7 +11,7 @@ public class Drone extends MovableUnit {
     private static MapLocation target = RobotPlayer.enemyHQLocation;
     private static MapLocation[] tempEnemyLoc;
     private static int numberOfEnemies = 0;
-    private static RobotInfo[] enemies;
+    private static RobotInfo[] enemiesInSight;
     
     
     public static void start() throws GameActionException {
@@ -71,8 +71,9 @@ public class Drone extends MovableUnit {
     
     private static void checkForEnemies() throws GameActionException
     {
-        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-        numberOfEnemies = enemies.length;
+        enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
+        numberOfEnemies = enemiesInSight.length;
+        enemies = enemiesInSight;
             
         // Vigilance: stops everything and attacks when enemies are in attack range.
         while (enemies.length > 0) {
@@ -90,7 +91,7 @@ public class Drone extends MovableUnit {
         MapLocation enemyLoc;
         int i = 0;
         while(i < numberOfEnemies) {
-            enemyLoc = enemies[i].location;
+            enemyLoc = enemiesInSight[i].location;
             tempEnemyLoc[i] = enemyLoc;
             setInternalMap(enemyLoc, 4);
         }
