@@ -249,15 +249,16 @@ public class Beaver extends MiningUnit {
         if (request != 0)
                scoreRequest(request);
     }
-
+    
+    // Vigilance: stops everything and attacks when enemies are in attack range.
     private static void checkForEnemies() throws GameActionException {
-        // Vigilance: stops everything and attacks when enemies are in attack range.
+        
         while (enemies.length > 0) {
             if (rc.isWeaponReady()) {
                 // basicAttack(enemies);
                 priorityAttack(enemies, attackPriorities);
             }
-            enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
             rc.yield();
         }
     }

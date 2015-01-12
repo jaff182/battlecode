@@ -21,12 +21,14 @@ public class Miner extends MiningUnit {
     }
     
     private static void loop() throws GameActionException {
-        updateMyLocation();
+        //Update location
+        myLocation = rc.getLocation();
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        //Sense nearby units
+        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
 
         switch (robotState) {
             case WANDER: switchStateFromWanderState(); break;
@@ -45,9 +47,9 @@ public class Miner extends MiningUnit {
         }
     }
     
+    //State switching =========================================================
     
-    private static void switchStateFromWanderState() throws GameActionException
-    {
+    private static void switchStateFromWanderState() throws GameActionException {
         if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
@@ -59,11 +61,6 @@ public class Miner extends MiningUnit {
     }
     
     private static void switchStateFromMineState() throws GameActionException {
-        // Sensing methods go here
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-
-        updateMyLocation();
-
         if (enemies.length != 0) {
             robotState = RobotState.ATTACK_MOVE;
             moveTargetLocation = HQLocation;
@@ -76,45 +73,34 @@ public class Miner extends MiningUnit {
         }
     }
     
-    private static void checkForEnemies() throws GameActionException {
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-
-        // Vigilance: stops everything and attacks when enemies are in attack range.
-        while (enemies.length > 0) {
-            if (rc.isWeaponReady()) {
-                // basicAttack(enemies);
-                priorityAttack(enemies, attackPriorities);
-            }
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-            rc.yield();
-        }
-    }
+    //State methods ===========================================================
     
-    
-    private static void minerAttack() throws GameActionException
-    {
-        // TODO: potentially refactor out checkForEnemies
+    private static void minerAttack() throws GameActionException {
+        //Vigilance
         checkForEnemies();
 
         // Go to Enemy HQ
         bug(enemyHQLocation);
-
+        
+        //Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
-    private static void minerWander() throws GameActionException
-    {
+    private static void minerWander() throws GameActionException {
+        //Vigilance
         checkForEnemies();
         
         //Hill climb ore distribution while being repelled from other units
-        RobotInfo[] friends = rc.senseNearbyRobots(8, myTeam);
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-        goTowardsOre(friends,enemies);
-
+        friends = rc.senseNearbyRobots(8, myTeam);
+        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        goTowardsOre();
+        
+        //Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
     private static void minerMine() throws GameActionException {
+        //Vigilance
         checkForEnemies();
         
         //Mine
@@ -124,7 +110,19 @@ public class Miner extends MiningUnit {
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
-    //Specific methods =========================================================
+    //Other methods =========================================================
+    
+    // Vigilance: stops everything and attacks when enemies are in attack range.
+    private static void checkForEnemies() throws GameActionException {
+        while (enemies.length > 0) {
+            if (rc.isWeaponReady()) {
+                // basicAttack(enemies);
+                priorityAttack(enemies, attackPriorities);
+            }
+            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            rc.yield();
+        }
+    }
     
     //Parameters ==============================================================
     
