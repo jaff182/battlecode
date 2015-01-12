@@ -1,8 +1,9 @@
 package team157;
 
+import java.util.Random;
 import battlecode.common.*;
 
-public class Beaver extends MovableUnit {
+public class Beaver extends MiningUnit {
 
     // General methods =========================================================
 
@@ -35,9 +36,9 @@ public class Beaver extends MovableUnit {
             double ore = rc.senseOre(myLocation);
             double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
             if (buildingType != null) {
-                robotState = RobotState.BUILD;
+                //robotState = RobotState.BUILD;
             }
-            else if(rand.nextInt(100) <= 100*miningProbability) {
+            else if(rand.nextDouble() <= miningProbability) {
                 robotState = RobotState.MINE;
             }
         }
@@ -61,7 +62,7 @@ public class Beaver extends MovableUnit {
         else if (rc.isCoreReady()) {
             double ore = rc.senseOre(myLocation);
             double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
-            if(rand.nextInt(100) > 100*miningProbability) {
+            if(rand.nextDouble() > miningProbability) {
                 robotState = RobotState.WANDER;
             }
         }
@@ -114,9 +115,11 @@ public class Beaver extends MovableUnit {
     private static void beaverWander() throws GameActionException
     {
         checkForEnemies();
-
-        // Go to Enemy HQ
-        wander();
+        
+        //Hill climb ore distribution while being repelled from other units
+        RobotInfo[] friends = rc.senseNearbyRobots(8, myTeam);
+        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        goTowardsOre(friends,enemies);
 
         // Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);

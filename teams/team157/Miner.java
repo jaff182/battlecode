@@ -3,7 +3,7 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class Miner extends MovableUnit {
+public class Miner extends MiningUnit {
     
     //General methods =========================================================
     
