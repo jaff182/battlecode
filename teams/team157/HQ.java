@@ -2,8 +2,8 @@ package team157;
 
 import java.util.Random;
 
-import team157.Utility.LastAttackedLocationsReport;
-import team157.Utility.Waypoints;
+import team157.utility.LastAttackedLocationsReport;
+import team157.utility.Waypoints;
 
 import battlecode.common.*;
 
