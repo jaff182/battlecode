@@ -43,7 +43,7 @@ public class Drone extends MovableUnit {
         myLocation = rc.getLocation();
         waypointTimeout--;
         rc.setIndicatorString(1, "Waypoint timeout " + waypointTimeout + " " + indexInWaypoints + " " + Waypoints.numberOfWaypoints
-                + "x: " + target.x + "y: " + target.y);
+                + " x: " + target.x + "y: " + target.y);
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -82,8 +82,8 @@ public class Drone extends MovableUnit {
         if (waypointTimeout <= 0 ||
                 (myLocation.distanceSquaredTo(target) < 24 && numberOfEnemies == 0)) {
             previousTarget = target;
-            indexInWaypoints++;
-            target = Waypoints.waypoints[Math.min(indexInWaypoints, Waypoints.numberOfWaypoints -1)];
+            indexInWaypoints = Math.min(indexInWaypoints + 1, Waypoints.numberOfWaypoints - 1);
+            target = Waypoints.waypoints[indexInWaypoints];
             waypointTimeout = 100;
         }
         switchTarget = !target.equals(previousTarget);
@@ -215,7 +215,14 @@ public class Drone extends MovableUnit {
         if(myLocation.distanceSquaredTo(target) < 48) {
             return;
         }
-        bug(target);
+        if (Clock.getRoundNum() > 1000 && Clock.getRoundNum() < 1100) {
+            exploreRandom(target);
+        } else if (Clock.getRoundNum() < roundNumAttack) {
+            bug(target);
+        } else {
+            exploreRandom(target);
+        }
+        
     }
     
     /**
@@ -223,8 +230,12 @@ public class Drone extends MovableUnit {
      * @param target target location
      * @throws GameActionException
      */
-    private static void droneSwarmPathing(MapLocation target) throws GameActionException {
-        bug(target);
+    private static void droneSwarmPathing(MapLocation target) throws GameActionException {        
+        if (Clock.getRoundNum() < roundNumAttack) {
+            bug(target);
+        } else {
+            exploreRandom(target);
+        }
     }
     
     /**
