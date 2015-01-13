@@ -16,8 +16,9 @@ public class Drone extends MovableUnit {
     private static MapLocation previousTarget = target;
     private static int indexInWaypoints = 0;
     private static int waypointTimeout = 100;
-    private static final int roundNumAttack = 1700;
+    private static final int roundNumAttack = 1750;
     private static final int numberInSwarm = 5;
+    private static boolean keepAwayFromTarget = false;
     
     
     public static void start() throws GameActionException {
@@ -43,7 +44,7 @@ public class Drone extends MovableUnit {
         myLocation = rc.getLocation();
         waypointTimeout--;
         rc.setIndicatorString(1, "Waypoint timeout " + waypointTimeout + " " + indexInWaypoints + " " + Waypoints.numberOfWaypoints
-                + "x: " + target.x + "y: " + target.y);
+                + " x: " + target.x + "y: " + target.y);
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -69,7 +70,7 @@ public class Drone extends MovableUnit {
         }
         
         //Display state
-        //rc.setIndicatorString(1, "In state: " + robotState);
+        rc.setIndicatorString(1, "In state: " + robotState);
         
         droneMoveAttack(target);
     }
@@ -82,8 +83,13 @@ public class Drone extends MovableUnit {
         if (waypointTimeout <= 0 ||
                 (myLocation.distanceSquaredTo(target) < 24 && numberOfEnemies == 0)) {
             previousTarget = target;
-            indexInWaypoints++;
-            target = Waypoints.waypoints[Math.min(indexInWaypoints, Waypoints.numberOfWaypoints -1)];
+            indexInWaypoints = Math.min(indexInWaypoints + 1, Waypoints.numberOfWaypoints - 1);
+            target = Waypoints.waypoints[indexInWaypoints];
+            if (targetIsTowerOrHQ(target)) {
+                keepAwayFromTarget = true;
+            } else{
+                keepAwayFromTarget = false;
+            }
             waypointTimeout = 100;
         }
         switchTarget = !target.equals(previousTarget);
@@ -93,38 +99,50 @@ public class Drone extends MovableUnit {
     private static void checkForEnemies() throws GameActionException
     {
         enemies = enemiesInSight;
-            
-        // Vigilance: stops everything and attacks when enemies are in attack range.
-        while (enemies.length > 0) {
-            if (rc.isWeaponReady()) {
-                // basicAttack(enemies);
-                priorityAttack(enemies, attackPriorities);
+        if (robotState == robotState.UNSWARM){
+            if (enemies.length > 0) {
+                if (rc.isWeaponReady()) {
+                    // basicAttack(enemies);
+                    priorityAttack(enemies, attackPriorities);
+                }
+                enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+                RobotCount.report();
+                rc.yield();
             }
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-            RobotCount.report();
-            rc.yield();
+        } else {
+         // Vigilance: stops everything and attacks when enemies are in attack range.
+            while (enemies.length > 0) {
+                if (rc.isWeaponReady()) {
+                    // basicAttack(enemies);
+                    priorityAttack(enemies, attackPriorities);
+                }
+                enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+                RobotCount.report();
+                rc.yield();
+            }
         }
+        
     }
 
     // TODO can't identify bug, do not use!!!
     private static void droneRetreat() throws GameActionException {
-        System.out.println("retreat!1");
+        rc.setIndicatorString(1, "retreat");
         tempEnemyLoc = new MapLocation[numberOfEnemies];
         MapLocation enemyLoc;
         int i = 0;
         while(i < numberOfEnemies) {
             enemyLoc = enemiesInSight[i].location;
             tempEnemyLoc[i] = enemyLoc;
-            setInternalMap(enemyLoc, 4);
+            setInternalMap(enemyLoc, 1);
+            i++;
         }
         Direction chosenDir = Direction.NONE;
-        System.out.println("retreat!2");
         if (rc.isCoreReady()) {
-            
             chosenDir = chooseAvoidanceDir(myLocation);
-            rc.move(chosenDir);
+            if (chosenDir!= Direction.NONE && chosenDir!= Direction.OMNI){
+                rc.move(chosenDir);
+            }
         }
-        System.out.println(chosenDir);
     }
     
     private static void droneMoveAttack(MapLocation target) throws GameActionException
@@ -133,7 +151,11 @@ public class Drone extends MovableUnit {
 
         switch(robotState) {
         case UNSWARM:
-            droneUnswarmPathing(target);
+            if (numberOfEnemies > 1) {
+                droneRetreat();
+            } else {
+                droneUnswarmPathing(target);
+            }
             break;
         case SWARM:
             droneSwarmPathing(target);
@@ -185,18 +207,24 @@ public class Drone extends MovableUnit {
         //System.out.println(getInternalMap(rc.senseEnemyTowerLocations()[0].add(Direction.NORTH)));
     }
     
+    private static boolean targetIsTowerOrHQ(MapLocation target) {
+        for (MapLocation tower: rc.senseEnemyTowerLocations()) {
+            if (target.equals(tower)) {
+                return true;
+            }
+        }
+        if (target.equals(rc.senseEnemyHQLocation())) {
+            return true;
+        }
+        return false;
+    }
     /**
      * Set all locations within sight of input target as pathable.
      * @param target attack target.
      */
     private static void initAttackState(MapLocation target) {
         // check if target is tower or hq
-        for (MapLocation tower: rc.senseEnemyTowerLocations()) {
-            if (target.equals(tower)) {
-                return;
-            }
-        }
-        if (target.equals(rc.senseEnemyHQLocation())) {
+        if (keepAwayFromTarget) {
             return;
         }
         for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, 35)) {
@@ -211,11 +239,23 @@ public class Drone extends MovableUnit {
      * @throws GameActionException
      */
     private static void droneUnswarmPathing(MapLocation target) throws GameActionException {
-        // stay at distance >= 7 squares from target if not attacking yet.
-        if(myLocation.distanceSquaredTo(target) < 48) {
-            return;
+        if (keepAwayFromTarget) {
+            // stay at distance >= 7 squares from target if not attacking yet.
+            if(myLocation.distanceSquaredTo(target) < 35) {
+                return;
+            }
+        } else {
+            if(myLocation.distanceSquaredTo(target) < 15) {
+                return;
+            }
         }
-        bug(target);
+
+        if (Clock.getRoundNum() < roundNumAttack) {
+            bug(target);
+        } else {
+            exploreRandom(target);
+        }
+        
     }
     
     /**
@@ -223,8 +263,12 @@ public class Drone extends MovableUnit {
      * @param target target location
      * @throws GameActionException
      */
-    private static void droneSwarmPathing(MapLocation target) throws GameActionException {
-        bug(target);
+    private static void droneSwarmPathing(MapLocation target) throws GameActionException {        
+        if (Clock.getRoundNum() < roundNumAttack) {
+            bug(target);
+        } else {
+            exploreRandom(target);
+        }
     }
     
     /**
