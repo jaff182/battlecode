@@ -6,8 +6,8 @@ import team157.Utility.*;
 
 public class Drone extends MovableUnit {
 
-        
     //General methods =========================================================
+
     private static MapLocation target = RobotPlayer.enemyHQLocation;
     private static MapLocation[] tempEnemyLoc;
     private static int numberOfEnemies = 0;

@@ -1,7 +1,5 @@
 package team157;
 
-import java.util.Random;
-
 import team157.Utility.*;
 import battlecode.common.*;
 
@@ -46,7 +44,6 @@ public class HQ extends Structure {
 
     private static BuildingQueue queue;
 
-
     public static void start() throws GameActionException {
         init();
         while(true) {
@@ -64,6 +61,7 @@ public class HQ extends Structure {
         //Initiate radio map
         setMaps(HQLocation,3);
         setMaps(enemyHQLocation,2);
+        // TODO: add some distance radius in case the location is not exactly symmetrical
         if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
             symmetry = 3;
@@ -131,7 +129,11 @@ public class HQ extends Structure {
                 }
                 break;
         }
+    }
 
+    private static boolean hasFewBeavers() throws GameActionException
+    {
+        return RobotCount.read(RobotType.BEAVER) < 15;
     }
     
     private static void loop() throws GameActionException {
@@ -156,7 +158,7 @@ public class HQ extends Structure {
             build(nextBuilding); // Read javadoc of build for caveats
         }
         
-        if (RobotCount.read(RobotType.BEAVER) < 15)
+        if (hasFewBeavers())
             trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
         
         dispenseSupply(suppliabilityMultiplier);
