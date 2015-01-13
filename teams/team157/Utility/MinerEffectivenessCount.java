@@ -4,12 +4,13 @@ import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotType;
 import team157.Miner;
+import team157.Channels;
 import team157.RobotPlayer;
 
 
 public class MinerEffectivenessCount {
 
-    public static final int BASE_CHANNEL = 40000;
+    public static final int BASE_CHANNEL = Channels.EFFECTIVE_MINERS_COUNT;
     
     /**
      * ONLY CALL IN MINERS.
