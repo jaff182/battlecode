@@ -1,6 +1,5 @@
 package team157;
 
-import java.util.Random;
 import battlecode.common.*;
 import team157.Utility.*;
 
@@ -54,8 +53,8 @@ public class Beaver extends MiningUnit {
         //checkMailbox();
 
         //Sense nearby units
-        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
-        
+        updateEnemyInSight();
+
         //State machine -------------------------------------------------------
         //Switch states
         switch (robotState) {
@@ -203,8 +202,8 @@ public class Beaver extends MiningUnit {
         **/
         
         //Hill climb ore distribution while being repelled from other units
-        friends = rc.senseNearbyRobots(8, myTeam);
-        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        updateFriendlyInRange(8);
+        updateEnemyInSight();
         goTowardsOre();
         
         //Distribute supply
@@ -280,7 +279,7 @@ public class Beaver extends MiningUnit {
                 // basicAttack(enemies);
                 priorityAttack(enemies, attackPriorities);
             }
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            updateEnemyInRange(attackRange);
             RobotCount.report();
             rc.yield();
         }

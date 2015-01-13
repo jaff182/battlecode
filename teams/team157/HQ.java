@@ -79,7 +79,7 @@ public class HQ extends Structure {
     // TODO: consider to refactor this method
     private static void checkForEnemies() throws GameActionException
     {
-        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        updateEnemyInRange(sightRange);
 
         // Vigilance: stops everything and attacks when enemies are in attack range.
         while (enemies.length > 0) {
@@ -87,7 +87,7 @@ public class HQ extends Structure {
                 // basicAttack(enemies);
                 priorityAttack(enemies, attackPriorities);
             }
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            updateEnemyInRange(attackRange);
             rc.yield();
         }
     }

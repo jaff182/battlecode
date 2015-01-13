@@ -530,4 +530,24 @@ public class RobotPlayer {
     public static void updateMyLocation() {
         myLocation = rc.getLocation();
     }
+
+    public static void updateFriendlyInRange(int range)
+    {
+        friends = rc.senseNearbyRobots(range, myTeam);
+    }
+
+    public static void updateFriendlyInSight()
+    {
+        updateFriendlyInRange(sightRange);
+    }
+
+    public static void updateEnemyInRange(int range)
+    {
+        enemies = rc.senseNearbyRobots(range, enemyTeam);
+    }
+
+    public static void updateEnemyInSight()
+    {
+        updateEnemyInRange(sightRange);
+    }
 }
