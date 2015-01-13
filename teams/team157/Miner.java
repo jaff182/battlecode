@@ -2,8 +2,15 @@ package team157;
 
 import java.util.Random;
 import battlecode.common.*;
+import team157.Utility.MinerEffectivenessCount;
+
 
 public class Miner extends MiningUnit {
+    
+    /**
+     * Is this miner mining efficiently? That is, is it mining at 0.75*3?
+     */
+    public static boolean miningEfficiently = true;
     
     //General methods =========================================================
     
@@ -26,6 +33,9 @@ public class Miner extends MiningUnit {
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
+        
+        //Update effectiveness count. Data might be *slightly* stale, but it's fine (hopefully).
+        MinerEffectivenessCount.report();
         
         //Sense nearby units
         enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
@@ -53,6 +63,7 @@ public class Miner extends MiningUnit {
         if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
+            miningEfficiently = ore > 0.75*GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE;
             double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE));
             if(rand.nextDouble() <= miningProbability) {
                 robotState = RobotState.MINE;
