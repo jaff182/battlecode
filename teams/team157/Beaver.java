@@ -105,6 +105,7 @@ public class Beaver extends MiningUnit {
             moveTargetLocation = myLocation;
             //need to add response
         } else if(Clock.getRoundNum() > 250 //Leave enough time for exploration
+            && RobotCount.read(RobotType.MINERFACTORY) < 1
             && rc.readBroadcast(getChannel(ChannelName.MF_BUILDER_ID)) == rc.getID()
             && rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL)) > 0) {
                 //Hard coded building a minerfactory
@@ -118,8 +119,10 @@ public class Beaver extends MiningUnit {
                 robotState = RobotState.BUILD;
                 moveTargetLocation = loc;
                 buildingType = RobotType.MINERFACTORY;
+                rc.broadcast(getChannel(ChannelName.MF_BUILDER_ID),0);
                 
-        } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10) {
+        } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10 
+            && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
             //Lategame handwash station attack
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
