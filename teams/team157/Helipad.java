@@ -29,7 +29,6 @@ public class Helipad extends Structure {
         
         //Dispense Supply
         dispenseSupply(suppliabilityMultiplier_Preattack);
-        
     }
     
     //Specific methods =========================================================

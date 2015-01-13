@@ -25,6 +25,15 @@ public class BeaversBuildRequest {
     public static int BASE_CHANNEL = Channels.BEAVER_BUILD_REQUEST;
     
     /**
+     * HQ must run this at start of game once, in it's init code.
+     * 
+     * @throws GameActionException
+     */
+    public static void HQinit() throws GameActionException {
+        RobotPlayer.rc.broadcast(BASE_CHANNEL, Integer.MAX_VALUE);
+    }
+    
+    /**
      * Every beaver should call this to check if they have to build a building.
      * 
      * @return the building type if they have to, null otherwise.
@@ -32,9 +41,12 @@ public class BeaversBuildRequest {
      */
     public static RobotType doIHaveToBuildABuilding() throws GameActionException {
         int robotType = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        final int thisBeaverNumber = RobotPlayer.rc.readBroadcast(BASE_CHANNEL+1);
+        RobotPlayer.rc.broadcast(BASE_CHANNEL+1, thisBeaverNumber-1);
             if (robotType != Integer.MAX_VALUE) {// Maybe..
-                final int thisBeaverNumber = RobotPlayer.rc.readBroadcast(BASE_CHANNEL+2);
-                final int beaverNumberSelected = RobotPlayer.rc.readBroadcast(BASE_CHANNEL+1);
+                final int beaverNumberSelected = RobotPlayer.rc.readBroadcast(BASE_CHANNEL+2);
+//                System.out.println("Look! A request for beaver " + beaverNumberSelected +", and i'm " + thisBeaverNumber);
+
                 if (beaverNumberSelected == thisBeaverNumber) {
                     RobotPlayer.rc.broadcast(BASE_CHANNEL, Integer.MAX_VALUE); // Turn off building checks
                     return RobotPlayer.robotTypes[robotType]; // Yup I do
@@ -58,6 +70,7 @@ public class BeaversBuildRequest {
     public static void pleaseBuildABuilding(RobotType buildingType,
             int totalNumberOfBeavers, int numberOfBeaverToBuildBuilding)
             throws GameActionException {
+//        System.out.println("Look! A request for beaver " + numberOfBeaverToBuildBuilding);
         RobotPlayer.rc.broadcast(BASE_CHANNEL, buildingType.ordinal());
         RobotPlayer.rc.broadcast(BASE_CHANNEL + 1, totalNumberOfBeavers);
         RobotPlayer.rc.broadcast(BASE_CHANNEL + 2,

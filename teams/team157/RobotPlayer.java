@@ -363,7 +363,7 @@ public class RobotPlayer {
         MAP_SYMMETRY, MAP_DATA,
         ORE_LEVEL,ORE_XLOCATION,ORE_YLOCATION,MF_BUILDER_ID, 
         BARRACKS, TECHINST, HELIPAD, MINERFACTORY,
-        SEQ_UNIT_NUMBER, UNIT_COUNT_BASE, LAST_ATTACKED_COORDINATES, BEAVER_BUILD_REQUEST,
+        SEQ_UNIT_NUMBER, UNIT_COUNT_BASE, LAST_ATTACKED_COORDINATES, BEAVER_BUILD_REQUEST, EFFECTIVE_MINERS_COUNT,
         REQUEST_MAILBOX_BASE, REQUESTS_METADATA_BASE
     }
     
@@ -385,10 +385,11 @@ public class RobotPlayer {
      * 1 to allocatedWidth*allocatedHeight - global shared map data<br>
      * 16001 - number of units produced since start of game by you (including
      * towers, HQ) <br>
-     * 16002-16023 - number of robots that exist now<br>
-     * 16030-16050 - The last attacks that have occurred, by x, y coordinates.
+     * 16002-16049 - number of robots that exist now<br>
+     * 16050-16070 - The last attacks that have occurred, by x, y coordinates.
      * count at 16030, pairs start from 16031 onwards. <br>
-     * 16051-16060 - beaver build request system<br>
+     * 16071-16074 - beaver build request system<br>
+     * 16075-16076 - effective miner count system<br>
      * 16100-16140 - request system unit type mailboxes. each unit uses 2
      * channels. 17000-23999 - request system metadata
      * 
@@ -430,6 +431,8 @@ public class RobotPlayer {
                 return Channels.LAST_ATTACKED_COORDINATES;
             case BEAVER_BUILD_REQUEST:
                 return Channels.BEAVER_BUILD_REQUEST;
+            case EFFECTIVE_MINERS_COUNT:
+                return Channels.EFFECTIVE_MINERS_COUNT;
             case REQUEST_MAILBOX_BASE:
                 return 16100;
             case REQUESTS_METADATA_BASE:
@@ -518,8 +521,8 @@ public class RobotPlayer {
         RobotCount.report();
         
         // Report any drops in HP
+        // TODO: I'm not entirely sure whether you can do this without creating an instance
         LastAttackedLocationsReport.report();
-
     }
     
     public static void updateMyLocation() {

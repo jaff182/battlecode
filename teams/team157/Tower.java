@@ -2,6 +2,7 @@ package team157;
 
 import java.util.Random;
 import battlecode.common.*;
+import team157.Utility.*;
 
 public class Tower extends Structure {
     
@@ -31,6 +32,7 @@ public class Tower extends Structure {
                 priorityAttack(enemies,attackPriorities);
             }
             enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            RobotCount.report();
             rc.yield();
         }
         

@@ -56,6 +56,8 @@ public class HQ extends Structure {
         team157.Utility.LastAttackedLocationsReport.HQinit();
         
         team157.Utility.LastAttackedLocationsReport.everyRobotInit();
+        
+        team157.Utility.BeaversBuildRequest.HQinit();
     }
 
     // TODO: consider to refactor this method
@@ -101,7 +103,8 @@ public class HQ extends Structure {
      * building must be the building corresponding to numBuilding. Note that
      * unlinking building from numBuilding outside this function may cause
      * unexpected consequences.
-     * 
+     *
+     * TODO: refactor the build order into a dedicated build queue to encaspulate information
      * 
      * @param building
      *            IMPORTANT: READ CAVEATS ABOVE
@@ -129,6 +132,10 @@ public class HQ extends Structure {
     }
     
     private static void loop() throws GameActionException {
+        // Clean up robot count data for this round -- do not remove, will break invariants
+        RobotCount.reset();
+        MinerEffectivenessCount.reset();
+
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
@@ -152,9 +159,7 @@ public class HQ extends Structure {
 
         Waypoints.refreshLocalCache();
 
-        // Clean up robot count data for next round -- do not remove, do not
-        // attempt to use RobotCount after this line before the next turn.
-        RobotCount.reset();
+
     }
     
     //Specific methods =========================================================
