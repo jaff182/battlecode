@@ -313,9 +313,9 @@ public class MovableUnit extends RobotPlayer {
     public static void bug(MapLocation target) throws GameActionException {
         if (rc.isCoreReady()) {
             Direction nextDir = bugDirection(target);
-            if (nextDir != null && rc.canMove(nextDir)) {
+            if ((nextDir != null) && movePossible(nextDir)) {
                 previousDir = nextDir;
-                moveSense(nextDir);
+                rc.move(nextDir);
             }
         }
     }
@@ -391,12 +391,12 @@ public class MovableUnit extends RobotPlayer {
     private static boolean movePossible(Direction dir) {
         if (blockedDirs[prohibitedDir[0]][prohibitedDir[1]][dir.ordinal()]) {
             return false;
-        }
-        if (getInternalMap(myLocation.add(dir)) > 1 ) {
+        } else if (getInternalMap(myLocation.add(dir)) > 1 ) {
             return false;
-        }
-        if (rc.canMove(dir)) {
-            return true;
+        } else {
+            if (rc.canMove(dir)) {
+                return true;
+            }
         }
         return false;
     }

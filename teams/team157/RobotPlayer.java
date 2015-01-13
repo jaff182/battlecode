@@ -159,6 +159,17 @@ public class RobotPlayer {
     }
     
     /**
+     * Sets value in internal map without using the symmetry.
+     * @param loc MapLocation to set value.
+     * @param value Value to be set.
+     */
+    public static void setInternalMapWithoutSymmetry(MapLocation loc, int value) {
+        int xidx = locationToMapXIndex(loc.x);
+        int yidx = locationToMapYIndex(loc.y);
+        map[yidx][xidx] = value;
+    }
+    
+    /**
      * Gets value in internal map
      * @param loc MapLocation to get value.
      * @return map value
@@ -300,6 +311,8 @@ public class RobotPlayer {
     public static void printInternalMap() {
         for (int[] line: map) {
             for (int i: line) {
+                System.out.print(i); 
+                /**
                 switch(i) {
                     case 0: System.out.print("?"); break; //unknown
                     case 1: System.out.print(" "); break; //normal
@@ -308,6 +321,7 @@ public class RobotPlayer {
                     case 4: System.out.print("."); break; //void
                     case 5: System.out.print("#"); break; //out of map
                 }
+                **/
             }
             System.out.println("");
         }
