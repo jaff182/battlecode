@@ -138,7 +138,7 @@ public class MovableUnit extends RobotPlayer {
         directions[2] = (turnLeft ? rightDir : leftDir);
 
         for (int i = 0; i<3; i++) {
-            if (rc.canMove(directions[i])) {
+            if (movePossible(directions[i])) {
                 return directions[i];
             }
         }
@@ -174,7 +174,7 @@ public class MovableUnit extends RobotPlayer {
         }
 
         for (int i = 0; i<5; i++) {
-            if (rc.canMove(directions[i])) {
+            if (movePossible(directions[i])) {
                 return directions[i];
             }
         }
@@ -279,7 +279,7 @@ public class MovableUnit extends RobotPlayer {
             Direction forwardDir = chooseForwardDir(x, y, targetDir);
             if (forwardDir!= null) {
                 return forwardDir;
-            } 
+            }
             pathingState = PathingState.HUGGING;
             startDistance = myLocation.distanceSquaredTo(target);
             startTargetDir = targetDir;
