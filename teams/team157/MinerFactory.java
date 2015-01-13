@@ -2,6 +2,7 @@ package team157;
 
 import java.util.Random;
 import battlecode.common.*;
+import team157.Utility.*;
 
 public class MinerFactory extends Structure {
     
@@ -25,7 +26,9 @@ public class MinerFactory extends Structure {
         sharedLoopCode();
         
         //Spawn
-        trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.MINER);
+        if(RobotCount.read(RobotType.MINER) < 30) {
+            trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.MINER);
+        }
         
         //Dispense Supply
         dispenseSupply(suppliabilityMultiplier_Preattack);

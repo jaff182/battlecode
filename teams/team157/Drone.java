@@ -4,6 +4,7 @@ import java.util.Random;
 
 import team157.Utility.*;
 import battlecode.common.*;
+import team157.Utility.*;
 
 public class Drone extends MovableUnit {
     
@@ -82,6 +83,7 @@ public class Drone extends MovableUnit {
                 priorityAttack(enemies, attackPriorities);
             }
             enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            RobotCount.report();
             rc.yield();
         }
     }

@@ -2,6 +2,7 @@ package team157;
 
 import java.util.Random;
 import battlecode.common.*;
+import team157.Utility.*;
 
 public class Miner extends MiningUnit {
     
@@ -120,6 +121,7 @@ public class Miner extends MiningUnit {
                 priorityAttack(enemies, attackPriorities);
             }
             enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            RobotCount.report();
             rc.yield();
         }
     }

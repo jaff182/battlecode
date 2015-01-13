@@ -117,7 +117,7 @@ public class Beaver extends MiningUnit {
                 //Claim building job
                 robotState = RobotState.BUILD;
                 moveTargetLocation = loc;
-                buildingType = RobotType.HELIPAD;
+                buildingType = RobotType.MINERFACTORY;
                 
         } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10) {
             //Lategame handwash station attack
@@ -224,23 +224,19 @@ public class Beaver extends MiningUnit {
         //Vigilance
         checkForEnemies();
         
-        if(moveTargetLocation == null) {
-            // Go closer to build location.
-            // When the beaver is there, we cans start building immediately
-            int distance = myLocation.distanceSquaredTo(moveTargetLocation);
-            if(distance == 0) bug(HQLocation); //move next to build spot
-            else if(distance > 2) bug(moveTargetLocation); //travel to build spot
-            else {
-                Direction dirToBuild = myLocation.directionTo(moveTargetLocation);
-                if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType) 
-                    && rc.canBuild(dirToBuild,buildingType)) {
-                    //Can build building
-                    rc.build(dirToBuild,buildingType);
-                    robotState = RobotState.WANDER;
-                }
+        // Go closer to build location.
+        // When the beaver is there, we cans start building immediately
+        int distance = myLocation.distanceSquaredTo(moveTargetLocation);
+        if(distance == 0) bug(HQLocation); //move next to build spot
+        else if(distance > 2) bug(moveTargetLocation); //travel to build spot
+        else {
+            Direction dirToBuild = myLocation.directionTo(moveTargetLocation);
+            if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType) 
+                && rc.canBuild(dirToBuild,buildingType)) {
+                //Can build building
+                rc.build(dirToBuild,buildingType);
+                robotState = RobotState.WANDER;
             }
-        } else {
-            tryBuild(myLocation.directionTo(enemyHQLocation),buildingType);
         }
         
         //Distribute supply
@@ -265,6 +261,7 @@ public class Beaver extends MiningUnit {
                 priorityAttack(enemies, attackPriorities);
             }
             enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            RobotCount.report();
             rc.yield();
         }
     }
