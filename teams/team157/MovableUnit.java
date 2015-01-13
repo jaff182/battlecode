@@ -342,12 +342,13 @@ public class MovableUnit extends RobotPlayer {
             return targetDir;
         }
         Direction tryDir = turn(targetDir);
-        for (int i = 0; i < 8 && !movePossible(tryDir); i++) {
+        MapLocation tryLoc = myLocation.add(tryDir);
+        for (int i = 0; i < 8 && !movePossible(tryDir) && !(rc.senseTerrainTile(tryLoc).equals(TerrainTile.OFF_MAP)); i++) {
             tryDir = turn(tryDir);
         }
         
         // If the loop failed (found no directions or encountered the map edge)
-        if (!movePossible(tryDir)) {
+        if (!movePossible(tryDir) || rc.senseTerrainTile(tryLoc).equals(TerrainTile.OFF_MAP)) {
             turnClockwise = !turnClockwise;
             if (tried) {
                 // hugging has been tried in both directions
