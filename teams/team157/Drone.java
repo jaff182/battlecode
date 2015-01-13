@@ -197,11 +197,15 @@ public class Drone extends MovableUnit {
         // set all locations within sight range of tower and hq as void in internal map
         for (MapLocation tower: rc.senseEnemyTowerLocations()) {
             for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 35)) {
-                setInternalMapWithoutSymmetry(inSightOfTower, 9);
+                if (rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
+                    setInternalMapWithoutSymmetry(inSightOfTower, 9);
+                }          
             }
         }
         for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(rc.senseEnemyHQLocation(),35)) {
-            setInternalMapWithoutSymmetry(inSightOfHQ, 7);
+            if (rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
+                setInternalMapWithoutSymmetry(inSightOfHQ, 7);
+            }   
         }
         //printInternalMap();
         //System.out.println(getInternalMap(rc.senseEnemyTowerLocations()[0].add(Direction.NORTH)));
@@ -228,7 +232,10 @@ public class Drone extends MovableUnit {
             return;
         }
         for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, 35)) {
-            RobotPlayer.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
+            if (rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
+                RobotPlayer.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
+            }
+            
         }
     }
     
