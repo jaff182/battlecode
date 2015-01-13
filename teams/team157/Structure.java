@@ -42,7 +42,7 @@ public class Structure extends RobotPlayer {
             RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myTeam);
             int targetidx = -1;
             double totalsupply = 0, totalcapacity = 0;
-            double targetsupplyratio = 500, minsupplyratio = targetsupplyratio;
+            double targetsupplyratio = 1000, minsupplyratio = targetsupplyratio;
             //targetsupplyratio arbitrarily set to 500 for now
             
             for(int i=0; i<friends.length; i++) {
