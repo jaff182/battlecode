@@ -10,7 +10,7 @@ public class HQ extends Structure {
     //General methods =========================================================
 
     private final static RobotType[] buildOrder1 = {
-            RobotType.BARRACKS, RobotType.BARRACKS,
+            //RobotType.BARRACKS, RobotType.BARRACKS,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD

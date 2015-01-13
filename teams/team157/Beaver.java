@@ -82,7 +82,9 @@ public class Beaver extends MiningUnit {
     private static void switchStateFromWanderState() throws GameActionException {
         //check if need to build stuff
         buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
-        if(buildingType != null) {
+        if(buildingType != null
+            && (buildingType != RobotType.HELIPAD || myLocation.distanceSquaredTo(HQLocation) < 15)) {
+            BeaversBuildRequest.yesIWillBuildABuilding();
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
             //need to add response
@@ -100,7 +102,9 @@ public class Beaver extends MiningUnit {
         
         //check if need to build stuff
         buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
-        if(buildingType != null) {
+        if(buildingType != null
+            && (buildingType != RobotType.HELIPAD || myLocation.distanceSquaredTo(HQLocation) < 15)) {
+            BeaversBuildRequest.yesIWillBuildABuilding();
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
             //need to add response
