@@ -51,7 +51,7 @@ public class Beaver extends MiningUnit {
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
-        checkMailbox();
+        //checkMailbox();
 
         //Sense nearby units
         enemies = rc.senseNearbyRobots(sightRange, enemyTeam);

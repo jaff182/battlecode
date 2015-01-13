@@ -29,6 +29,7 @@ public class Miner extends MiningUnit {
     private static void loop() throws GameActionException {
         //Update location
         myLocation = rc.getLocation();
+        miningEfficiently = (rc.senseOre(myLocation) > 0.5*GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE);
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -62,7 +63,6 @@ public class Miner extends MiningUnit {
         if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
-            miningEfficiently = ore > 0.75*GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE;
             double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE));
             if(rand.nextDouble() <= miningProbability) {
                 robotState = RobotState.MINE;
