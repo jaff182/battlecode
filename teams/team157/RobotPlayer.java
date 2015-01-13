@@ -109,7 +109,11 @@ public class RobotPlayer {
      * x reflections, so 0: unknown,  1: x-reflection,  2: y-reflection, 3: rotational
      *
      */
-    public static int mapx0, mapy0, symmetry=0;
+    public static final int UNKNOWN_SYMMETRY = 0;
+    public static final int X_REFLECTION = 1;
+    public static final int Y_REFLECTION = 2;
+    public static final int ROTATION_RELFECTION = 3;
+    public static int mapx0, mapy0, symmetry = UNKNOWN_SYMMETRY;
     public static int allocatedWidth = GameConstants.MAP_MAX_WIDTH+2;
     public static int allocatedHeight = GameConstants.MAP_MAX_HEIGHT+2;
     
