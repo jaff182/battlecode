@@ -74,6 +74,17 @@ public class Beaver extends MiningUnit {
             case BUILD: beaverBuild(); break;
             default: throw new IllegalStateException();
         }
+        
+        //Quarter map trigger
+        if(rc.readBroadcast(getChannel(ChannelName.QUARTERMAP)) == 0) {
+            myLocation = rc.getLocation();
+            int HQSeparation = HQLocation.distanceSquaredTo(enemyHQLocation);
+            double projectedDistance = 1.0*((myLocation.x-HQLocation.x)*(enemyHQLocation.x-HQLocation.x) + (myLocation.y-HQLocation.y)*(enemyHQLocation.y-HQLocation.y)) / HQSeparation;
+            //rc.setIndicatorString(2,"progress is "+projectedDistance);
+            if(projectedDistance > 0.3) {
+                rc.broadcast(getChannel(ChannelName.QUARTERMAP),1);
+            }
+        }
     }
     
     
@@ -108,7 +119,8 @@ public class Beaver extends MiningUnit {
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
             //need to add response
-        } else if(Clock.getRoundNum() > 250 //Leave enough time for exploration
+        } else if((Clock.getRoundNum() > 250 //Leave enough time for exploration
+            || rc.readBroadcast(getChannel(ChannelName.QUARTERMAP)) == 1)
             && RobotCount.read(RobotType.MINERFACTORY) < 1
             && rc.readBroadcast(getChannel(ChannelName.MF_BUILDER_ID)) == rc.getID()
             && rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL)) > 0) {

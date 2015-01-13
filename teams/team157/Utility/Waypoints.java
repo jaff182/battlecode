@@ -55,6 +55,11 @@ public class Waypoints {
             numberOfEventsThatHaveOccurredWhenLastUpdated = numberOfEventsThatHaveOccurred;
 
             int i = 0;
+            
+            if (RobotPlayer.rand.nextInt(5) == 0) { // 1 in 5 drones go to HQ
+                waypoints[i] = RobotPlayer.HQLocation;
+                ++i;
+            }
             // build new waypoints array
             for (; i < LAST_ATTACKED_LOCATIONS_USED; ++i) {
                 int x = LastAttackedLocationsReport.getLastAttackXCoordinate(i);
