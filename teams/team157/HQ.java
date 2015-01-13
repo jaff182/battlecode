@@ -174,9 +174,6 @@ public class HQ extends Structure {
         dispenseSupply(suppliabilityMultiplier);
         //if(Clock.getRoundNum() == 1500) printRadioMap();
 
-        Waypoints.refreshLocalCache();
-
-
     }
     
     //Specific methods =========================================================
