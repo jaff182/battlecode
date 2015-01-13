@@ -371,10 +371,10 @@ public class RobotPlayer {
      * 1 to allocatedWidth*allocatedHeight - global shared map data<br>
      * 16001 - number of units produced since start of game by you (including
      * towers, HQ) <br>
-     * 16002-16023 - number of robots that exist now<br>
-     * 16030-16050 - The last attacks that have occurred, by x, y coordinates.
+     * 16002-16049 - number of robots that exist now<br>
+     * 16050-16070 - The last attacks that have occurred, by x, y coordinates.
      * count at 16030, pairs start from 16031 onwards. <br>
-     * 16051-16060 - beaver build request system<br>
+     * 16071-16080 - beaver build request system<br>
      * 16100-16140 - request system unit type mailboxes. each unit uses 2
      * channels. 17000-23999 - request system metadata
      * 
