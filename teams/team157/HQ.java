@@ -56,6 +56,8 @@ public class HQ extends Structure {
         team157.Utility.LastAttackedLocationsReport.HQinit();
         
         team157.Utility.LastAttackedLocationsReport.everyRobotInit();
+        
+        team157.Utility.BeaversBuildRequest.HQinit();
     }
 
     // TODO: consider to refactor this method

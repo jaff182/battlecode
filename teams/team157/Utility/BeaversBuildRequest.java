@@ -25,6 +25,15 @@ public class BeaversBuildRequest {
     public static int BASE_CHANNEL = Channels.BEAVER_BUILD_REQUEST;
     
     /**
+     * HQ must run this at start of game once, in it's init code.
+     * 
+     * @throws GameActionException
+     */
+    public static void HQinit() throws GameActionException {
+        RobotPlayer.rc.broadcast(BASE_CHANNEL, Integer.MAX_VALUE);
+    }
+    
+    /**
      * Every beaver should call this to check if they have to build a building.
      * 
      * @return the building type if they have to, null otherwise.
