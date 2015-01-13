@@ -28,13 +28,13 @@ public class Tower extends Structure {
 
         //Vigilance
         //Stops everything and attacks when enemies are in attack range.
-        RobotInfo[] enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+        updateEnemyInRange(attackRange);
         while(enemies.length > 0) {
             if(rc.isWeaponReady()) {
                 //basicAttack(enemies);
                 priorityAttack(enemies,attackPriorities);
             }
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            updateEnemyInRange(attackRange);
             RobotCount.report();
             rc.yield();
         }

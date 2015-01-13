@@ -38,7 +38,7 @@ public class Miner extends MiningUnit {
         MinerEffectivenessCount.report();
         
         //Sense nearby units
-        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        updateEnemyInSight();
 
         switch (robotState) {
             case WANDER: switchStateFromWanderState(); break;
@@ -101,8 +101,8 @@ public class Miner extends MiningUnit {
         checkForEnemies();
         
         //Hill climb ore distribution while being repelled from other units
-        friends = rc.senseNearbyRobots(8, myTeam);
-        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        updateFriendlyInRange(8);
+        updateEnemyInSight();
         goTowardsOre();
         
         //Distribute supply
@@ -129,7 +129,7 @@ public class Miner extends MiningUnit {
                 // basicAttack(enemies);
                 priorityAttack(enemies, attackPriorities);
             }
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            updateEnemyInRange(attackRange);
             RobotCount.report();
             rc.yield();
         }

@@ -6,8 +6,8 @@ import team157.Utility.*;
 
 public class Drone extends MovableUnit {
 
-        
     //General methods =========================================================
+
     private static MapLocation target = RobotPlayer.enemyHQLocation;
     private static MapLocation[] tempEnemyLoc;
     private static int numberOfEnemies = 0;
@@ -98,6 +98,7 @@ public class Drone extends MovableUnit {
     
     private static void checkForEnemies() throws GameActionException
     {
+        // TODO: why do we have two enemies counter?
         enemies = enemiesInSight;
         if (robotState == robotState.UNSWARM){
             if (enemies.length > 0) {
@@ -105,12 +106,13 @@ public class Drone extends MovableUnit {
                     // basicAttack(enemies);
                     priorityAttack(enemies, attackPriorities);
                 }
+                updateEnemyInRange(attackRange);
                 enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
                 RobotCount.report();
                 rc.yield();
             }
         } else {
-         // Vigilance: stops everything and attacks when enemies are in attack range.
+            // Vigilance: stops everything and attacks when enemies are in attack range.
             while (enemies.length > 0) {
                 if (rc.isWeaponReady()) {
                     // basicAttack(enemies);

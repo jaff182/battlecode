@@ -1,12 +1,10 @@
 package team157;
 
-import java.util.Random;
-
 import team157.Utility.*;
 import battlecode.common.*;
 
 public class HQ extends Structure {
-    
+
     //General methods =========================================================
 
     private final static RobotType[] buildOrder1 = {
@@ -44,7 +42,7 @@ public class HQ extends Structure {
     
     private static BuildingRequestState buildingRequestState = BuildingRequestState.NO_PENDING_REQUEST;
 
-    private static int numBuilding = 0;
+    private static BuildingQueue queue;
 
     public static void start() throws GameActionException {
         init();
@@ -57,10 +55,13 @@ public class HQ extends Structure {
     
     private static void init() throws GameActionException {
         rc.setIndicatorString(0,"hello i'm a hq.");
+
+        queue = new BuildingQueue(buildOrder1, RobotType.SUPPLYDEPOT);
         
         //Initiate radio map
         setMaps(HQLocation,3);
         setMaps(enemyHQLocation,2);
+        // TODO: add some distance radius in case the location is not exactly symmetrical
         if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
             symmetry = 3;
@@ -78,7 +79,7 @@ public class HQ extends Structure {
     // TODO: consider to refactor this method
     private static void checkForEnemies() throws GameActionException
     {
-        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        updateEnemyInRange(sightRange);
 
         // Vigilance: stops everything and attacks when enemies are in attack range.
         while (enemies.length > 0) {
@@ -86,7 +87,7 @@ public class HQ extends Structure {
                 // basicAttack(enemies);
                 priorityAttack(enemies, attackPriorities);
             }
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            updateEnemyInRange(attackRange);
             rc.yield();
         }
     }
@@ -97,16 +98,6 @@ public class HQ extends Structure {
         return rc.getTeamOre() > cost*3;//1.5;
     }
 
-    private static RobotType getNextBuilding()
-    {
-        if (numBuilding < buildOrder1.length)
-        {
-            return buildOrder1[numBuilding];
-        }
-        // We want to build as many supply depots as possible, whenever we have funds
-        return RobotType.SUPPLYDEPOT;
-    }
-
     /**
      * Maintains the HQ build queue. Run once per turn, with current building on
      * build queue.
@@ -114,13 +105,8 @@ public class HQ extends Structure {
      * This function must advance the build queue for you automatically. Do not
      * attempt to do so outside. Increments numBuilding when acknowledgement is
      * received from beaver.
-     * 
-     * building must be the building corresponding to numBuilding. Note that
-     * unlinking building from numBuilding outside this function may cause
-     * unexpected consequences.
      *
-     * TODO: refactor the build order into a dedicated build queue to encaspulate information
-     * 
+     *
      * @param building
      *            IMPORTANT: READ CAVEATS ABOVE
      * @throws GameActionException
@@ -131,7 +117,7 @@ public class HQ extends Structure {
         switch (buildingRequestState) {
         case REQUESTING_BUILDING:
             if (BeaversBuildRequest.wasMyBuildMessageReceived()) {
-                numBuilding += 1;
+                queue.updateBuildingNumber();
                 buildingRequestState = BuildingRequestState.NO_PENDING_REQUEST;
                 return;
             }
@@ -143,7 +129,11 @@ public class HQ extends Structure {
                 }
                 break;
         }
+    }
 
+    private static boolean hasFewBeavers() throws GameActionException
+    {
+        return RobotCount.read(RobotType.BEAVER) < 15;
     }
     
     private static void loop() throws GameActionException {
@@ -161,14 +151,14 @@ public class HQ extends Structure {
         //    System.out.println("The number of " + robotType + " is " + RobotCount.read(robotType));
         //}
 
-        RobotType nextBuilding = getNextBuilding();
+        RobotType nextBuilding = queue.getNextBuilding();
 
         // In the future we can add some probabilistic constants so that we can switch between buildings and units
         if(RobotCount.read(RobotType.MINERFACTORY) >= 1 && Clock.getRoundNum() < 1800) {
             build(nextBuilding); // Read javadoc of build for caveats
         }
         
-        if (RobotCount.read(RobotType.BEAVER) < 15)
+        if (hasFewBeavers())
             trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
         
         dispenseSupply(suppliabilityMultiplier);
