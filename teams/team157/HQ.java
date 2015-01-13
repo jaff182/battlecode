@@ -10,7 +10,7 @@ public class HQ extends Structure {
     //General methods =========================================================
 
     private final static RobotType[] buildOrder1 = {
-            RobotType.BARRACKS, RobotType.BARRACKS,
+            //RobotType.BARRACKS, RobotType.BARRACKS,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD
@@ -63,7 +63,7 @@ public class HQ extends Structure {
     // TODO: consider to refactor this method
     private static void checkForEnemies() throws GameActionException
     {
-        RobotInfo[] enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
+        enemies = rc.senseNearbyRobots(sightRange, enemyTeam);
 
         // Vigilance: stops everything and attacks when enemies are in attack range.
         while (enemies.length > 0) {
@@ -79,7 +79,7 @@ public class HQ extends Structure {
     // TODO:  Just for thought - modify this method so that we can reserve some minimum amounts of emergency fund.
     private static boolean hasFunds(double cost)
     {
-        return rc.getTeamOre() > cost*1.5;
+        return rc.getTeamOre() > cost*3;//1.5;
     }
 
     private static RobotType getNextBuilding()
@@ -149,7 +149,9 @@ public class HQ extends Structure {
         RobotType nextBuilding = getNextBuilding();
 
         // In the future we can add some probabilistic constants so that we can switch between buildings and units
-        build(nextBuilding); // Read javadoc of build for caveats
+        if(RobotCount.read(RobotType.MINERFACTORY) >= 1) {
+            build(nextBuilding); // Read javadoc of build for caveats
+        }
         
         if (RobotCount.read(RobotType.BEAVER) < 15)
             trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);

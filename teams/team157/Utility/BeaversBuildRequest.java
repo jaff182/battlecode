@@ -48,11 +48,18 @@ public class BeaversBuildRequest {
 //                System.out.println("Look! A request for beaver " + beaverNumberSelected +", and i'm " + thisBeaverNumber);
 
                 if (beaverNumberSelected == thisBeaverNumber) {
-                    RobotPlayer.rc.broadcast(BASE_CHANNEL, Integer.MAX_VALUE); // Turn off building checks
                     return RobotPlayer.robotTypes[robotType]; // Yup I do
                 }
             }
         return null; // Nope
+    }
+    
+    /**
+     * Respond to doIHaveToBuildABuilding().
+     * @throws GameActionException
+     */
+    public static void yesIWillBuildABuilding() throws GameActionException {
+        RobotPlayer.rc.broadcast(BASE_CHANNEL, Integer.MAX_VALUE); // Turn off building checks
     }
     
     /**

@@ -1,6 +1,7 @@
 package team157;
 
 import java.util.Random;
+
 import battlecode.common.*;
 import team157.Utility.*;
 
@@ -22,7 +23,9 @@ public class Tower extends Structure {
     }
     
     private static void loop() throws GameActionException {
-        
+        // Even though bytecode limited, report any attacks on this structure too.
+        LastAttackedLocationsReport.report();
+
         //Vigilance
         //Stops everything and attacks when enemies are in attack range.
         RobotInfo[] enemies = rc.senseNearbyRobots(attackRange, enemyTeam);

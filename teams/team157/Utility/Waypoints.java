@@ -26,7 +26,6 @@ public class Waypoints {
     
     public static MapLocation waypoints[] = new MapLocation[MAX_NUMBER_OF_WAYPOINTS];
     public static int numberOfWaypoints = 0;
-    public static int numberOfAttackWaypoints = 0;
     
     public static MapLocation bestEnemyOreLocation = null;
     
@@ -66,7 +65,6 @@ public class Waypoints {
                 else
                     break;
             }
-            numberOfAttackWaypoints = i+1;
             if (bestEnemyOreLocation != null) {
                 waypoints[i] = bestEnemyOreLocation;
                 ++i;
@@ -76,5 +74,11 @@ public class Waypoints {
         }
     }
     
+    public static void print() {
+        System.out.println("Waypoints (" + numberOfWaypoints + " of them):");
+        for (int i=0; i<numberOfWaypoints; i++) {
+            System.out.println(waypoints[i]);
+        }
+    }
     
 }
