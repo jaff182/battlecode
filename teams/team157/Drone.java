@@ -14,6 +14,10 @@ public class Drone extends MovableUnit {
     private static RobotInfo[] enemiesInSight;
     private static boolean switchTarget = false;
     private static MapLocation previousTarget = target;
+    private static int indexInWaypoints = 0;
+    private static int waypointTimeout = 100;
+    private static final int roundNumAttack = 1700;
+    private static final int numberInSwarm = 5;
     
     
     public static void start() throws GameActionException {
@@ -26,15 +30,30 @@ public class Drone extends MovableUnit {
     
     private static void init() throws GameActionException {  
         robotState = RobotState.UNSWARM;
-        initUnswarmState();
+        if (Clock.getRoundNum() < roundNumAttack) {
+            initUnswarmState();
+        }
+        
+        Waypoints.refreshLocalCache();
+        target = Waypoints.waypoints[0];
     }
     
     
     private static void loop() throws GameActionException {
         myLocation = rc.getLocation();
+        waypointTimeout--;
+        rc.setIndicatorString(1, "Waypoint timeout " + waypointTimeout + " " + indexInWaypoints + " " + Waypoints.numberOfWaypoints
+                + "x: " + target.x + "y: " + target.y);
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
+        
+        if (Clock.getRoundNum() == roundNumAttack) {
+            resetInternalMap();
+        }
+        
+        enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
+        numberOfEnemies = enemiesInSight.length;
         
         setTargetToWayPoints();
         
@@ -50,7 +69,7 @@ public class Drone extends MovableUnit {
         }
         
         //Display state
-        rc.setIndicatorString(1, "In state: " + robotState);
+        //rc.setIndicatorString(1, "In state: " + robotState);
         
         droneMoveAttack(target);
     }
@@ -60,10 +79,12 @@ public class Drone extends MovableUnit {
      * @throws GameActionException
      */
     private static void setTargetToWayPoints() throws GameActionException {
-        previousTarget = target;
-        Waypoints.refreshLocalCache();
-        if (Waypoints.numberOfWaypoints > 0) {
-            target = Waypoints.waypoints[0]; 
+        if (waypointTimeout <= 0 ||
+                (myLocation.distanceSquaredTo(target) < 24 && numberOfEnemies == 0)) {
+            previousTarget = target;
+            indexInWaypoints++;
+            target = Waypoints.waypoints[Math.min(indexInWaypoints, Waypoints.numberOfWaypoints -1)];
+            waypointTimeout = 100;
         }
         switchTarget = !target.equals(previousTarget);
     }
@@ -71,12 +92,10 @@ public class Drone extends MovableUnit {
     
     private static void checkForEnemies() throws GameActionException
     {
-        enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
-        numberOfEnemies = enemiesInSight.length;
         enemies = enemiesInSight;
             
         // Vigilance: stops everything and attacks when enemies are in attack range.
-        while (robotState == RobotState.SWARM && enemies.length > 0) {
+        while (enemies.length > 0) {
             if (rc.isWeaponReady()) {
                 // basicAttack(enemies);
                 priorityAttack(enemies, attackPriorities);
@@ -114,11 +133,7 @@ public class Drone extends MovableUnit {
 
         switch(robotState) {
         case UNSWARM:
-            if (numberOfEnemies > 0) {
-                droneRetreat();
-            } else {
-                droneUnswarmPathing(target);
-            } 
+            droneUnswarmPathing(target);
             break;
         case SWARM:
             droneSwarmPathing(target);
@@ -134,7 +149,7 @@ public class Drone extends MovableUnit {
      * Switches state to swarm state when >4 friendly units within sensing radius.
      */
     private static void switchStateFromUnswarmState() {
-        if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length > 4) {
+        if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
             robotState = RobotState.SWARM;
             initAttackState(target);
         }
@@ -145,9 +160,11 @@ public class Drone extends MovableUnit {
      * or when moving to a new target.
      */
     private static void switchStateFromSwarmState() {
-        if (switchTarget || rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length < 5) {
+        if (switchTarget || rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length < numberInSwarm) {
             robotState = RobotState.UNSWARM;
-            initUnswarmState();
+            if (Clock.getRoundNum() < roundNumAttack) {
+                initUnswarmState();
+            }
         }
     }
     
@@ -195,7 +212,7 @@ public class Drone extends MovableUnit {
      */
     private static void droneUnswarmPathing(MapLocation target) throws GameActionException {
         // stay at distance >= 7 squares from target if not attacking yet.
-        if(myLocation.distanceSquaredTo(target) < 49) {
+        if(myLocation.distanceSquaredTo(target) < 48) {
             return;
         }
         bug(target);
