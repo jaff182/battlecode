@@ -1,7 +1,5 @@
 package team157;
 
-import java.util.Random;
-
 import team157.Utility.*;
 import battlecode.common.*;
 import team157.Utility.*;
@@ -34,7 +32,7 @@ public class Drone extends MovableUnit {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
-        setTarget();
+        setTargetToWayPoints();
         
         switch (robotState) {
             case UNSWARM:
@@ -57,9 +55,8 @@ public class Drone extends MovableUnit {
      * Set target based on waypoints.
      * @throws GameActionException
      */
-    private static void setTarget() throws GameActionException {
+    private static void setTargetToWayPoints() throws GameActionException {
         Waypoints.refreshLocalCache();
-        // target = Waypoints.waypoints[0];
         if (Waypoints.numberOfAttackWaypoints > 0) {
             target = Waypoints.waypoints[rand.nextInt(Waypoints.numberOfAttackWaypoints)];
         } else if (Waypoints.numberOfWaypoints > 1) {
