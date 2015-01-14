@@ -23,12 +23,14 @@ public class Miner extends MiningUnit {
     
     private static void init() throws GameActionException {
         rc.setIndicatorString(0,"hello i'm a miner.");
-        
+
     }
     
     private static void loop() throws GameActionException {
         //Update location
         myLocation = rc.getLocation();
+        //Calculate whether we are mining efficiently; used in the miner effectiveness count to calibrate output
+        //TODO: can we refactor this into the effectiveness count?
         miningEfficiently = (rc.senseOre(myLocation) > 0.5*GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE);
         
         // Code that runs in every robot (including buildings, excepting missiles)
@@ -63,6 +65,7 @@ public class Miner extends MiningUnit {
         if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
+            //Mining probability decreases with the increasing number of miners and the decreasing amount of ore
             double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE));
             if(rand.nextDouble() <= miningProbability) {
                 robotState = RobotState.MINE;
