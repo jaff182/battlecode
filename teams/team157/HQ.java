@@ -62,10 +62,11 @@ public class HQ extends Structure {
         setMaps(HQLocation,3);
         setMaps(enemyHQLocation,2);
         // TODO: add some distance radius in case the location is not exactly symmetrical
-        if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
+        if(!(Math.abs(HQLocation.x - enemyHQLocation.x) < 5) &&
+                !(Math.abs(HQLocation.y - enemyHQLocation.y) < 5)) {
             //rotational symmetry
-            symmetry = 3;
-            rc.broadcast(getChannel(ChannelName.MAP_SYMMETRY),3);
+            symmetry = ROTATION_RELFECTION;
+            rc.broadcast(getChannel(ChannelName.MAP_SYMMETRY), ROTATION_RELFECTION);
         }
         
         // Init LastAttackedLocations
