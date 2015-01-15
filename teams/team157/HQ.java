@@ -9,6 +9,7 @@ public class HQ extends Structure {
 
     private final static RobotType[] buildOrder1 = {
             //RobotType.BARRACKS, RobotType.BARRACKS,
+            RobotType.MINERFACTORY,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
@@ -133,7 +134,7 @@ public class HQ extends Structure {
 
     private static boolean hasFewBeavers() throws GameActionException
     {
-        return RobotCount.read(RobotType.BEAVER) < 15;
+        return RobotCount.read(RobotType.BEAVER) < 5;
     }
     
     private static void loop() throws GameActionException {
@@ -154,15 +155,16 @@ public class HQ extends Structure {
         RobotType nextBuilding = queue.getNextBuilding();
 
         // In the future we can add some probabilistic constants so that we can switch between buildings and units
-        if(RobotCount.read(RobotType.MINERFACTORY) >= 1 && Clock.getRoundNum() < 1800) {
+        if(Clock.getRoundNum() < 1800) {
             build(nextBuilding); // Read javadoc of build for caveats
         }
         
         if (hasFewBeavers())
             trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
         
+        
         dispenseSupply(suppliabilityMultiplier);
-        //if(Clock.getRoundNum() == 1500) printRadioMap();
+        //if(Clock.getRoundNum() == 1500) debug_printRadioMap();
 
     }
     

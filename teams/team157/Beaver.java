@@ -83,7 +83,6 @@ public class Beaver extends MiningUnit {
         //check if need to build stuff
         buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
         if(buildingType != null) {
-            //&& (buildingType != RobotType.HELIPAD || myLocation.distanceSquaredTo(HQLocation) < 15)) {
             BeaversBuildRequest.yesIWillBuildABuilding();
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
@@ -103,7 +102,6 @@ public class Beaver extends MiningUnit {
         //check if need to build stuff
         buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
         if(buildingType != null) {
-            //&& (buildingType != RobotType.HELIPAD || myLocation.distanceSquaredTo(HQLocation) < 15)) {
             BeaversBuildRequest.yesIWillBuildABuilding();
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
@@ -114,10 +112,6 @@ public class Beaver extends MiningUnit {
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
             buildingType = RobotType.HANDWASHSTATION;
-//        } else if (enemies.length != 0) {
-//            //Avoid enemies
-//            robotState = RobotState.ATTACK_MOVE;
-//            moveTargetLocation = HQLocation;
         } else if (rc.isCoreReady()) {
             //Transition to wandering around if ore level is too low
             double ore = rc.senseOre(myLocation);

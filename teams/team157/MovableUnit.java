@@ -189,8 +189,8 @@ public class MovableUnit extends RobotPlayer {
      * @throws GameActionException
      */
     public static Direction chooseAvoidanceDir(MapLocation myLoc) throws GameActionException {
-        int x = RobotPlayer.locationToMapXIndex(myLoc.x);
-        int y = RobotPlayer.locationToMapYIndex(myLoc.y);
+        int x = Map.locationToMapXIndex(myLoc.x);
+        int y = Map.locationToMapYIndex(myLoc.y);
         int maxStat = 500;
         Direction bestDir = Direction.NONE;
         int statsInDir;
@@ -213,8 +213,8 @@ public class MovableUnit extends RobotPlayer {
     public static void exploreWithStats(MapLocation target) throws GameActionException {
         if(rc.isCoreReady()) {
             updateMyLocation();
-            int x = locationToMapXIndex(myLocation.x);
-            int y = locationToMapYIndex(myLocation.y);
+            int x = Map.locationToMapXIndex(myLocation.x);
+            int y = Map.locationToMapYIndex(myLocation.y);
             Direction targetDir = myLocation.directionTo(target);
             Direction forwardDir = chooseForwardDir(x, y, targetDir);
             Direction backwardDir = chooseBackwardDir(x, y, targetDir);
@@ -274,8 +274,8 @@ public class MovableUnit extends RobotPlayer {
         case BUGGING:
             rc.setIndicatorString(0,"bug " + targetDir);
             
-            int x = locationToMapXIndex(myLocation.x);
-            int y = locationToMapYIndex(myLocation.y);
+            int x = Map.locationToMapXIndex(myLocation.x);
+            int y = Map.locationToMapYIndex(myLocation.y);
             Direction forwardDir = chooseForwardDir(x, y, targetDir);
             if (forwardDir!= null) {
                 return forwardDir;
@@ -392,7 +392,7 @@ public class MovableUnit extends RobotPlayer {
     private static boolean movePossible(Direction dir) {
         if (blockedDirs[prohibitedDir[0]][prohibitedDir[1]][dir.ordinal()]) {
             return false;
-        } else if (getInternalMap(myLocation.add(dir)) > 1 ) {
+        } else if (Map.getInternalMap(myLocation.add(dir)) > 1 ) {
             return false;
         } else {
             if (rc.canMove(dir)) {
@@ -418,68 +418,68 @@ public class MovableUnit extends RobotPlayer {
         int sum = 0;
         switch(dir) {
         case NORTH:
-            sum += getInternalMap(x,y-1)
-                + getInternalMap(x-1,y-1)
-                + getInternalMap(x+1,y-1)
-                + getInternalMap(x,y-2)
-                + getInternalMap(x-1,y-2)
-                + getInternalMap(x+1,y-2);
+            sum += Map.getInternalMap(x,y-1)
+                + Map.getInternalMap(x-1,y-1)
+                + Map.getInternalMap(x+1,y-1)
+                + Map.getInternalMap(x,y-2)
+                + Map.getInternalMap(x-1,y-2)
+                + Map.getInternalMap(x+1,y-2);
             break;
         case EAST:
-            sum += getInternalMap(x+1,y-1)
-                + getInternalMap(x+1,y)
-                + getInternalMap(x+1,y+1)
-                + getInternalMap(x+2,y-1)
-                + getInternalMap(x+2,y)
-                + getInternalMap(x+2,y+1);
+            sum += Map.getInternalMap(x+1,y-1)
+                + Map.getInternalMap(x+1,y)
+                + Map.getInternalMap(x+1,y+1)
+                + Map.getInternalMap(x+2,y-1)
+                + Map.getInternalMap(x+2,y)
+                + Map.getInternalMap(x+2,y+1);
             break;
         case SOUTH:
-            sum += getInternalMap(x,y+1)
-            + getInternalMap(x-1,y+1)
-            + getInternalMap(x+1,y+1)
-            + getInternalMap(x,y+2)
-            + getInternalMap(x-1,y+2)
-            + getInternalMap(x+1,y+2);
+            sum += Map.getInternalMap(x,y+1)
+            + Map.getInternalMap(x-1,y+1)
+            + Map.getInternalMap(x+1,y+1)
+            + Map.getInternalMap(x,y+2)
+            + Map.getInternalMap(x-1,y+2)
+            + Map.getInternalMap(x+1,y+2);
             break;
         case WEST:
-            sum += getInternalMap(x-1,y-1)
-                + getInternalMap(x-1,y)
-                + getInternalMap(x-1,y+1)
-                + getInternalMap(x-2,y-1)
-                + getInternalMap(x-2,y)
-                + getInternalMap(x-2,y+1);
+            sum += Map.getInternalMap(x-1,y-1)
+                + Map.getInternalMap(x-1,y)
+                + Map.getInternalMap(x-1,y+1)
+                + Map.getInternalMap(x-2,y-1)
+                + Map.getInternalMap(x-2,y)
+                + Map.getInternalMap(x-2,y+1);
             break;
         case NORTH_EAST:
-            sum += getInternalMap(x,y-1)
-                + getInternalMap(x+1,y-1)
-                + getInternalMap(x+2,y-1)
-                + getInternalMap(x+1,y)
-                + getInternalMap(x+1,y-2)
-                + getInternalMap(x+2,y-2);
+            sum += Map.getInternalMap(x,y-1)
+                + Map.getInternalMap(x+1,y-1)
+                + Map.getInternalMap(x+2,y-1)
+                + Map.getInternalMap(x+1,y)
+                + Map.getInternalMap(x+1,y-2)
+                + Map.getInternalMap(x+2,y-2);
             break;
         case SOUTH_EAST:
-            sum += getInternalMap(x,y+1)
-                + getInternalMap(x+1,y+1)
-                + getInternalMap(x+2,y+1)
-                + getInternalMap(x+1,y)
-                + getInternalMap(x+1,y+2)
-                + getInternalMap(x+2,y+2);
+            sum += Map.getInternalMap(x,y+1)
+                + Map.getInternalMap(x+1,y+1)
+                + Map.getInternalMap(x+2,y+1)
+                + Map.getInternalMap(x+1,y)
+                + Map.getInternalMap(x+1,y+2)
+                + Map.getInternalMap(x+2,y+2);
             break;
         case NORTH_WEST:
-            sum += getInternalMap(x,y-1)
-                + getInternalMap(x-1,y-1)
-                + getInternalMap(x-2,y-1)
-                + getInternalMap(x-1,y)
-                + getInternalMap(x-1,y-2)
-                + getInternalMap(x-2,y-2);
+            sum += Map.getInternalMap(x,y-1)
+                + Map.getInternalMap(x-1,y-1)
+                + Map.getInternalMap(x-2,y-1)
+                + Map.getInternalMap(x-1,y)
+                + Map.getInternalMap(x-1,y-2)
+                + Map.getInternalMap(x-2,y-2);
             break;
         case SOUTH_WEST:
-            sum += getInternalMap(x,y+1)
-                + getInternalMap(x-1,y+1)
-                + getInternalMap(x-2,y+1)
-                + getInternalMap(x-1,y)
-                + getInternalMap(x-1,y+2)
-                + getInternalMap(x-2,y+2);
+            sum += Map.getInternalMap(x,y+1)
+                + Map.getInternalMap(x-1,y+1)
+                + Map.getInternalMap(x-2,y+1)
+                + Map.getInternalMap(x-1,y)
+                + Map.getInternalMap(x-1,y+2)
+                + Map.getInternalMap(x-2,y+2);
             break;
         default:
             break;
