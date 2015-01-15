@@ -50,7 +50,7 @@ public class Drone extends MovableUnit {
         sharedLoopCode();
         
         if (Clock.getRoundNum() == roundNumAttack) {
-            resetInternalMap();
+            Map.resetInternalMap();
         }
         
         enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
@@ -100,7 +100,7 @@ public class Drone extends MovableUnit {
     {
         // TODO: why do we have two enemies counter?
         enemies = enemiesInSight;
-        if (robotState == robotState.UNSWARM){
+        if (robotState == RobotState.UNSWARM){
             if (enemies.length > 0) {
                 if (rc.isWeaponReady()) {
                     // basicAttack(enemies);
@@ -135,7 +135,7 @@ public class Drone extends MovableUnit {
         while(i < numberOfEnemies) {
             enemyLoc = enemiesInSight[i].location;
             tempEnemyLoc[i] = enemyLoc;
-            setInternalMap(enemyLoc, 1);
+            Map.setInternalMap(enemyLoc, 1);
             i++;
         }
         Direction chosenDir = Direction.NONE;
@@ -200,13 +200,13 @@ public class Drone extends MovableUnit {
         for (MapLocation tower: rc.senseEnemyTowerLocations()) {
             for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 35)) {
                 if (rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
-                    setInternalMapWithoutSymmetry(inSightOfTower, 9);
+                    Map.setInternalMapWithoutSymmetry(inSightOfTower, 9);
                 }          
             }
         }
         for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(rc.senseEnemyHQLocation(),35)) {
             if (rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
-                setInternalMapWithoutSymmetry(inSightOfHQ, 7);
+                Map.setInternalMapWithoutSymmetry(inSightOfHQ, 7);
             }   
         }
         //printInternalMap();
@@ -235,7 +235,7 @@ public class Drone extends MovableUnit {
         }
         for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, 35)) {
             if (rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
-                RobotPlayer.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
+                Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
             }
             
         }
@@ -286,7 +286,7 @@ public class Drone extends MovableUnit {
      * @return true if move is possible in input direction.
      */
     private static boolean droneMovePossible(Direction dir) {
-        if (rc.canMove(dir) && (RobotPlayer.getInternalMap(myLocation.add(dir)) < 4)) {
+        if (rc.canMove(dir) && (Map.getInternalMap(myLocation.add(dir)) < 4)) {
                 return true;
         }
         return false;

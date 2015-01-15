@@ -59,13 +59,13 @@ public class HQ extends Structure {
         queue = new BuildingQueue(buildOrder1, RobotType.SUPPLYDEPOT);
         
         //Initiate radio map
-        setMaps(HQLocation,3);
-        setMaps(enemyHQLocation,2);
+        Map.setMaps(HQLocation.x,HQLocation.y,3);
+        Map.setMaps(enemyHQLocation.x,enemyHQLocation.y,2);
         // TODO: add some distance radius in case the location is not exactly symmetrical
         if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
-            symmetry = 3;
-            rc.broadcast(getChannel(ChannelName.MAP_SYMMETRY),3);
+            Map.symmetry = 3;
+            rc.broadcast(Channels.MAP_SYMMETRY,3);
         }
         
         // Init LastAttackedLocations

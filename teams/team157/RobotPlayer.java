@@ -54,15 +54,15 @@ public class RobotPlayer {
             //Internal map
             //This year's implementation randomizes offsets to the x,y coordinates
             //Coordinate offsets at map[60][60]
-            mapx0 = (HQLocation.x+enemyHQLocation.x)/2;
-            mapy0 = (HQLocation.y+enemyHQLocation.y)/2;
+            Map.mapx0 = (HQLocation.x+enemyHQLocation.x)/2;
+            Map.mapy0 = (HQLocation.y+enemyHQLocation.y)/2;
             //Get symmetry from radio
-            symmetry = rc.readBroadcast(getChannel(ChannelName.MAP_SYMMETRY));
+            Map.symmetry = rc.readBroadcast(Channels.MAP_SYMMETRY);
             
             //set countingID for messaging (WARNING, ASSUMES MESSAGING ARRAY IS INITIALIZED TO ZERO)
             if(myType != RobotType.MISSILE) {
-                countingID = rc.readBroadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER));
-                rc.broadcast(getChannel(ChannelName.SEQ_UNIT_NUMBER), countingID+1);
+                countingID = rc.readBroadcast(Channels.SEQ_UNIT_NUMBER);
+                rc.broadcast(Channels.SEQ_UNIT_NUMBER, countingID+1);
             }
             
             // Init the reporting system for enemy attacks
@@ -103,173 +103,6 @@ public class RobotPlayer {
     //Map methods =============================================================
     
     /**
-     * mapx0,mapy0 are the MapLocation coordinates of the HQ-to-HQ midpoint,
-     *
-     * symmetry represents the symmetry type of the map, in its last 2 bits for y and 
-     * x reflections, so 0: unknown,  1: x-reflection,  2: y-reflection, 3: rotational
-     *
-     */
-    public static int mapx0, mapy0, symmetry=0;
-    public static int allocatedWidth = GameConstants.MAP_MAX_WIDTH+2;
-    public static int allocatedHeight = GameConstants.MAP_MAX_HEIGHT+2;
-    
-    /**
-     * Internal map is toroidal and approximately centered at midpoint of HQs.
-     * Map representation modulo 6:
-     *  0: unknown,  1: normal,  2: enemy HQ,  3: HQ,  4: void,  5: out of map
-     *
-     *  (ordinal values for terrain tiles: 2: unknown, 1: void, 3: offmap, 0: normal)
-     */
-    public static int[][] map = new int[allocatedWidth][allocatedHeight];
-    
-    //Internal map methods
-    public static int locationToMapXIndex(int locX) {
-        //return (3*allocatedWidth/2+locX-mapx0)%allocatedWidth;
-        return (183+locX-mapx0)%122;
-    }
-    public static int locationToMapYIndex(int locY) {
-        //return (3*allocatedHeight/2+locY-mapy0)%allocatedHeight;
-        return (183+locY-mapy0)%122;
-    }
-    private static int locationToReflectedMapXIndex(int locX) {
-        //return (3*allocatedWidth/2+HQLocation.x+enemyHQLocation.x-locX-mapx0)%allocatedWidth;
-        return (183+HQLocation.x+enemyHQLocation.x-locX-mapx0)%122;
-    }
-    private static int locationToReflectedMapYIndex(int locY) {
-        //return (3*allocatedHeight/2+HQLocation.y+enemyHQLocation.y-locY-mapy0)%allocatedHeight;
-        return (183+HQLocation.y+enemyHQLocation.y-locY-mapy0)%122;
-    }
-    private static int mapIndexToChannel(int xidx, int yidx) {
-        //return xidx*allocatedHeight+yidx+getChannel(ChannelName.MAP_DATA);
-        return xidx*122+yidx+getChannel(ChannelName.MAP_DATA);
-    }
-    
-    /**
-     * Sets value in internal map
-     * @param loc MapLocation to set value.
-     * @param value Value to be set.
-     */
-    public static void setInternalMap(MapLocation loc, int value) {
-        int xidx = locationToMapXIndex(loc.x);
-        int yidx = locationToMapYIndex(loc.y);
-        map[yidx][xidx] = value;
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
-        if(symmetry%4 != 0) map[yidx][xidx] = value;
-    }
-    
-    /**
-     * Sets value in internal map without using the symmetry.
-     * @param loc MapLocation to set value.
-     * @param value Value to be set.
-     */
-    public static void setInternalMapWithoutSymmetry(MapLocation loc, int value) {
-        int xidx = locationToMapXIndex(loc.x);
-        int yidx = locationToMapYIndex(loc.y);
-        map[yidx][xidx] = value;
-    }
-    
-    /**
-     * Gets value in internal map
-     * @param loc MapLocation to get value.
-     * @return map value
-     */
-    public static int getInternalMap(MapLocation loc) {
-        int xidx = locationToMapXIndex(loc.x);
-        int yidx = locationToMapYIndex(loc.y);
-        return map[yidx][xidx];
-    }
-    
-    /**
-     * Gets value in internal map.
-     * @param xidx x location in internal map.
-     * @param yidx y location in internal map.
-     * @return value in internal map at input location.
-     */
-    public static int getInternalMap(int xidx, int yidx) {
-        return map[yidx][xidx];
-    }
-    
-    /**
-     * Updates internal map with radio map value
-     * @param loc MapLocation to update value.
-     * @throws GameActionException
-     */
-    public static void updateInternalMap(MapLocation loc) throws GameActionException {
-        int xidx = locationToMapXIndex(loc.x);
-        int yidx = locationToMapYIndex(loc.y);
-        int value = rc.readBroadcast(mapIndexToChannel(xidx,yidx));
-        map[yidx][xidx] = value;
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
-        if(symmetry%4 != 0) map[yidx][xidx] = value;
-    }
-    
-    /**
-     * Resets internal map.
-     */
-    public static void resetInternalMap() {
-        map = new int[allocatedWidth][allocatedHeight];
-    }
-    
-    /**
-     * Sets value in radio map
-     * @param loc MapLocation to set value.
-     * @param value Value to be set.
-     * @throws GameActionException
-     */
-    public static void setRadioMap(MapLocation loc, int value) throws GameActionException {
-        int xidx = locationToMapXIndex(loc.x);
-        int yidx = locationToMapYIndex(loc.y);
-        rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
-        if(symmetry%4 != 0) rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-    }
-    
-    /**
-     * Gets value in radio map
-     * @param loc MapLocation to get value.
-     * @return map value
-     * @throws GameActionException
-     */
-    public static int getRadioMap(MapLocation loc) throws GameActionException {
-        int xidx = locationToMapXIndex(loc.x);
-        int yidx = locationToMapYIndex(loc.y);
-        return rc.readBroadcast(mapIndexToChannel(xidx,yidx));
-    }
-    
-    /**
-     * Updates radio map with internal map value
-     * @param loc MapLocation to update value.
-     * @throws GameActionException
-     */
-    public static void updateRadioMap(MapLocation loc) throws GameActionException {
-        int xidx = locationToMapXIndex(loc.x);
-        int yidx = locationToMapYIndex(loc.y);
-        rc.broadcast(mapIndexToChannel(xidx,yidx), map[yidx][xidx]);
-    }
-    
-    /**
-     * Set both internal and radio maps
-     * @param loc MapLocation to set value
-     * @param value Value to be set
-     * @throws GameActionException
-     */
-    public static void setMaps(MapLocation loc, int value) throws GameActionException {
-        int xidx = locationToMapXIndex(loc.x);
-        int yidx = locationToMapYIndex(loc.y);
-        map[yidx][xidx] = value;
-        rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
-        if(symmetry%4 != 0) {
-            map[yidx][xidx] = value;
-            rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-        }
-    }
-    
-    /**
      * Update internal map within sensor radius using values from radio map.
      * If some locations are unknown, then sense them and update radio map and
      * internal map.
@@ -291,63 +124,19 @@ public class RobotPlayer {
      * @throws GameActionException
      */
     public static void senseMap(MapLocation loc) throws GameActionException {
-        int value = getRadioMap(loc);
+        int value = Map.getRadioMap(loc.x,loc.y);
         if (value == 0) {
             switch (rc.senseTerrainTile(loc)) {
-                case VOID: setMaps(loc, 4); break;
-                case NORMAL: setMaps(loc, 1); break;
-                case OFF_MAP: setMaps(loc, 5); break;
+                case VOID: Map.setMaps(loc.x,loc.y, 4); break;
+                case NORMAL: Map.setMaps(loc.x,loc.y, 1); break;
+                case OFF_MAP: Map.setMaps(loc.x,loc.y, 5); break;
                 case UNKNOWN: break;
                 default: break;
             }
         } else {
-            setInternalMap(loc,value);
+            Map.setInternalMap(loc.x,loc.y,value);
         }
     }
-    
-    /**
-     * Print internal map to console.
-     */
-    public static void printInternalMap() {
-        for (int[] line: map) {
-            for (int i: line) {
-                System.out.print(i); 
-                /**
-                switch(i) {
-                    case 0: System.out.print("?"); break; //unknown
-                    case 1: System.out.print(" "); break; //normal
-                    case 2: System.out.print("X"); break; //enemy HQ
-                    case 3: System.out.print("O"); break; //HQ
-                    case 4: System.out.print("."); break; //void
-                    case 5: System.out.print("#"); break; //out of map
-                }
-                **/
-            }
-            System.out.println("");
-        }
-    }
-    
-    /**
-     * Print radio map to console.
-     */
-    public static void printRadioMap() throws GameActionException {
-        for (int yidx=0; yidx<allocatedHeight; yidx++) {
-            for (int xidx=0; xidx<allocatedWidth; xidx++) {
-                switch(rc.readBroadcast(mapIndexToChannel(xidx,yidx))) {
-                    case 0: System.out.print("?"); break; //unknown
-                    case 1: System.out.print(" "); break; //normal
-                    case 2: System.out.print("X"); break; //enemy HQ
-                    case 3: System.out.print("O"); break; //HQ
-                    case 4: System.out.print("."); break; //void
-                    case 5: System.out.print("#"); break; //out of map
-                }
-            }
-            System.out.println("");
-        }
-    }
-    
-    
-    
     
     //Comms ===================================================================
     
@@ -360,9 +149,6 @@ public class RobotPlayer {
      *
      */
     public enum ChannelName {
-        MAP_SYMMETRY, MAP_DATA,
-        ORE_LEVEL,ORE_XLOCATION,ORE_YLOCATION,MF_BUILDER_ID,QUARTERMAP,
-        BARRACKS, TECHINST, HELIPAD, MINERFACTORY,
         SEQ_UNIT_NUMBER, UNIT_COUNT_BASE, LAST_ATTACKED_COORDINATES, BEAVER_BUILD_REQUEST, EFFECTIVE_MINERS_COUNT,
         REQUEST_MAILBOX_BASE, REQUESTS_METADATA_BASE
     }
@@ -381,8 +167,6 @@ public class RobotPlayer {
      * See "Messaging [bcd09]" from the spec document
      * 
      * Allocations:<br>
-     * 0 - type of symmetry of map (rotational, type)<br>
-     * 1 to allocatedWidth*allocatedHeight - global shared map data<br>
      * 16001 - number of units produced since start of game by you (including
      * towers, HQ) <br>
      * 16002-16049 - number of robots that exist now<br>
@@ -400,31 +184,6 @@ public class RobotPlayer {
      */
     public static int getChannel(ChannelName channelName) {
         switch(channelName) {
-            case MAP_SYMMETRY:
-                return 0;
-            case MAP_DATA:
-                return 1; //allocatedWidth*allocatedHeight channels
-            
-            //Hard code building a minerfactory
-            case ORE_LEVEL:
-                return 15000;
-            case ORE_XLOCATION:
-                return 15001;
-            case ORE_YLOCATION:
-                return 15002;
-            case MF_BUILDER_ID:
-                return 15003;
-            case QUARTERMAP:
-                return 15004;
-            
-            case BARRACKS:
-                return 15500;
-            case TECHINST:
-                return 15600;
-            case HELIPAD:
-                return 15700;
-            case MINERFACTORY:
-                return 15800;
             case SEQ_UNIT_NUMBER:
                 return Channels.SEQ_UNIT_NUMBER;
             case UNIT_COUNT_BASE:
