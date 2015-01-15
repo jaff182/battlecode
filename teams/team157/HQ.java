@@ -59,7 +59,8 @@ public class HQ extends Structure {
 
         queue = new BuildingQueue(buildOrder1, RobotType.SUPPLYDEPOT);
         
-        //Initiate radio map
+
+        //Initiate radio map TODO: towers locations?
         Map.setMaps(HQLocation.x,HQLocation.y,3);
         Map.setMaps(enemyHQLocation.x,enemyHQLocation.y,2);
         // TODO: add some distance radius in case the location is not exactly symmetrical
