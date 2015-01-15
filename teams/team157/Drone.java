@@ -19,7 +19,8 @@ public class Drone extends MovableUnit {
     private static final int roundNumAttack = 1750; // round number when end game attack starts
     private static final int numberInSwarm = 5; // minimum size of group for drones to start swarming
     private static boolean keepAwayFromTarget = false; // true if target is tower or hq, false otherwise
-    private static DroneState robotState = DroneState.UNSWARM;
+    private static DroneState droneState = DroneState.UNSWARM;
+    private static int retreatTimeout = 5; // number of rounds before changing from retreat to unswarm state.
     
     public static void start() throws GameActionException {
         init();
@@ -31,7 +32,21 @@ public class Drone extends MovableUnit {
     
     private static void init() throws GameActionException {  
         if (Clock.getRoundNum() < roundNumAttack) {
-            initUnswarmState();
+            // set all locations within sight range of tower and hq as void in internal map
+            for (MapLocation tower: rc.senseEnemyTowerLocations()) {
+                for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 24)) {
+                    if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
+                        setInternalMapWithoutSymmetry(inSightOfTower, 9);
+                    }          
+                }
+            }
+            for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(rc.senseEnemyHQLocation(),24)) {
+                if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
+                    setInternalMapWithoutSymmetry(inSightOfHQ, 7);
+                }   
+            }
+        } else {
+            droneState = DroneState.SUICIDE;
         }
         
         Waypoints.refreshLocalCache();
@@ -52,26 +67,42 @@ public class Drone extends MovableUnit {
             resetInternalMap();
         }
         
+        if (Clock.getRoundNum() > roundNumAttack) {
+            droneState = DroneState.SUICIDE;
+        }
+        
         enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
         numberOfEnemies = enemiesInSight.length;
         
         setTargetToWayPoints();
         
-        switch (robotState) {
+        switch (droneState) {
             case UNSWARM:
                 switchStateFromUnswarmState();
                 break;
             case SWARM:
                 switchStateFromSwarmState();
                 break;
+            case SUICIDE:
+                break;
+            case FOLLOW:
+                break;
+            case RETREAT:
+                switchStateFromRetreatState();
+                break;
+            case SURROUND:
+                break;
+            case SCOUT:
+                break;
             default:
                 throw new IllegalStateException();
         }
         
         //Display state
-        rc.setIndicatorString(1, "In state: " + robotState);
+        rc.setIndicatorString(1, "In state: " + droneState);
         
-        droneMoveAttack(target);
+        droneMove(target);
+        RobotCount.report();
     }
     
     /**
@@ -101,22 +132,10 @@ public class Drone extends MovableUnit {
      * if not in ATTACK state and continuously attacks if in ATTACK state.
      * @throws GameActionException
      */
-    private static void checkForEnemies() throws GameActionException
-    {
-        enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-        if (robotState != DroneState.ATTACK){
-            // hit once only and run
-            if (enemies.length > 0) {
-                if (rc.isWeaponReady()) {
-                    // basicAttack(enemies);
-                    priorityAttack(enemies, attackPriorities);
-                }
-                updateEnemyInRange(attackRange);
-                enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-                RobotCount.report();
-                rc.yield();
-            }
-        } else {
+    private static void checkForEnemies() throws GameActionException {
+        
+        if (droneState == DroneState.SUICIDE){
+            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
             // continually attacks when enemies are in attack range.
             while (enemies.length > 0) {
                 if (rc.isWeaponReady()) {
@@ -124,28 +143,62 @@ public class Drone extends MovableUnit {
                     priorityAttack(enemies, attackPriorities);
                 }
                 enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-                RobotCount.report();
                 rc.yield();
             }
+        } else {
+            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            if (enemies.length > 0) {
+                if (rc.isWeaponReady()) {
+                    // basicAttack(enemies);
+                    priorityAttack(enemies, attackPriorities);
+                }
+            }
         }
-        
     }
 
     
-    private static void droneMoveAttack(MapLocation target) throws GameActionException
-    {
+    private static void droneMove(MapLocation target) throws GameActionException{
         checkForEnemies();
 
-        switch(robotState) {
+        switch(droneState) {
         case UNSWARM:
-            if (numberOfEnemies > 1) {
-                droneRetreat();
+            if (numberOfEnemies > 0) {
+                retreat();
+                droneState = DroneState.RETREAT;
+                retreatTimeout = 5;
             } else {
-                droneUnswarmPathing(target);
+                if (keepAwayFromTarget) {
+                    // stay at distance >= 7 squares from target if not attacking yet.
+                    if(myLocation.distanceSquaredTo(target) < 35) {
+                        return;
+                    }
+                } else {
+                    if(myLocation.distanceSquaredTo(target) < 20) {
+                        return;
+                    }
+                }
+                bug(target);
             }
             break;
         case SWARM:
-            droneSwarmPathing(target);
+            bug(target);
+            break;
+        case SUICIDE:
+            exploreRandom(target);
+            break;
+        case FOLLOW:
+            break;
+        case RETREAT:
+            if (numberOfEnemies > 0) {
+                retreat();
+                retreatTimeout = 5;
+            } else {
+                retreatTimeout--;
+            }
+            break;
+        case SURROUND:
+            break;
+        case SCOUT:
             break;
         default:
             throw new IllegalStateException();
@@ -162,7 +215,7 @@ public class Drone extends MovableUnit {
      */
     private static void switchStateFromUnswarmState() {
         if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
-            robotState = DroneState.SWARM;
+            droneState = DroneState.SWARM;
             initAttackState(target);
         }
     }
@@ -173,34 +226,23 @@ public class Drone extends MovableUnit {
      */
     private static void switchStateFromSwarmState() {
         if (switchTarget || rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length < numberInSwarm) {
-            if (Clock.getRoundNum() < roundNumAttack) {
-                robotState = DroneState.UNSWARM;
-                initUnswarmState();
-            }
+            droneState = DroneState.UNSWARM;
         }
+    }
+    
+    private static void switchStateFromRetreatState() {
+        if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
+            droneState = DroneState.SWARM;
+            initAttackState(target);
+        } else if (retreatTimeout < 0) {
+            droneState = DroneState.UNSWARM;
+        }
+        
     }
     
     
     // init states =======================================================================
     
-    /**
-     * Set all locations within sight range of enemy tower and hq as void in internal map.
-     */
-    private static void initUnswarmState() {
-        // set all locations within sight range of tower and hq as void in internal map
-        for (MapLocation tower: rc.senseEnemyTowerLocations()) {
-            for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 24)) {
-                if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
-                    setInternalMapWithoutSymmetry(inSightOfTower, 9);
-                }          
-            }
-        }
-        for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(rc.senseEnemyHQLocation(),24)) {
-            if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
-                setInternalMapWithoutSymmetry(inSightOfHQ, 7);
-            }   
-        }
-    }
     
     /**
      * Set all locations within sight of input target as pathable unless target is tower or hq.
@@ -212,7 +254,7 @@ public class Drone extends MovableUnit {
             return;
         }
         for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, 35)) {
-            if (!rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
+            if (getInternalMap(inSightOfTarget) < 7 && !rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
                 RobotPlayer.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
             }
             
@@ -222,46 +264,6 @@ public class Drone extends MovableUnit {
     
     // Movement methods =================================================================
 
-    
-    /**
-     * Drone pathing to input target, avoiding enemy tower and hq, staying at distance
-     * >= 7 squares from target.
-     * @param target target location.
-     * @throws GameActionException
-     */
-    private static void droneUnswarmPathing(MapLocation target) throws GameActionException {
-        if (keepAwayFromTarget) {
-            // stay at distance >= 7 squares from target if not attacking yet.
-            if(myLocation.distanceSquaredTo(target) < 35) {
-                return;
-            }
-        } else {
-            if(myLocation.distanceSquaredTo(target) < 15) {
-                return;
-            }
-        }
-
-        if (Clock.getRoundNum() < roundNumAttack) {
-            bug(target);
-        } else {
-            exploreRandom(target);
-        }
-        
-    }
-    
-    /**
-     * Drone swarm pathing to input target.
-     * @param target target location
-     * @throws GameActionException
-     */
-    private static void droneSwarmPathing(MapLocation target) throws GameActionException {        
-        if (Clock.getRoundNum() < roundNumAttack) {
-            bug(target);
-        } else {
-            exploreRandom(target);
-        }
-    }
-    
     /**
      * Retreat method for drones, choosing direction with least enemies.
      * @throws GameActionException
@@ -283,6 +285,7 @@ public class Drone extends MovableUnit {
             chosenDir = chooseAvoidanceDir(myLocation);
             if (chosenDir!= Direction.NONE && chosenDir!= Direction.OMNI){
                 rc.move(chosenDir);
+                previousDirection = chosenDir;
             }
         }
         //System.out.println(Clock.getBytecodeNum());

@@ -12,7 +12,6 @@ public class MovableUnit extends RobotPlayer {
     private static boolean turnClockwise = rand.nextBoolean();
     private static double startDistance; //distance squared before hugging
     private static Direction startTargetDir; //target direction before hugging.
-    private static Direction previousDir; //previous direction in hugging
     private static int[] prohibitedDir = new int[2];
     private static final int noDir = 8;
     private static boolean goneAround = false;
@@ -117,31 +116,7 @@ public class MovableUnit extends RobotPlayer {
             }
         }
     }
-    
-    /**
-     * Return preferred direction to move in given input Direction, based on mapStats.
-     * @param x x coordinate of robot position in internal map
-     * @param y y coordinate of robot position in internal map
-     * @param targetDir desired direction to move in.
-     * @return preferred direction to move in, or null if cannot move into 3 forward directions.
-     * @throws GameActionException
-     */
-    private static Direction chooseForwardDir(int x, int y, Direction targetDir) throws GameActionException {
-        Direction leftDir = targetDir.rotateLeft();
-        Direction rightDir = targetDir.rotateRight();
-        Direction[] directions = new Direction[3];
-        directions[0] = targetDir;
-        boolean turnLeft = mapStats(x,y,leftDir) < mapStats(x,y,rightDir);
-        directions[1] = (turnLeft ? leftDir : rightDir);
-        directions[2] = (turnLeft ? rightDir : leftDir);
-
-        for (int i = 0; i<3; i++) {
-            if (movePossible(directions[i])) {
-                return directions[i];
-            }
-        }
-        return null;
-    }
+   
     
     /**
      * Return preferred enemy/obstacle avoidance direction based on mapStats.
@@ -166,6 +141,25 @@ public class MovableUnit extends RobotPlayer {
         return bestDir;
     }
     
+    /**
+     * Retreat in preference of direction that robot came from.
+     * @throws GameActionException
+     */
+    public static void retreat() throws GameActionException {
+        if (rc.isCoreReady()) {
+            int tryInt = previousDirection.opposite().ordinal();
+            int offsetIndex = 0;
+            while (offsetIndex < 5 && !movePossible(directions[(tryInt+offsets[offsetIndex]+8)%8])) {
+                offsetIndex++;
+            }
+            if (offsetIndex < 5) {
+                Direction dirToMove = directions[(tryInt+offsets[offsetIndex]+8)%8];
+                rc.move(dirToMove);
+                previousDirection = dirToMove;
+            }
+        }
+    }
+    
     
     /**
      * Move around randomly.
@@ -187,9 +181,35 @@ public class MovableUnit extends RobotPlayer {
     }
     
     /**
+     * Return preferred direction to move in given input Direction, based on mapStats.
+     * @param x x coordinate of robot position in internal map
+     * @param y y coordinate of robot position in internal map
+     * @param targetDir desired direction to move in.
+     * @return preferred direction to move in, or NONE if cannot move into 3 forward directions.
+     * @throws GameActionException
+     */
+    private static Direction chooseForwardDir(int x, int y, Direction targetDir) throws GameActionException {
+        Direction leftDir = targetDir.rotateLeft();
+        Direction rightDir = targetDir.rotateRight();
+        Direction[] directions = new Direction[3];
+        directions[0] = targetDir;
+        boolean turnLeft = mapStats(x,y,leftDir) < mapStats(x,y,rightDir);
+        directions[1] = (turnLeft ? leftDir : rightDir);
+        directions[2] = (turnLeft ? rightDir : leftDir);
+
+        for (int i = 0; i<3; i++) {
+            if (movePossible(directions[i])) {
+                return directions[i];
+            }
+        }
+        return Direction.NONE;
+    }
+    
+    /**
      * Return direction to bug in.
      * @param target location of target.
-     * @return next direction to move in, robot should be able to move in this direction.
+     * @return next direction to move in, robot should be able to move in this direction; 
+     * returns NONE if no directions possible.
      * @throws GameActionException
      */
     public static Direction bugDirection(MapLocation target) throws GameActionException {
@@ -198,7 +218,7 @@ public class MovableUnit extends RobotPlayer {
         Direction targetDir = myLocation.directionTo(target);
         
         if (targetDir == Direction.NONE || targetDir == Direction.OMNI){
-            return null;
+            return Direction.NONE;
         }
         
         if (pathingState == PathingState.HUGGING){
@@ -217,8 +237,9 @@ public class MovableUnit extends RobotPlayer {
             
             int x = locationToMapXIndex(myLocation.x);
             int y = locationToMapYIndex(myLocation.y);
+            
             Direction forwardDir = chooseForwardDir(x, y, targetDir);
-            if (forwardDir!= null) {
+            if (forwardDir!= Direction.NONE) {
                 return forwardDir;
             }
             pathingState = PathingState.HUGGING;
@@ -236,14 +257,14 @@ public class MovableUnit extends RobotPlayer {
                 goneAround = true;
             }
             Direction nextDir = hug(targetDir, false);
-            if (nextDir == null) {
+            if (nextDir == Direction.NONE) {
                 nextDir = targetDir;
             }
             return nextDir;
         default:
             break;
         }
-        return null;
+        return Direction.NONE;
     }
     
     /**
@@ -254,8 +275,8 @@ public class MovableUnit extends RobotPlayer {
     public static void bug(MapLocation target) throws GameActionException {
         if (rc.isCoreReady()) {
             Direction nextDir = bugDirection(target);
-            if ((nextDir != null) && bugMovePossible(nextDir)) {
-                previousDir = nextDir;
+            if ((nextDir != Direction.NONE) && bugMovePossible(nextDir)) {
+                previousDirection = nextDir;
                 rc.move(nextDir);
             }
         }
@@ -281,6 +302,10 @@ public class MovableUnit extends RobotPlayer {
     private static Direction hug(Direction targetDir, boolean tried) throws GameActionException {    
         if (bugMovePossible(targetDir)) {
             return targetDir;
+        } else {
+            if (rc.senseNearbyRobots(2, myTeam).length > 3) {
+                return Direction.NONE;
+            }
         }
         Direction tryDir = turn(targetDir);
         MapLocation tryLoc = myLocation.add(tryDir);
@@ -305,7 +330,7 @@ public class MovableUnit extends RobotPlayer {
                     prohibitedDir = new int[]{noDir, noDir};
                     goneAround = false;
                     
-                    return null;
+                    return Direction.NONE;
                 }
             }
             // hug the other direction
@@ -314,7 +339,7 @@ public class MovableUnit extends RobotPlayer {
         
         // store past two cardinal directions that were used in hugging to make
         // sure that these directions are not used again.
-        if (tryDir != previousDir && !tryDir.isDiagonal()) {
+        if (tryDir != previousDirection && !tryDir.isDiagonal()) {
             if (turn(turn(intToDirection[prohibitedDir[0]])) == tryDir) {
                 prohibitedDir[0] = tryDir.opposite().ordinal();
                 prohibitedDir[1] = noDir;
