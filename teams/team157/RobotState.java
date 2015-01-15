@@ -13,6 +13,4 @@ public enum RobotState {
     WANDER, // Random walk, attack when needed
     MINE, // Mining mode, for beavers, miners
     BUILD, //Building mode, for beavers
-    SWARM, // Swarming mode for drones only
-    UNSWARM // Non-swarming mode for drones only
 }
