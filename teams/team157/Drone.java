@@ -131,29 +131,6 @@ public class Drone extends MovableUnit {
         
     }
 
-<<<<<<< HEAD
-    // TODO can't identify bug, do not use!!!
-    private static void droneRetreat() throws GameActionException {
-        rc.setIndicatorString(1, "retreat");
-        tempEnemyLoc = new MapLocation[numberOfEnemies];
-        MapLocation enemyLoc;
-        int i = 0;
-        while(i < numberOfEnemies) {
-            enemyLoc = enemiesInSight[i].location;
-            tempEnemyLoc[i] = enemyLoc;
-            Map.setInternalMap(enemyLoc, 1);
-            i++;
-        }
-        Direction chosenDir = Direction.NONE;
-        if (rc.isCoreReady()) {
-            chosenDir = chooseAvoidanceDir(myLocation);
-            if (chosenDir!= Direction.NONE && chosenDir!= Direction.OMNI){
-                rc.move(chosenDir);
-            }
-        }
-    }
-=======
->>>>>>> 984e9e7f1d6901aeb6d5ab73be89ec97fba83c39
     
     private static void droneMoveAttack(MapLocation target) throws GameActionException
     {
@@ -212,27 +189,15 @@ public class Drone extends MovableUnit {
     private static void initUnswarmState() {
         // set all locations within sight range of tower and hq as void in internal map
         for (MapLocation tower: rc.senseEnemyTowerLocations()) {
-<<<<<<< HEAD
-            for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 35)) {
-                if (rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
-                    Map.setInternalMapWithoutSymmetry(inSightOfTower, 9);
-                }          
-            }
-        }
-        for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(rc.senseEnemyHQLocation(),35)) {
-            if (rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
-                Map.setInternalMapWithoutSymmetry(inSightOfHQ, 7);
-=======
             for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 24)) {
                 if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
-                    setInternalMapWithoutSymmetry(inSightOfTower, 9);
+                    Map.setInternalMapWithoutSymmetry(inSightOfTower, 9);
                 }          
             }
         }
         for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(rc.senseEnemyHQLocation(),24)) {
             if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
-                setInternalMapWithoutSymmetry(inSightOfHQ, 7);
->>>>>>> 984e9e7f1d6901aeb6d5ab73be89ec97fba83c39
+                Map.setInternalMapWithoutSymmetry(inSightOfHQ, 7);
             }   
         }
     }
@@ -247,13 +212,8 @@ public class Drone extends MovableUnit {
             return;
         }
         for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, 35)) {
-<<<<<<< HEAD
-            if (rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
-                Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
-=======
             if (!rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
-                RobotPlayer.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
->>>>>>> 984e9e7f1d6901aeb6d5ab73be89ec97fba83c39
+                Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
             }
             
         }
@@ -306,11 +266,6 @@ public class Drone extends MovableUnit {
      * Retreat method for drones, choosing direction with least enemies.
      * @throws GameActionException
      */
-<<<<<<< HEAD
-    private static boolean droneMovePossible(Direction dir) {
-        if (rc.canMove(dir) && (Map.getInternalMap(myLocation.add(dir)) < 4)) {
-                return true;
-=======
     private static void droneRetreat() throws GameActionException {
         //System.out.println("retreat!" + Clock.getBytecodeNum());
         tempEnemyLoc = new MapLocation[numberOfEnemies]; //store location of enemies in sight
@@ -319,9 +274,8 @@ public class Drone extends MovableUnit {
         while(i < numberOfEnemies) {
             enemyLoc = enemiesInSight[i].location;
             tempEnemyLoc[i] = enemyLoc;
-            setInternalMap(enemyLoc, 1);
+            Map.setInternalMap(enemyLoc, 1);
             i++;
->>>>>>> 984e9e7f1d6901aeb6d5ab73be89ec97fba83c39
         }
         //System.out.println(Clock.getBytecodeNum());
         Direction chosenDir = Direction.NONE;

@@ -350,7 +350,7 @@ public class MovableUnit extends RobotPlayer {
      * @return true if robot can move in dir, false otherwise.
      */
     private static boolean movePossible(Direction dir) {
-        if (getInternalMap(myLocation.add(dir)) > 1 ) {
+        if (Map.getInternalMap(myLocation.add(dir)) > 1 ) {
             return false;
         } else if (rc.canMove(dir)) {
                 return true;
