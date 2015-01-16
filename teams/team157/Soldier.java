@@ -5,6 +5,8 @@ import battlecode.common.*;
 
 public class Soldier extends MovableUnit {
     
+    public static SoldierState state = SoldierState.ATTACK_MOVE;
+    
     //General methods =========================================================
     
     public static void start() throws GameActionException {
@@ -24,6 +26,16 @@ public class Soldier extends MovableUnit {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
+        // todo refactor
+        switch (state) {
+        case ATTACK_MOVE:
+            
+            break;
+        case RETREAT:
+            break;
+        case WAIT:
+            break;
+        }
     }
     
     //Specific methods =========================================================
