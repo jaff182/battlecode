@@ -13,12 +13,12 @@ public class MiningUnit extends MovableUnit {
     /**
      * Minimum mining rate acceptable.
      */
-    public static final double MIN_MINING_RATE = 1;
+    public static double MIN_MINING_RATE;
     
     /**
      * Minimum ore that permits mining rate above MIN_MINING_RATE.
      */
-    public static double MIN_ORE_WORTH_MINING = 10;
+    public static double MIN_ORE_WORTH_MINING;
     
     
     
@@ -27,7 +27,7 @@ public class MiningUnit extends MovableUnit {
     /**
      * Attractive force towards each direction.
      */
-    private static double[] attraction;
+    private static double[] directionPriority;
     
     //Coordinates for shells of increasing distance (hill climb levels, or HCL)
     //Inner shells have higher priority in deciding the direction to go to mine.
@@ -52,7 +52,6 @@ public class MiningUnit extends MovableUnit {
     
     //Ore searching parameters for when no direction is preferred
     private static int oreSearchDirInt = rand.nextInt(8);
-    private static final int oreSearchTurnDir = 2*rand.nextInt(2)-1;
     
     /**
      * Hill climb towards more ore.
@@ -61,8 +60,8 @@ public class MiningUnit extends MovableUnit {
         if(rc.isCoreReady()) {
             //Initialize variables
             int HCL = 0; //hill climb level
-            boolean noPreferredDirFound = false;
-            attraction = new double[8];
+            boolean noPreferredDirFound = true;
+            directionPriority = new double[8];
             myLocation = rc.getLocation();
             
             //Add attractive forces from ore around robot
@@ -77,7 +76,7 @@ public class MiningUnit extends MovableUnit {
                 
                 //Find preferred direction
                 for(int dirInt=0; dirInt<8; dirInt++) {
-                    if(attraction[dirInt] > 0) {
+                    if(directionPriority[dirInt] > 0) {
                         noPreferredDirFound = false;
                         break;
                     }
@@ -92,22 +91,26 @@ public class MiningUnit extends MovableUnit {
                 //Repel other miners
                 for(RobotInfo robotInfo : friends) {
                     RobotType type = robotInfo.type;
-                    if(type == myType) {
+                    if(type == myType || type == RobotType.HQ) {
                         MapLocation loc = robotInfo.location;
                         int distance = myLocation.distanceSquaredTo(loc);
                         if(distance < 15) {
                             int dirInt = loc.directionTo(myLocation).ordinal();
-                            double force = 1000;
-                            attraction[dirInt] += force;
-                            attraction[(dirInt+1)%8] += force;
-                            attraction[(dirInt+7)%8] += force;
+                            double force = 1000/distance;
+                            
+                            directionPriority[dirInt] += force;
+                            directionPriority[(dirInt+1)%8] += 0.707*force;
+                            directionPriority[(dirInt+7)%8] += 0.707*force;
+                            directionPriority[(dirInt+3)%8] -= 0.707*force;
+                            directionPriority[(dirInt+5)%8] -= 0.707*force;
+                            directionPriority[(dirInt+4)%8] -= force;
                         }
                     }
                 }
                 
-                //Find best ore direction
+                //Check i
                 for(int dirInt=0; dirInt<8; dirInt++) {
-                    if(attraction[dirInt] > 0) {
+                    if(directionPriority[dirInt] > 0) {
                         noPreferredDirFound = false;
                         break;
                     }
@@ -115,9 +118,9 @@ public class MiningUnit extends MovableUnit {
                 
                 //No fellow miners around
                 if(noPreferredDirFound) {
-                    //Skewed dumb bug around
-                    for(int i=0; i<=2; i++) {
-                        attraction[(oreSearchDirInt+oreSearchTurnDir*i+8)%8] += 8-i;
+                    //randomly move around with preference for straighter paths
+                    for(int i=-2; i<=2; i++) {
+                        directionPriority[(oreSearchDirInt+i+8)%8] += 8-Math.abs(i);
                     }
                 }
             }
@@ -125,14 +128,14 @@ public class MiningUnit extends MovableUnit {
             //Find most preferred direction
             int[] bestDirInts = {-1,-1,-1,-1,-1,-1,-1,-1};
             int maxCount = 0;
-            double bestAttraction = -10000000;
+            double bestdirectionPriority = -10000000;
             for(int dirInt=0; dirInt<8; dirInt++) {
                 if(rc.canMove(directions[dirInt])) {
-                    if(attraction[dirInt] > bestAttraction) {
-                        bestAttraction = attraction[dirInt];
+                    if(directionPriority[dirInt] > bestdirectionPriority) {
+                        bestdirectionPriority = directionPriority[dirInt];
                         bestDirInts[0] = dirInt;
                         maxCount = 1;
-                    } else if(attraction[dirInt] == bestAttraction) {
+                    } else if(directionPriority[dirInt] == bestdirectionPriority) {
                         bestDirInts[maxCount] = dirInt;
                         maxCount++;
                     }
@@ -145,27 +148,27 @@ public class MiningUnit extends MovableUnit {
                 oreSearchDirInt = dirToMove.ordinal();
                 rc.move(dirToMove);
             }
-
+            
         }
     }
     
     /**
      * Helper function for goTowardsOre(). Adds the ore contribution to the index of 
-     * the attraction array corresponding to the appropriate relative location. The 
+     * the directionPriority array corresponding to the appropriate relative location. The 
      * location should be within the sensing radius of the robot.
      * @param dx Relative X coordinate
      * @param dy Relative Y coordinate
      */
     private static void countOreInRelativeLocation(int dx, int dy) {
         MapLocation loc = myLocation.add(dx,dy);
-        double ore = rc.senseOre(loc);
-        if(ore >= MIN_ORE_WORTH_MINING) {
-            int dirInt = myLocation.directionTo(loc).ordinal();
-            if(rc.isPathable(myType,loc)) attraction[dirInt] += ore;
-            else {
-                //discourage the direction if obstructed
-                attraction[dirInt] -= 20000.0/(dx*dx+dy*dy);
-            }
+        int dirInt = myLocation.directionTo(loc).ordinal();
+        if(rc.isPathable(myType,loc)) {
+            double ore = rc.senseOre(loc);
+            if(ore >= MIN_ORE_WORTH_MINING) directionPriority[dirInt] += ore;
+        } else {
+            //discourage the direction if obstructed
+            double force = 1000.0/(dx*dx+dy*dy);
+            directionPriority[dirInt] -= force;
         }
     }
     

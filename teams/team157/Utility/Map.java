@@ -24,11 +24,11 @@ public class Map {
     
     /**
      * Allocated size of the internal and radio maps. Since sensing region can be as 
-     * much as 5 units away, we add 5 to prevent overflowing to the other side of the 
+     * much as 5 units away, we add 10 to prevent overflowing to the other side of the 
      * map.
      */
-    public static final int ALLOCATED_WIDTH = GameConstants.MAP_MAX_WIDTH+5,
-                            ALLOCATED_HEIGHT = GameConstants.MAP_MAX_HEIGHT+5;
+    public static final int ALLOCATED_WIDTH = GameConstants.MAP_MAX_WIDTH+10,
+                            ALLOCATED_HEIGHT = GameConstants.MAP_MAX_HEIGHT+10;
     
     /**
      * Internal map is toroidal and approximately centered at midpoint of HQs.
@@ -51,7 +51,7 @@ public class Map {
      */
     public static int locationToMapXIndex(int locX) {
         //Same as return (3*ALLOCATED_WIDTH/2+locX-mapx0)%ALLOCATED_WIDTH;
-        return (189+locX-mapx0)%126;
+        return (195+locX-mapx0)%130;
     }
     
     /**
@@ -62,7 +62,7 @@ public class Map {
      */
     public static int locationToMapYIndex(int locY) {
         //Same as return (3*ALLOCATED_HEIGHT/2+locY-mapy0)%ALLOCATED_HEIGHT;
-        return (189+locY-mapy0)%126;
+        return (195+locY-mapy0)%130;
     }
     
     /**
@@ -73,7 +73,7 @@ public class Map {
      */
     public static int locationToReflectedMapXIndex(int locX) {
         //Same as return (3*ALLOCATED_WIDTH/2+RobotPlayer.HQLocation.x+RobotPlayer.enemyHQLocation.x-locX-mapx0)%ALLOCATED_WIDTH;
-        return (189+RobotPlayer.HQLocation.x+RobotPlayer.enemyHQLocation.x-locX-mapx0)%126;
+        return (195+RobotPlayer.HQLocation.x+RobotPlayer.enemyHQLocation.x-locX-mapx0)%130;
     }
     
     /**
@@ -84,7 +84,7 @@ public class Map {
      */
     public static int locationToReflectedMapYIndex(int locY) {
         //Same as return (3*ALLOCATED_HEIGHT/2+RobotPlayer.HQLocation.y+RobotPlayer.enemyHQLocation.y-locY-mapy0)%ALLOCATED_HEIGHT;
-        return (189+RobotPlayer.HQLocation.y+RobotPlayer.enemyHQLocation.y-locY-mapy0)%126;
+        return (195+RobotPlayer.HQLocation.y+RobotPlayer.enemyHQLocation.y-locY-mapy0)%130;
     }
     
     /**
@@ -94,7 +94,7 @@ public class Map {
      */
     public static int mapIndexToChannel(int xidx, int yidx) {
         //Same as return xidx*ALLOCATED_HEIGHT+yidx+Channels.MAP_DATA;
-        return xidx*126+yidx+Channels.MAP_DATA;
+        return xidx*130+yidx+Channels.MAP_DATA;
     }
     
     

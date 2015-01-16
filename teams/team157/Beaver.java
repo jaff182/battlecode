@@ -33,6 +33,11 @@ public class Beaver extends MiningUnit {
 
     private static void init() throws GameActionException {
         robotState = RobotState.WANDER;
+        
+        //Set mining parameters
+        MIN_MINING_RATE = GameConstants.BEAVER_MINE_MAX;
+        MIN_ORE_WORTH_MINING = MIN_MINING_RATE*GameConstants.BEAVER_MINE_RATE;
+        
         //initialSense(rc.getLocation());
     }
     
