@@ -1,4 +1,5 @@
 package team157;
+import team157.Utility.*;
 import battlecode.common.*;
 
 public class MovableUnit extends RobotPlayer {
@@ -12,8 +13,8 @@ public class MovableUnit extends RobotPlayer {
     private static boolean turnClockwise = rand.nextBoolean();
     private static double startDistance; //distance squared before hugging
     private static Direction startTargetDir; //target direction before hugging.
-    private static int[] prohibitedDir = new int[2];
     private static final int noDir = 8;
+    private static int[] prohibitedDir = {noDir, noDir};
     private static boolean goneAround = false;
     //Previously moved direction
     public static Direction previousDirection = Direction.NONE;
@@ -126,9 +127,9 @@ public class MovableUnit extends RobotPlayer {
      * @throws GameActionException
      */
     public static Direction chooseAvoidanceDir(MapLocation myLoc) throws GameActionException {
-        int x = RobotPlayer.locationToMapXIndex(myLoc.x);
-        int y = RobotPlayer.locationToMapYIndex(myLoc.y);
-        int maxStat = 100;
+        int x = Map.locationToMapXIndex(myLoc.x);
+        int y = Map.locationToMapYIndex(myLoc.y);
+        int maxStat = 500;
         Direction bestDir = Direction.NONE;
         int statsInDir;
         for (Direction dir: movableDirections) {
@@ -234,10 +235,8 @@ public class MovableUnit extends RobotPlayer {
         switch(pathingState) {
         case BUGGING:
             rc.setIndicatorString(0,"bug " + targetDir);
-            
-            int x = locationToMapXIndex(myLocation.x);
-            int y = locationToMapYIndex(myLocation.y);
-            
+            int x = Map.locationToMapXIndex(myLocation.x);
+            int y = Map.locationToMapYIndex(myLocation.y);
             Direction forwardDir = chooseForwardDir(x, y, targetDir);
             if (forwardDir!= Direction.NONE) {
                 return forwardDir;
@@ -303,7 +302,7 @@ public class MovableUnit extends RobotPlayer {
         if (bugMovePossible(targetDir)) {
             return targetDir;
         } else {
-            if (rc.senseNearbyRobots(2, myTeam).length > 3) {
+            if (rc.senseNearbyRobots(9, myTeam).length > 8) {
                 return Direction.NONE;
             }
         }
@@ -320,12 +319,11 @@ public class MovableUnit extends RobotPlayer {
             if (tried) {
                 // hugging has been tried in both directions
                 if (prohibitedDir[0] != noDir && prohibitedDir[1] != noDir) {
-                    // We were prohibiting certain directions before.
-                    // try again allowing those directions
+                    // allow prohibited direction
                     prohibitedDir[1] = noDir;
                     return hug(targetDir, false);
                 } else {
-                    // Complete failure. Reset the state and start over.
+                    // reset and start over.
                     pathingState = PathingState.BUGGING;
                     prohibitedDir = new int[]{noDir, noDir};
                     goneAround = false;
@@ -360,10 +358,10 @@ public class MovableUnit extends RobotPlayer {
     private static boolean bugMovePossible(Direction dir) {
         if (blockedDirs[prohibitedDir[0]][prohibitedDir[1]][dir.ordinal()]) {
             return false;
-        } else if (getInternalMap(myLocation.add(dir)) > 1 ) {
+        } else if (Map.getInternalMap(myLocation.add(dir)) > 1 ) { //do not change!!!
             return false;
         } else if (rc.canMove(dir)) {
-                return true;
+            return true;
         }
         return false;
     }
@@ -375,7 +373,7 @@ public class MovableUnit extends RobotPlayer {
      * @return true if robot can move in dir, false otherwise.
      */
     private static boolean movePossible(Direction dir) {
-        if (getInternalMap(myLocation.add(dir)) > 1 ) {
+        if (Map.getInternalMap(myLocation.add(dir)) > 1 ) {
             return false;
         } else if (rc.canMove(dir)) {
                 return true;
@@ -399,28 +397,28 @@ public class MovableUnit extends RobotPlayer {
         int sum = 0;
         switch(dir) {
         case NORTH:
-            sum += getInternalMap(x,y-1) + getInternalMap(x,y-2);
+            sum += Map.getInternalMap(x,y-1) + Map.getInternalMap(x,y-2);
             break;
         case EAST:
-            sum += getInternalMap(x+1,y) + getInternalMap(x+2,y);
+            sum += Map.getInternalMap(x+1,y) + Map.getInternalMap(x+2,y);
             break;
         case SOUTH:
-            sum += getInternalMap(x,y+1) + getInternalMap(x,y+2);
+            sum += Map.getInternalMap(x,y+1) + Map.getInternalMap(x,y+2);
             break;
         case WEST:
-            sum += getInternalMap(x-1,y) + getInternalMap(x-2,y);
+            sum += Map.getInternalMap(x-1,y) + Map.getInternalMap(x-2,y);
             break;
         case NORTH_EAST:
-            sum += getInternalMap(x+1,y-1) + getInternalMap(x+2,y-2);
+            sum += Map.getInternalMap(x+1,y-1) + Map.getInternalMap(x+2,y-2);
             break;
         case SOUTH_EAST:
-            sum += getInternalMap(x+1,y+1) + getInternalMap(x+2,y+2);
+            sum += Map.getInternalMap(x+1,y+1) + Map.getInternalMap(x+2,y+2);
             break;
         case NORTH_WEST:
-            sum += getInternalMap(x-1,y-1) + getInternalMap(x-2,y-2);
+            sum += Map.getInternalMap(x-1,y-1) + Map.getInternalMap(x-2,y-2);
             break;
         case SOUTH_WEST:
-            sum += getInternalMap(x-1,y+1) + getInternalMap(x-2,y+2);
+            sum += Map.getInternalMap(x-1,y+1) + Map.getInternalMap(x-2,y+2);
             break;
         default:
             break;

@@ -74,16 +74,6 @@ public class Beaver extends MiningUnit {
             default: throw new IllegalStateException();
         }
         
-        //Quarter map trigger
-        if(rc.readBroadcast(getChannel(ChannelName.QUARTERMAP)) == 0) {
-            myLocation = rc.getLocation();
-            int HQSeparation = HQLocation.distanceSquaredTo(enemyHQLocation);
-            double projectedDistance = 1.0*((myLocation.x-HQLocation.x)*(enemyHQLocation.x-HQLocation.x) + (myLocation.y-HQLocation.y)*(enemyHQLocation.y-HQLocation.y)) / HQSeparation;
-            //rc.setIndicatorString(2,"progress is "+projectedDistance);
-            if(projectedDistance > 0.3) {
-                rc.broadcast(getChannel(ChannelName.QUARTERMAP),1);
-            }
-        }
     }
     
     
@@ -93,7 +83,6 @@ public class Beaver extends MiningUnit {
         //check if need to build stuff
         buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
         if(buildingType != null) {
-            //&& (buildingType != RobotType.HELIPAD || myLocation.distanceSquaredTo(HQLocation) < 15)) {
             BeaversBuildRequest.yesIWillBuildABuilding();
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
@@ -113,39 +102,16 @@ public class Beaver extends MiningUnit {
         //check if need to build stuff
         buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
         if(buildingType != null) {
-            //&& (buildingType != RobotType.HELIPAD || myLocation.distanceSquaredTo(HQLocation) < 15)) {
             BeaversBuildRequest.yesIWillBuildABuilding();
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
             //need to add response
-        } else if((Clock.getRoundNum() > 250 //Leave enough time for exploration
-            || rc.readBroadcast(getChannel(ChannelName.QUARTERMAP)) == 1)
-            && RobotCount.read(RobotType.MINERFACTORY) < 1
-            && rc.readBroadcast(getChannel(ChannelName.MF_BUILDER_ID)) == rc.getID()
-            && rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL)) > 0) {
-                //Hard coded building a minerfactory
-                //TODO: Improve reporting and task claiming robustness
-                //Temporary, will be improved on later
-                int locX = rc.readBroadcast(getChannel(ChannelName.ORE_XLOCATION));
-                int locY = rc.readBroadcast(getChannel(ChannelName.ORE_YLOCATION));
-                MapLocation loc = new MapLocation(locX,locY);
-                
-                //Claim building job
-                robotState = RobotState.BUILD;
-                moveTargetLocation = loc;
-                buildingType = RobotType.MINERFACTORY;
-                rc.broadcast(getChannel(ChannelName.MF_BUILDER_ID),0);
-                
         } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10 
             && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
             //Lategame handwash station attack
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
             buildingType = RobotType.HANDWASHSTATION;
-//        } else if (enemies.length != 0) {
-//            //Avoid enemies
-//            robotState = RobotState.ATTACK_MOVE;
-//            moveTargetLocation = HQLocation;
         } else if (rc.isCoreReady()) {
             //Transition to wandering around if ore level is too low
             double ore = rc.senseOre(myLocation);
@@ -215,16 +181,6 @@ public class Beaver extends MiningUnit {
     private static void beaverMine() throws GameActionException {
         //Vigilance
         checkForEnemies();
-        
-        //Hard coded minerfactory building
-        //Report mining conditions
-        double ore = rc.senseOre(myLocation);
-        if(ore > rc.readBroadcast(getChannel(ChannelName.ORE_LEVEL))) {
-                rc.broadcast(getChannel(ChannelName.ORE_LEVEL),(int)ore);
-                rc.broadcast(getChannel(ChannelName.ORE_XLOCATION),myLocation.x);
-                rc.broadcast(getChannel(ChannelName.ORE_YLOCATION),myLocation.y);
-                rc.broadcast(getChannel(ChannelName.MF_BUILDER_ID),rc.getID());
-        }
         
         //Mine
         if (rc.getCoreDelay()< 1) rc.mine();

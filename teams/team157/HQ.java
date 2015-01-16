@@ -9,6 +9,7 @@ public class HQ extends Structure {
 
     private final static RobotType[] buildOrder1 = {
             //RobotType.BARRACKS, RobotType.BARRACKS,
+            RobotType.MINERFACTORY,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
@@ -58,15 +59,32 @@ public class HQ extends Structure {
 
         queue = new BuildingQueue(buildOrder1, RobotType.SUPPLYDEPOT);
         
-        //Initiate radio map TODO: towers locations?
-        setMaps(HQLocation,3);
-        setMaps(enemyHQLocation,2);
+
+        //Initiate radio map TODO: towers locations?  
+        int towerID = 7;
+        for (MapLocation tower: enemyTowers) {
+            for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 24)) {
+                if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
+                    Map.setInternalMapWithoutSymmetry(inSightOfTower, towerID);
+                }
+            }
+            towerID++;
+        }
+        for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,24)) {
+            if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
+                Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
+            }   
+        }
+        
+        Map.setMaps(HQLocation.x,HQLocation.y,3);
+        Map.setMaps(enemyHQLocation.x,enemyHQLocation.y,2);
         // TODO: add some distance radius in case the location is not exactly symmetrical
         if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
-            symmetry = 3;
-            rc.broadcast(getChannel(ChannelName.MAP_SYMMETRY),3);
+            Map.symmetry = 3;
+            rc.broadcast(Channels.MAP_SYMMETRY,3);
         }
+
         
         // Init LastAttackedLocations
         team157.Utility.LastAttackedLocationsReport.HQinit();
@@ -133,7 +151,7 @@ public class HQ extends Structure {
 
     private static boolean hasFewBeavers() throws GameActionException
     {
-        return RobotCount.read(RobotType.BEAVER) < 15;
+        return RobotCount.read(RobotType.BEAVER) < 5;
     }
     
     private static void loop() throws GameActionException {
@@ -154,15 +172,16 @@ public class HQ extends Structure {
         RobotType nextBuilding = queue.getNextBuilding();
 
         // In the future we can add some probabilistic constants so that we can switch between buildings and units
-        if(RobotCount.read(RobotType.MINERFACTORY) >= 1 && Clock.getRoundNum() < 1800) {
+        if(Clock.getRoundNum() < 1800) {
             build(nextBuilding); // Read javadoc of build for caveats
         }
         
         if (hasFewBeavers())
             trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
         
+        
         dispenseSupply(suppliabilityMultiplier);
-        //if(Clock.getRoundNum() == 1500) printRadioMap();
+        //if(Clock.getRoundNum() == 1500) debug_printRadioMap();
 
     }
     
