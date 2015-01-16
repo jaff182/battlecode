@@ -82,7 +82,7 @@ public class Beaver extends MiningUnit {
     private static void switchStateFromWanderState() throws GameActionException {
         //check if need to build stuff
         buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
-        if(buildingType != null) {
+        if(buildingType != null && (myLocation.x+myLocation.y)%2 == 0) {
             BeaversBuildRequest.yesIWillBuildABuilding();
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
@@ -90,8 +90,8 @@ public class Beaver extends MiningUnit {
         } else if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
-            double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
-            if(rand.nextDouble() <= miningProbability) {
+            //double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
+            if(ore >= MIN_ORE_WORTH_MINING) {//rand.nextDouble() <= miningProbability) {
                 robotState = RobotState.MINE;
             }
         }
@@ -101,7 +101,7 @@ public class Beaver extends MiningUnit {
         
         //check if need to build stuff
         buildingType = BeaversBuildRequest.doIHaveToBuildABuilding();
-        if(buildingType != null) {
+        if(buildingType != null && (myLocation.x+myLocation.y)%2 == 0) {
             BeaversBuildRequest.yesIWillBuildABuilding();
             robotState = RobotState.BUILD;
             moveTargetLocation = myLocation;
@@ -115,8 +115,8 @@ public class Beaver extends MiningUnit {
         } else if (rc.isCoreReady()) {
             //Transition to wandering around if ore level is too low
             double ore = rc.senseOre(myLocation);
-            double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
-            if(rand.nextDouble() > miningProbability) {
+            //double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
+            if(ore < MIN_ORE_WORTH_MINING) {//rand.nextDouble() > miningProbability) {
                 robotState = RobotState.WANDER;
             }
         }
@@ -201,7 +201,7 @@ public class Beaver extends MiningUnit {
         // Go closer to build location.
         // When the beaver is there, we cans start building immediately
         int distance = myLocation.distanceSquaredTo(moveTargetLocation);
-        if(distance == 0) bug(HQLocation); //move next to build spot
+        if(distance == 0) explore(HQLocation); //move next to build spot
         else if(distance > 2) bug(moveTargetLocation); //travel to build spot
         else {
             Direction dirToBuild = myLocation.directionTo(moveTargetLocation);

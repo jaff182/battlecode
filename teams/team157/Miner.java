@@ -63,8 +63,8 @@ public class Miner extends MiningUnit {
         if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
-            double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE));
-            if(rand.nextDouble() <= miningProbability) {
+            //double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE));
+            if(ore >= MIN_ORE_WORTH_MINING) {//rand.nextDouble() <= miningProbability) {
                 robotState = RobotState.MINE;
             }
         }
@@ -76,8 +76,8 @@ public class Miner extends MiningUnit {
             moveTargetLocation = HQLocation;
         } else if (rc.isCoreReady()) {
             double ore = rc.senseOre(myLocation);
-            double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE));
-            if(rand.nextDouble() > miningProbability) {
+            //double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE));
+            if(ore < MIN_ORE_WORTH_MINING) {//rand.nextDouble() > miningProbability) {
                 robotState = RobotState.WANDER;
             }
         }
