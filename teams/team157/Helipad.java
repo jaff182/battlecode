@@ -17,6 +17,7 @@ public class Helipad extends Structure {
     }
     
     private static void init() throws GameActionException {  
+        spawnLocation = enemyHQLocation;
     }
     
     private static void loop() throws GameActionException {
@@ -24,8 +25,7 @@ public class Helipad extends Structure {
         sharedLoopCode();
         
         //Spawn
-        trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.DRONE);
-        
+        trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);
         
         //Dispense Supply
         dispenseSupply(suppliabilityMultiplier_Preattack);

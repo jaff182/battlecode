@@ -5,7 +5,8 @@ import battlecode.common.*;
 
 public class Structure extends RobotPlayer {
     
-    
+    protected static MapLocation spawnLocation;
+
     //Spawning ================================================================
     
     /**
