@@ -1,6 +1,8 @@
 package team157.Utility;
 
 import java.util.Random;
+import team157.RobotPlayer;
+import team157.Channels;
 import battlecode.common.*;
 
 public class Map {
