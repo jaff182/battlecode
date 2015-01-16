@@ -3,32 +3,12 @@ package team157;
 import java.util.Random;
 import battlecode.common.*;
 
-public class AerospaceLab extends Structure {
+public class AerospaceLab extends SpawnableStructure {
     
     //General methods =========================================================
     
     public static void start() throws GameActionException {
-        init();
-        while(true) {
-            loop();
-            rc.yield(); //Yield the round
-        }
+        // spawn launchers and send them to our HQ
+       start(RobotType.LAUNCHER, HQLocation);
     }
-    
-    private static void init() throws GameActionException {
-        rc.setIndicatorString(0,"hello i'm a aerospacelab.");
-        
-    }
-    
-    private static void loop() throws GameActionException {
-        // Code that runs in every robot (including buildings, excepting missiles)
-        sharedLoopCode();
-        
-    }
-    
-    //Specific methods =========================================================
-    
-
-    
-    
 }
