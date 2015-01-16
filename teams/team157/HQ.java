@@ -84,8 +84,8 @@ public class HQ extends Structure {
         // TODO: add some distance radius in case the location is not exactly symmetrical
         if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
-            Map.symmetry = 3;
-            rc.broadcast(Channels.MAP_SYMMETRY,3);
+            Map.symmetry = Map.rotationSymmetry;
+            rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
         }
 
         
