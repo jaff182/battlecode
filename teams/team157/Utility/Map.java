@@ -155,8 +155,7 @@ public class Map {
         int yidx = locationToMapYIndex(locY);
         map[yidx][xidx] = value;
     }
-    
-    
+
     /**
      * Gets value in internal map (deprecated, use getInternalMap_(int locX, int locY) 
      * instead for better bytecode efficiency). Underscore is to differentiate from 
@@ -181,8 +180,7 @@ public class Map {
         int yidx = locationToMapYIndex(locY);
         return map[yidx][xidx];
     }
-    
-    
+
     /**
      * Gets value in internal map (Lynn's version which accepts int array index 
      * arguments rather than MapLocation coordinates).
@@ -193,16 +191,14 @@ public class Map {
     public static int getInternalMap(int xidx, int yidx) {
         return map[yidx][xidx];
     }
-    
-    
+
     /**
      * Resets internal map.
      */
     public static void resetInternalMap() {
         map = new int[ALLOCATED_WIDTH][ALLOCATED_HEIGHT];
     }
-    
-    
+
     /**
      * Sets value in radio map
      * @param locX X coordinate of MapLocation to set value.
