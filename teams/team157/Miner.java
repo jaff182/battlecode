@@ -6,10 +6,13 @@ import team157.Utility.*;
 
 public class Miner extends MiningUnit {
     
+    //Global variables ========================================================
+    
     /**
      * Is this miner mining efficiently? That is, is it mining at 0.75*3?
      */
     public static boolean miningEfficiently = true;
+    
     
     //General methods =========================================================
     
@@ -27,15 +30,13 @@ public class Miner extends MiningUnit {
         //Set mining parameters
         MIN_MINING_RATE = GameConstants.MINER_MINE_MAX;
         MIN_ORE_WORTH_MINING = MIN_MINING_RATE*GameConstants.MINER_MINE_RATE;
+        MIN_ORE_WORTH_CONSIDERING = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.MINER_MINE_RATE;
         
     }
     
     private static void loop() throws GameActionException {
         //Update location
         myLocation = rc.getLocation();
-        //Calculate whether we are mining efficiently; used in the miner effectiveness count to calibrate output
-        //TODO: can we refactor this into the effectiveness count?
-        miningEfficiently = (rc.senseOre(myLocation) > 0.5*GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE);
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -45,7 +46,9 @@ public class Miner extends MiningUnit {
         
         //Sense nearby units
         updateEnemyInSight();
-
+        
+        //State machine -------------------------------------------------------
+        //Switch state
         switch (robotState) {
             case WANDER: switchStateFromWanderState(); break;
             case MINE: switchStateFromMineState(); break;
@@ -69,23 +72,20 @@ public class Miner extends MiningUnit {
         if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
-            //Mining probability decreases with the increasing number of miners and the decreasing amount of ore
-            //double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE));
-            if(ore >= MIN_ORE_WORTH_MINING) {//rand.nextDouble() <= miningProbability) {
-
+            double miningProbability = 0.5*(ore-MIN_ORE_WORTH_CONSIDERING)/(MIN_ORE_WORTH_MINING-MIN_ORE_WORTH_CONSIDERING);
+            if(ore >= MIN_ORE_WORTH_MINING || rand.nextDouble() <= miningProbability) {
+                miningEfficiently = true;
                 robotState = RobotState.MINE;
             }
         }
     }
     
     private static void switchStateFromMineState() throws GameActionException {
-        if (enemies.length != 0) {
-            robotState = RobotState.ATTACK_MOVE;
-            moveTargetLocation = HQLocation;
-        } else if (rc.isCoreReady()) {
+        if (rc.isCoreReady()) {
             double ore = rc.senseOre(myLocation);
-            //double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE));
-            if(ore < MIN_ORE_WORTH_MINING) {//rand.nextDouble() > miningProbability) {
+            double miningProbability = 0.5*(ore-MIN_ORE_WORTH_CONSIDERING)/(MIN_ORE_WORTH_MINING-MIN_ORE_WORTH_CONSIDERING);
+            if(ore < MIN_ORE_WORTH_MINING && rand.nextDouble() > miningProbability) {
+                miningEfficiently = false;
                 robotState = RobotState.WANDER;
             }
         }
