@@ -39,6 +39,8 @@ public class Soldier extends MovableUnit {
         // Update any pertinent data structures
         myLocation = rc.getLocation();
 
+        enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+        
         SoldierGroup.sync(myLocation);
         
         // Code that runs in every robot (including buildings, excepting missiles)
@@ -75,13 +77,16 @@ public class Soldier extends MovableUnit {
             }
             
         }
-        
+        rc.setIndicatorString(2, "State " + state + ", moveTarget: " + moveTargetLocation);
         // Action
         // TODO: refactor
         switch (state) {
         case ATTACK_MOVE:
-            priorityAttack(enemies, attackPriorities); //attack (if any)
-            bug(moveTargetLocation); //move (if can move, since no cooldown)
+            if (enemies.length != 0 && rc.isWeaponReady())
+                priorityAttack(enemies, attackPriorities); // attack (if any)
+            else if (enemies.length == 0)
+                bug(moveTargetLocation); // move (if can move, since no
+                                         // cooldown)
             break;
         case RETREAT:
             bug(moveTargetLocation); //move (if can move, since no cooldown)
@@ -90,6 +95,10 @@ public class Soldier extends MovableUnit {
             priorityAttack(enemies, attackPriorities); //attack (if any)
             break;
         case JOIN_GROUP:
+            if (enemies.length != 0 && rc.isWeaponReady())
+                priorityAttack(enemies, attackPriorities); // attack (if any)
+            bug(moveTargetLocation); // move (if can move, since no
+                                         // cooldown)
             break;
         }
     }

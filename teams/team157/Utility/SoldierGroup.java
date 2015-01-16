@@ -39,8 +39,8 @@ public class SoldierGroup {
     // Variables indicating status of group =====================================================
     // These variables may be up to 2 rounds out of date (may be updated every 2
     // rounds), but will always be populated appropriately after sync is called.
-    public static MapLocation waypointLocation;
-    public static MapLocation groupCenter;
+    public static MapLocation waypointLocation = RobotPlayer.myLocation;
+    public static MapLocation groupCenter = RobotPlayer.myLocation;
     public static int groupSize;
     
     /**
@@ -83,26 +83,31 @@ public class SoldierGroup {
         } else { // Odd round.. Compute and update waypointLocation,
                  // groupCenter, and groupSize
             final int groupSize = rc.readBroadcast(GROUP_SIZE_CHANNEL);
-            SoldierGroup.groupSize = groupSize;
-            SoldierGroup.groupCenter = new MapLocation(
-                    rc.readBroadcast(X_COORDINATE_GROUP_CHANNEL_SUM)
-                            / groupSize,
-                    rc.readBroadcast(Y_COORDINATE_GROUP_CHANNEL_SUM)
-                            / groupSize);
-            SoldierGroup.waypointLocation = new MapLocation(
-                    rc.readBroadcast(X_COORDINATE_WAYPOINT_CHANNEL),
-                    rc.readBroadcast(Y_COORDINATE_WAYPOINT_CHANNEL));
+            if (groupSize > 0) { // Only work if we have more than 1 soldier.
+                SoldierGroup.groupSize = groupSize;
+                SoldierGroup.groupCenter = new MapLocation(
+                        rc.readBroadcast(X_COORDINATE_GROUP_CHANNEL_SUM)
+                                / groupSize,
+                        rc.readBroadcast(Y_COORDINATE_GROUP_CHANNEL_SUM)
+                                / groupSize);
+                SoldierGroup.waypointLocation = new MapLocation(
+                        rc.readBroadcast(X_COORDINATE_WAYPOINT_CHANNEL),
+                        rc.readBroadcast(Y_COORDINATE_WAYPOINT_CHANNEL));
+            }
         }
 
     }
-    
+
     /**
-     * Set next waypoint
+     * Set next waypoint.
+     * 
+     * Only HQ should call this, or soldiers could be in an inconsistent state
+     * for 2 rounds.
      * 
      * @param x
      * @param y
      * @param moveType
-     * @throws GameActionException 
+     * @throws GameActionException
      */
     public static void setNextWaypoint(int x, int y, MoveType moveType) throws GameActionException {
         RobotPlayer.rc.broadcast(X_COORDINATE_WAYPOINT_CHANNEL, x);
