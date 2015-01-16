@@ -16,9 +16,14 @@ public class MiningUnit extends MovableUnit {
     public static double MIN_MINING_RATE;
     
     /**
-     * Minimum ore that permits mining rate above MIN_MINING_RATE.
+     * Minimum ore that permits mining rate at least MIN_MINING_RATE.
      */
     public static double MIN_ORE_WORTH_MINING;
+    
+    /**
+     * Minimum ore that permits mining rate at least GameConstants.MINIMUM_MINE_AMOUNT.
+     */
+    public static double MIN_ORE_WORTH_CONSIDERING;
     
     
     

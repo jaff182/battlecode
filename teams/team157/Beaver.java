@@ -37,6 +37,7 @@ public class Beaver extends MiningUnit {
         //Set mining parameters
         MIN_MINING_RATE = GameConstants.BEAVER_MINE_MAX;
         MIN_ORE_WORTH_MINING = MIN_MINING_RATE*GameConstants.BEAVER_MINE_RATE;
+        MIN_ORE_WORTH_CONSIDERING = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.BEAVER_MINE_RATE;
         
         initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
         
@@ -63,7 +64,7 @@ public class Beaver extends MiningUnit {
         updateEnemyInSight();
 
         //State machine -------------------------------------------------------
-        //Switch states
+        //Switch state
         switch (robotState) {
             case WANDER: switchStateFromWanderState(); break;
             case MINE: switchStateFromMineState(); break;
@@ -97,8 +98,8 @@ public class Beaver extends MiningUnit {
         } else if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
-            //double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
-            if(ore >= MIN_ORE_WORTH_MINING) {//rand.nextDouble() <= miningProbability) {
+            double miningProbability = 0.5*(ore-MIN_ORE_WORTH_CONSIDERING)/(MIN_ORE_WORTH_MINING-MIN_ORE_WORTH_CONSIDERING);
+            if(ore >= MIN_ORE_WORTH_MINING || rand.nextDouble() <= miningProbability) {
                 robotState = RobotState.MINE;
             }
         }
@@ -122,8 +123,8 @@ public class Beaver extends MiningUnit {
         } else if (rc.isCoreReady()) {
             //Transition to wandering around if ore level is too low
             double ore = rc.senseOre(myLocation);
-            //double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.BEAVER_MINE_MAX*GameConstants.BEAVER_MINE_RATE));
-            if(ore < MIN_ORE_WORTH_MINING) {//rand.nextDouble() > miningProbability) {
+            double miningProbability = 0.5*(ore-MIN_ORE_WORTH_CONSIDERING)/(MIN_ORE_WORTH_MINING-MIN_ORE_WORTH_CONSIDERING);
+            if(ore < MIN_ORE_WORTH_MINING && rand.nextDouble() > miningProbability) {
                 robotState = RobotState.WANDER;
             }
         }
