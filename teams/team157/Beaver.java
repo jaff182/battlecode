@@ -149,7 +149,7 @@ public class Beaver extends MiningUnit {
        distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
-
+    // TODO: this is identical to miner's mine
     private static void beaverMine() throws GameActionException {
         //Vigilance
         checkForEnemies();
