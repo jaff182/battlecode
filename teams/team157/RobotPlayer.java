@@ -300,6 +300,7 @@ public class RobotPlayer {
         LastAttackedLocationsReport.report();
     }
     
+    
     public static void updateMyLocation() {
         myLocation = rc.getLocation();
     }

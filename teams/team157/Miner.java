@@ -25,12 +25,13 @@ public class Miner extends MiningUnit {
     }
     
     private static void init() throws GameActionException {
-        rc.setIndicatorString(0,"hello i'm a miner.");
-        
+
         //Set mining parameters
         MIN_MINING_RATE = GameConstants.MINER_MINE_MAX;
         MIN_ORE_WORTH_MINING = MIN_MINING_RATE*GameConstants.MINER_MINE_RATE;
         MIN_ORE_WORTH_CONSIDERING = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.MINER_MINE_RATE;
+        
+        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
         
     }
     

@@ -68,12 +68,14 @@ public class MovableUnit extends RobotPlayer {
      */
     public static MapLocation moveTargetLocation = enemyHQLocation;
     
+    
+    
     /**
      * Returns true if robot can move in input direction, return false otherwise.
      * @param dir target direction
      * @return true if robot can move in dir, false otherwise.
      */
-    private static boolean movePossible(Direction dir) {
+    protected static boolean movePossible(Direction dir) {
         if (Map.getInternalMap(myLocation.add(dir)) > 1 ) {
             return false;
         } else if (rc.canMove(dir)) {
@@ -90,9 +92,7 @@ public class MovableUnit extends RobotPlayer {
         int towerID = 7;
         for (MapLocation tower: enemyTowers) {
             for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, towerAttackRadius)) {
-                if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
-                    Map.setInternalMapWithoutSymmetry(inSightOfTower, towerID);
-                }
+                Map.setInternalMapWithoutSymmetry(inSightOfTower, towerID);
             }
             towerID++;
         }
@@ -100,9 +100,7 @@ public class MovableUnit extends RobotPlayer {
             HQAttackRadius = 24;
         }
         for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,HQAttackRadius)) {
-            if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
-                Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
-            }   
+            Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);   
         }
     }
     
@@ -114,11 +112,9 @@ public class MovableUnit extends RobotPlayer {
     public static void setTargetToTowerOrHQ(MapLocation target, int targetAttackRadiusSquared) {
         int targetID = Map.getInternalMap(target);
         for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, targetAttackRadiusSquared)) {          
-            if (!rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
-                if (Map.getInternalMap(inSightOfTarget) <= targetID) {
+            if (Map.getInternalMap(inSightOfTarget) <= targetID) {
                     Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
-                }        
-            }
+            }        
         }
     }
     

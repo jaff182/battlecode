@@ -62,21 +62,6 @@ public class HQ extends Structure {
 
         //Initiate radio map TODO: towers locations?  
         
-        // set all maplocations within enemy tower or HQ attack radius as unpathable
-        int towerID = 7;
-        for (MapLocation tower: enemyTowers) {
-            for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 24)) {
-                if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
-                    Map.setMaps(inSightOfTower.x, inSightOfTower.y, towerID);
-                }
-            }
-            towerID++;
-        }
-        for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,35)) {
-            if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
-                Map.setMaps(inSightOfHQ.x, inSightOfHQ.y, towerID);
-            }   
-        }
         //TODO need to reset radio map when a tower falls
         
         Map.setMaps(HQLocation.x,HQLocation.y,3);
@@ -183,9 +168,9 @@ public class HQ extends Structure {
             build(nextBuilding); // Read javadoc of build for caveats
         }
         
-        if (hasFewBeavers())
+        if (hasFewBeavers()) { 
             trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
-        
+        }
         
         dispenseSupply(suppliabilityMultiplier);
         //if(Clock.getRoundNum() == 1500) debug_printRadioMap();

@@ -135,7 +135,7 @@ public class MiningUnit extends MovableUnit {
             int maxCount = 0;
             double bestdirectionPriority = -10000000;
             for(int dirInt=0; dirInt<8; dirInt++) {
-                if(rc.canMove(directions[dirInt])) {
+                if(movePossible(directions[dirInt])) {
                     if(directionPriority[dirInt] > bestdirectionPriority) {
                         bestdirectionPriority = directionPriority[dirInt];
                         bestDirInts[0] = dirInt;

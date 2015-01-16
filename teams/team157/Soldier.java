@@ -28,7 +28,7 @@ public class Soldier extends MovableUnit {
     }
     
     private static void init() throws GameActionException {
-        rc.setIndicatorString(0,"hello i'm a soldier.");
+        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
         
     }
     

@@ -16,7 +16,7 @@ public class Commander extends MovableUnit {
     }
     
     private static void init() throws GameActionException {
-        rc.setIndicatorString(0,"hello i'm a commander.");
+        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
         
     }
     
