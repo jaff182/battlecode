@@ -80,7 +80,7 @@ public class HQ extends Structure {
         //TODO need to reset radio map when a tower falls
         
         Map.setMaps(HQLocation.x,HQLocation.y,3);
-        Map.setMaps(enemyHQLocation.x,enemyHQLocation.y,2);
+        //Map.setMaps(enemyHQLocation.x,enemyHQLocation.y,2);
         // TODO: add some distance radius in case the location is not exactly symmetrical
         if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
