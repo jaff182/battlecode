@@ -81,11 +81,11 @@ public class HQ extends Structure {
         
         Map.setMaps(HQLocation.x,HQLocation.y,3);
         Map.setMaps(enemyHQLocation.x,enemyHQLocation.y,2);
-        // TODO: add some distance radius in case the location is not exactly symmetrical
-        if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
+        
+        if(!(Math.abs(HQLocation.x - enemyHQLocation.x) < 5) && !(Math.abs(HQLocation.y - enemyHQLocation.y) < 5)) {
             //rotational symmetry
-            Map.symmetry = 3;
-            rc.broadcast(Channels.MAP_SYMMETRY,3);
+            Map.symmetry = Map.rotationSymmetry;
+            rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
         }
 
         

@@ -1,4 +1,4 @@
-package team157;
+package team157.Utility;
 
 import java.util.Random;
 import battlecode.common.*;
@@ -11,7 +11,9 @@ public class Map {
      * mapx0,mapy0 are the MapLocation coordinates of the HQ-to-HQ midpoint,
      */
     public static int mapx0, mapy0;
-    
+
+    public static final int rotationSymmetry = 3;
+
     /**
      * symmetry represents the symmetry type of the map, in its last 2 bits for y and 
      * x reflections, so 0: unknown,  1: x-reflection,  2: y-reflection, 3: rotational
