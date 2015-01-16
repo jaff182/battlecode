@@ -6,6 +6,5 @@ public enum DroneState {
     FOLLOW, // following enemy
     KAMIKAZE, // all out attack
     RETREAT, // retreats when enemy is in sight range and then stays still.
-    SURROUND, // circles around enemy
     SCOUT // scouting map for enemies or terrain
 }

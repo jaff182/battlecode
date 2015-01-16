@@ -9,7 +9,6 @@ public class Drone extends MovableUnit {
     //General methods =========================================================
 
     private static MapLocation target = RobotPlayer.enemyHQLocation;
-    private static MapLocation[] tempEnemyLoc;
     private static int numberOfEnemies = 0;
     private static RobotInfo[] enemiesInSight;
     private static boolean switchTarget = false;
@@ -21,7 +20,7 @@ public class Drone extends MovableUnit {
     private static boolean keepAwayFromTarget = false; // true if target is tower or hq, false otherwise
     private static DroneState droneState = DroneState.UNSWARM;
     private static int retreatTimeout = 5; // number of rounds before changing from retreat to unswarm state.
-    
+
     
     public static void start() throws GameActionException {
         init();
@@ -34,20 +33,7 @@ public class Drone extends MovableUnit {
     private static void init() throws GameActionException {  
         if (Clock.getRoundNum() < roundNumAttack) {
             // set all locations within sight range of tower and hq as void in internal map
-            int towerID = 7;
-            for (MapLocation tower: rc.senseEnemyTowerLocations()) {
-                for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 24)) {
-                    if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
-                        Map.setInternalMapWithoutSymmetry(inSightOfTower, towerID);
-                    }
-                }
-                towerID++;
-            }
-            for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(rc.senseEnemyHQLocation(),24)) {
-                if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
-                    Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
-                }   
-            }
+            initInternalMap();
 
         } else {
             droneState = DroneState.KAMIKAZE;
@@ -66,12 +52,6 @@ public class Drone extends MovableUnit {
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
-        
-        /**
-        if (Clock.getRoundNum() == roundNumAttack) {
-            Map.resetInternalMap();
-        }
-        **/
         
         if (Clock.getRoundNum() > roundNumAttack) {
             droneState = DroneState.KAMIKAZE;
@@ -96,8 +76,6 @@ public class Drone extends MovableUnit {
             case RETREAT:
                 switchStateFromRetreatState();
                 break;
-            case SURROUND:
-                break;
             case SCOUT:
                 break;
             default:
@@ -117,24 +95,22 @@ public class Drone extends MovableUnit {
      */
     private static void setTargetToWayPoints() throws GameActionException {
         if (Clock.getRoundNum() > roundNumAttack) {
+            // end game attack on towers and then hq
             MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
+            int enemyAttackRadius = towerAttackRadius;
             if (rc.senseEnemyTowerLocations().length != 0) {
                 target = towerLoc[0];
             } else {
                 target = rc.senseEnemyHQLocation();
+                enemyAttackRadius = HQAttackRadius;
             }
             // set area around target as pathable
             int targetID = Map.getInternalMap(target);
-            for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, 35)) {          
+            for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, enemyAttackRadius)) {          
                 if (!rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
-                    try {
-                        if (Map.getInternalMap(inSightOfTarget) <= targetID) {
-                            Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
-                        }
-                    } catch (Exception e) {
-                        System.out.println("offset is "+Map.mapx0+","+Map.mapy0);
-                        System.out.println(inSightOfTarget.toString());
-                    }         
+                    if (Map.getInternalMap(inSightOfTarget) <= targetID) {
+                        Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
+                    }        
                 }
             }
         }
@@ -218,7 +194,7 @@ public class Drone extends MovableUnit {
             bug(target);
             break;
         case KAMIKAZE:
-            exploreRandom(target);
+            bug(target);
             break;
         case FOLLOW:
             // TODO follow method not implemented yet!
@@ -231,10 +207,8 @@ public class Drone extends MovableUnit {
                 retreatTimeout--;
             }
             break;
-        case SURROUND:
-            // TODO surround method not implemented yet!
-            break;
         case SCOUT:
+            // TODO scout not implemented yet!
             break;
         default:
             throw new IllegalStateException();
@@ -275,37 +249,6 @@ public class Drone extends MovableUnit {
     }
     
     
-    // Movement methods =================================================================
-
-    /**
-     * Retreat method for drones, choosing direction with least enemies.
-     * @throws GameActionException
-     */
-    private static void droneRetreat() throws GameActionException {
-        //System.out.println("retreat!" + Clock.getBytecodeNum());
-        tempEnemyLoc = new MapLocation[numberOfEnemies]; //store location of enemies in sight
-        MapLocation enemyLoc;
-        int i = 0;
-        while(i < numberOfEnemies) {
-            enemyLoc = enemiesInSight[i].location;
-            tempEnemyLoc[i] = enemyLoc;
-            Map.setInternalMap(enemyLoc, 1);
-            i++;
-        }
-        //System.out.println(Clock.getBytecodeNum());
-        Direction chosenDir = Direction.NONE;
-        if (rc.isCoreReady()) {
-            chosenDir = chooseAvoidanceDir(myLocation);
-            if (chosenDir!= Direction.NONE && chosenDir!= Direction.OMNI){
-                rc.move(chosenDir);
-                previousDirection = chosenDir;
-            }
-        }
-        //System.out.println(Clock.getBytecodeNum());
-    }
-    
-    
-    
     //Misc. =========================================================
     
     
@@ -336,12 +279,13 @@ public class Drone extends MovableUnit {
      * defence strategy.
      */
     private static int[] attackPriorities = {
-        20/*0:HQ*/,         21/*1:TOWER*/,      6/*2:SUPPLYDPT*/,   3/*3:TECHINST*/,
-        7/*4:BARRACKS*/,    8/*5:HELIPAD*/,     5/*6:TRNGFIELD*/,   9/*7:TANKFCTRY*/,
-        4/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   10/*10:AEROLAB*/,   13/*11:BEAVER*/,
-        2/*12:COMPUTER*/,   16/*13:SOLDIER*/,   15/*14:BASHER*/,    12/*15:MINER*/,
-        14/*16:DRONE*/,     17/*17:TANK*/,      18/*18:COMMANDER*/, 11/*19:LAUNCHER*/,
-        19/*20:MISSILE*/
+        20/*0:HQ*/,         21/*1:TOWER*/,   19/*20:MISSILE*/,    
+        14/*16:DRONE*/,     11/*19:LAUNCHER*/, 17/*17:TANK*/,
+        18/*18:COMMANDER*/, 10/*10:AEROLAB*/, 8/*5:HELIPAD*/, 
+        9/*7:TANKFCTRY*/, 7/*4:BARRACKS*/, 4/*8:MINERFCTRY*/,
+        5/*6:TRNGFIELD*/, 15/*14:BASHER*/, 16/*13:SOLDIER*/,     
+        13/*11:BEAVER*/,  12/*15:MINER*/, 6/*2:SUPPLYDPT*/,   
+        3/*3:TECHINST*/, 1/*9:HNDWSHSTN*/, 2/*12:COMPUTER*/,   
     };
     
     /**

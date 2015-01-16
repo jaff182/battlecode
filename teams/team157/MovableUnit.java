@@ -8,6 +8,9 @@ public class MovableUnit extends RobotPlayer {
     
     //Movement ================================================================
     
+    public static final int towerAttackRadius = 24;
+    public static int HQAttackRadius = 35;
+    
     // For pathing
     private static PathingState pathingState = PathingState.BUGGING;
     private static boolean turnClockwise = rand.nextBoolean();
@@ -64,6 +67,46 @@ public class MovableUnit extends RobotPlayer {
      * TODO: is this a dangerous behaviour?
      */
     public static MapLocation moveTargetLocation = enemyHQLocation;
+    
+    
+    /**
+     * Initialize internal map when units are spawned, to bug around tower and hq attack radius.
+     */
+    public static void initInternalMap() {
+        int towerID = 7;
+        for (MapLocation tower: enemyTowers) {
+            for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, towerAttackRadius)) {
+                if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
+                    Map.setInternalMapWithoutSymmetry(inSightOfTower, towerID);
+                }
+            }
+            towerID++;
+        }
+        if (towerID < 9) {
+            HQAttackRadius = 24;
+        }
+        for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,HQAttackRadius)) {
+            if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
+                Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
+            }   
+        }
+    }
+    
+    /**
+     * Set all MapLocations in attack radius of tower or hq as pathable.
+     * @param target MapLocation of tower or hq.
+     * @param targetAttackRadiusSquared attack radius squared of target tower or hq.
+     */
+    public static void setTargetToTowerOrHQ(MapLocation target, int targetAttackRadiusSquared) {
+        int targetID = Map.getInternalMap(target);
+        for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, targetAttackRadiusSquared)) {          
+            if (!rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
+                if (Map.getInternalMap(inSightOfTarget) <= targetID) {
+                    Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
+                }        
+            }
+        }
+    }
     
     /**
      * Sense terrain while moving.
@@ -301,10 +344,6 @@ public class MovableUnit extends RobotPlayer {
     private static Direction hug(Direction targetDir, boolean tried) throws GameActionException {    
         if (bugMovePossible(targetDir)) {
             return targetDir;
-        } else {
-            if (rc.senseNearbyRobots(9, myTeam).length > 8) {
-                return Direction.NONE;
-            }
         }
         Direction tryDir = turn(targetDir);
         MapLocation tryLoc = myLocation.add(tryDir);
@@ -317,11 +356,14 @@ public class MovableUnit extends RobotPlayer {
         if (!bugMovePossible(tryDir) || rc.senseTerrainTile(tryLoc).equals(TerrainTile.OFF_MAP)) {
             turnClockwise = !turnClockwise;
             if (tried) {
-                // hugging has been tried in both directions
+             // hugging has been tried in both directions
                 if (prohibitedDir[0] != noDir && prohibitedDir[1] != noDir) {
                     // allow prohibited direction
                     prohibitedDir[1] = noDir;
                     return hug(targetDir, false);
+                } else if (rc.senseNearbyRobots(9, myTeam).length > 8) {
+                    // too many friendly units blocking
+                    return Direction.NONE;
                 } else {
                     // reset and start over.
                     pathingState = PathingState.BUGGING;
