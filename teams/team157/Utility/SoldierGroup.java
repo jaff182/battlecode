@@ -38,7 +38,7 @@ public class SoldierGroup {
     
     // Variables indicating status of group =====================================================
     // These variables may be up to 2 rounds out of date (may be updated every 2
-    // rounds), but will always be populated.
+    // rounds), but will always be populated appropriately after sync is called.
     public static MapLocation waypointLocation;
     public static MapLocation groupCenter;
     public static int groupSize;
@@ -46,59 +46,74 @@ public class SoldierGroup {
     /**
      * Called by all soldiers when initializing.
      * 
-     * @param MapLocation
-     * @throws GameActionException 
+     * Updates waypointLocation, groupCenter, groupSize on odd rounds.
+     * 
+     * Writes to these channels instead on even rounds, leaving the stale values
+     * of waypointLocation, groupCenter, groupSize.
+     * 
+     * @param MapLocation your current location
+     * @throws GameActionException
      */
     public static void sync(MapLocation myLocation) throws GameActionException {
         RobotController rc = RobotPlayer.rc;
         if (rc.readBroadcast(TOUCHED_CHANNEL) != Clock.getRoundNum()) {
+            // You're a leader (the first soldier to execute this round).
+            rc.broadcast(TOUCHED_CHANNEL, Clock.getRoundNum()); // Show that a leader has preprocessed this structure (to all other units)
             if (Clock.getRoundNum() % 2 == 0) {
                 // Even rounds trigger recomputations.. Zero values in channels
                 // used for distributed computation.
+                rc.broadcast(X_COORDINATE_GROUP_CHANNEL_SUM, 0);
+                rc.broadcast(Y_COORDINATE_GROUP_CHANNEL_SUM, 0);
+                rc.broadcast(GROUP_SIZE_CHANNEL, 0);
             }
         }
 
-        // You're the rest of the group
+        // Code for the rest of the group (and also the leader, since it's also
+        // part of the group)
         if (Clock.getRoundNum() % 2 == 0) { // Even round, update values, do not
                                             // read
-
-        } else { // Odd round.. Compute waypointLocation, groupCenter, and groupSize
-            
+            rc.broadcast(X_COORDINATE_GROUP_CHANNEL_SUM,
+                    rc.readBroadcast(X_COORDINATE_GROUP_CHANNEL_SUM)
+                            + myLocation.x);
+            rc.broadcast(Y_COORDINATE_GROUP_CHANNEL_SUM,
+                    rc.readBroadcast(Y_COORDINATE_GROUP_CHANNEL_SUM)
+                            + myLocation.y);
+            rc.broadcast(GROUP_SIZE_CHANNEL,
+                    rc.readBroadcast(GROUP_SIZE_CHANNEL) + 1);
+        } else { // Odd round.. Compute and update waypointLocation,
+                 // groupCenter, and groupSize
+            final int groupSize = rc.readBroadcast(GROUP_SIZE_CHANNEL);
+            SoldierGroup.groupSize = groupSize;
+            SoldierGroup.groupCenter = new MapLocation(
+                    rc.readBroadcast(X_COORDINATE_GROUP_CHANNEL_SUM)
+                            / groupSize,
+                    rc.readBroadcast(Y_COORDINATE_GROUP_CHANNEL_SUM)
+                            / groupSize);
+            SoldierGroup.waypointLocation = new MapLocation(
+                    rc.readBroadcast(X_COORDINATE_WAYPOINT_CHANNEL),
+                    rc.readBroadcast(Y_COORDINATE_WAYPOINT_CHANNEL));
         }
-            
+
     }
     
     /**
-     * Set next location to move to.
+     * Set next waypoint
      * 
      * @param x
      * @param y
      * @param moveType
+     * @throws GameActionException 
      */
-    public static void setNextLocation(int x, int y, MoveType moveType) {
+    public static void setNextWaypoint(int x, int y, MoveType moveType) throws GameActionException {
+        RobotPlayer.rc.broadcast(X_COORDINATE_WAYPOINT_CHANNEL, x);
+        RobotPlayer.rc.broadcast(Y_COORDINATE_WAYPOINT_CHANNEL, y);
     }
     
     public static enum MoveType {
         ATTACK, // Attack move to an area as a group.
         RALLY, // Build up forces in an area
         RETREAT // Move, but do not attack
-        }
-
-    
-    /**
-     * Check that a soldier is as close to the initial soldier as possible.
-     * 
-     * 
-     */
-    public static void isWaypointReached() {
-        
     }
     
-    /**
-     * 
-     */
-    public static void putNextWaypoint() {
-        
-    }
     
 }

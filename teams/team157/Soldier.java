@@ -10,6 +10,9 @@ public class Soldier extends MovableUnit {
     public static SoldierState state = SoldierState.ATTACK_MOVE;
     private static MapLocation moveTargetLocation = RobotPlayer.HQLocation;
     
+    
+    private static SoldierState oldStateBeforeJoinGroupTriggered;
+    
     // Constants to tune behaviour ============================================
     /**
      * Square distance from center of group before robot will start bugging
@@ -45,6 +48,7 @@ public class Soldier extends MovableUnit {
         // TODO: refactor
         if (myLocation.distanceSquaredTo(SoldierGroup.groupCenter) > distanceSquaredFromCenterOfGroupBeforeLost) {
             // Override state if too far from group, to get it to regroup.
+            oldStateBeforeJoinGroupTriggered = state;
             state = SoldierState.JOIN_GROUP;
             moveTargetLocation = SoldierGroup.groupCenter;
         } else if (!SoldierGroup.waypointLocation.equals(moveTargetLocation)) { 
@@ -55,16 +59,18 @@ public class Soldier extends MovableUnit {
             // Else, perform standard state transitions
             switch (state) {
             case ATTACK_MOVE:
-                if (checkIfWaypointReached())
+                if (checkIfMoveTargetReached())
                     state = SoldierState.WAIT;
                 break;
             case RETREAT:
-                if (checkIfWaypointReached())
+                if (checkIfMoveTargetReached())
                     state = SoldierState.WAIT;
                 break;
-            case WAIT: // No escape from WAIT, unless it gets left behind or waypoint is moved.
+            case WAIT: // No escape from WAIT, unless it gets left behind or waypoint is moved (see above)
                 break;
-            case JOIN_GROUP: // Keep trying to join the group we've lost, no matter the cost.
+            case JOIN_GROUP: // We've already joined group (or this code wouldn't be here)
+                state = oldStateBeforeJoinGroupTriggered; //Restore old state
+                moveTargetLocation = SoldierGroup.waypointLocation; //Restore waypoint location
                 break;
             }
             
@@ -89,17 +95,32 @@ public class Soldier extends MovableUnit {
     }
     
     /**
-     * Checks if the conditions for the current waypoint (in currentWaypoint)
-     * has been fulfilled.
+     * Checks if the conditions for the current moveTarget
      * 
-     * This requires that the center of the group be within 4 square of the target waypoint.
      * 
      * In ATTACK_MOVE and WAIT, this requires that no enemies are attackable by any unit.
      * 
+     * This call will always return false if in WAIT and JOIN_GROUP state.
+     * 
      * @return true if they have been, and false otherwise
+     * @throws GameActionException 
      */
-    private static boolean checkIfWaypointReached() {
-        // TODO Auto-generated method stub
+    private static boolean checkIfMoveTargetReached() throws GameActionException {
+        switch (state) {
+        case ATTACK_MOVE: case RETREAT:
+            final boolean centerOfGroupNearTarget = SoldierGroup.groupCenter.distanceSquaredTo(SoldierGroup.waypointLocation) < 4;
+            Direction bugDirection = MovableUnit.bugDirection(moveTargetLocation);
+            Direction directionToWaypoint = myLocation
+                    .directionTo(SoldierGroup.waypointLocation);
+            final boolean noPathToWaypoint = bugDirection == Direction.NONE
+                    || Math.abs((directionToWaypoint.ordinal() - bugDirection
+                            .ordinal())) > 2; // Check that bugging will be in a direction somewhat towards waypoint
+            return noPathToWaypoint && centerOfGroupNearTarget;
+        case WAIT:
+            return false;
+        case JOIN_GROUP:
+            return false;
+        }
         return false;
     }
 
