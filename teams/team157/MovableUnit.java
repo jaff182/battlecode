@@ -139,7 +139,7 @@ public class MovableUnit extends RobotPlayer {
 
             int dirInt = myLocation.directionTo(target).ordinal();
             int offsetIndex = 0;
-            while (offsetIndex < 5 && !rc.canMove(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
+            while (offsetIndex < 5 && !movePossible(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
                 offsetIndex++;
             }
             if (offsetIndex < 5) {
@@ -160,7 +160,7 @@ public class MovableUnit extends RobotPlayer {
             updateMyLocation();
             int dirInt = myLocation.directionTo(target).ordinal() + rand.nextInt(5)-2;
             int offsetIndex = 0;
-            while (offsetIndex < 5 && !rc.canMove(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
+            while (offsetIndex < 5 && !movePossible(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
                 offsetIndex++;
             }
             if (offsetIndex < 5) {
@@ -179,7 +179,7 @@ public class MovableUnit extends RobotPlayer {
         if(rc.isCoreReady()) {
             int dirInt = rand.nextInt(8);
             int offsetIndex = 0;
-            while (offsetIndex < 8 && !rc.canMove(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
+            while (offsetIndex < 8 && !movePossible(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
                 offsetIndex++;
             }
             if (offsetIndex < 8) {

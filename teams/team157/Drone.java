@@ -79,9 +79,16 @@ public class Drone extends MovableUnit {
         if (Clock.getRoundNum() > roundNumAttack) {
             // end game attack on towers and then hq
             MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
+            int distanceToClosestTower = Integer.MAX_VALUE;
             int enemyAttackRadius = towerAttackRadius;
             if (rc.senseEnemyTowerLocations().length != 0) {
-                target = towerLoc[0];
+                for (MapLocation loc: towerLoc) {
+                    int towerDist = myLocation.distanceSquaredTo(loc);
+                    if (towerDist <= distanceToClosestTower) {
+                        target = loc;
+                        distanceToClosestTower = towerDist;
+                    }
+                }
             } else {
                 target = rc.senseEnemyHQLocation();
                 enemyAttackRadius = HQAttackRadius;
@@ -89,10 +96,8 @@ public class Drone extends MovableUnit {
             // set area around target as pathable
             int targetID = Map.getInternalMap(target);
             for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, enemyAttackRadius)) {          
-                if (!rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
-                    if (Map.getInternalMap(inSightOfTarget) <= targetID) {
-                        Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
-                    }        
+                if (Map.getInternalMap(inSightOfTarget) == targetID) {
+                    Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
                 }
             }
         }
