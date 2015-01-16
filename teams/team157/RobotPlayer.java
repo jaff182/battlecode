@@ -226,7 +226,22 @@ public class RobotPlayer {
      * @throws GameActionException
      */
     public static void priorityAttack(RobotInfo[] enemies, int[] atkorder) throws GameActionException {
-        //Initiate
+        RobotInfo attackTarget = choosePriorityAttackTarget(enemies, atkorder);
+        if ( attackTarget != null) {
+          //Attack selected target
+            rc.attackLocation(attackTarget.location);
+        }
+    }
+    
+    /**
+     * Choose priority attack target on the weakest of nearby enemies
+     * @param enemies RobotInfo array of enemies in attack range
+     * @param atkorder int array of attack priority rank (0 to 20, allowing ties) for each corresponding RobotType ordinal in robotTypes (eg: atkorder[1] = 5 means TOWERs are the 6th most important RobotType to attack)
+     * @return RobotInfo representing chosen priority attack target.
+     * @throws GameActionException
+     */
+    public static RobotInfo choosePriorityAttackTarget(RobotInfo[] enemies, int[] atkorder) {
+      //Initiate
         int targetidx = -1, targettype = 1;
         double minhp = 100000;
         
@@ -249,11 +264,10 @@ public class RobotPlayer {
             }
         }
         if (targetidx != -1) {
-            //Attack selected target
-            rc.attackLocation(enemies[targetidx].location);
+            return enemies[targetidx];
         }
+        return null;
     }
-    
     
     //Tests ===================================================================
     

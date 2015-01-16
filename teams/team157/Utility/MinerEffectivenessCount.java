@@ -25,9 +25,9 @@ public class MinerEffectivenessCount {
             final int channel;
             if (Clock.getRoundNum() % 2 == 0) // even rounds write to high
                                               // address
-                channel = BASE_CHANNEL + 1;
+                channel = getHighChannel();
             else
-                channel = BASE_CHANNEL; // odd rounds write to low
+                channel = getLowChannel(); // odd rounds write to low
             final int count = RobotPlayer.rc.readBroadcast(channel);
             // System.out.println("Current count is " + count +
             // ". Writing this to " + channel);
@@ -47,9 +47,9 @@ public class MinerEffectivenessCount {
     public static int read() throws GameActionException {
         final int channel;
         if (Clock.getRoundNum()%2 == 0) // even rounds read from low address
-            channel = BASE_CHANNEL;
+            channel = getLowChannel();
         else // odd rounds read from high
-            channel = BASE_CHANNEL+1;
+            channel = getHighChannel();
         return RobotPlayer.rc.readBroadcast(channel);
     }
     
@@ -65,9 +65,19 @@ public class MinerEffectivenessCount {
     public static void reset() throws GameActionException {
         final int relBaseChannel;
         if (Clock.getRoundNum()%2 == 0) // even rounds reset high address at start of round
-            relBaseChannel = BASE_CHANNEL + 1;
+            relBaseChannel = getHighChannel();
         else // odd rounds reset low
-            relBaseChannel = BASE_CHANNEL;
+            relBaseChannel = getLowChannel();
         RobotPlayer.rc.broadcast(relBaseChannel, 0);
+    }
+
+    private static int getHighChannel()
+    {
+        return BASE_CHANNEL + 1;
+    }
+
+    private static int getLowChannel()
+    {
+        return BASE_CHANNEL;
     }
 }

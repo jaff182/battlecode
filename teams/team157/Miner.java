@@ -23,12 +23,14 @@ public class Miner extends MiningUnit {
     
     private static void init() throws GameActionException {
         rc.setIndicatorString(0,"hello i'm a miner.");
-        
+
     }
     
     private static void loop() throws GameActionException {
         //Update location
         myLocation = rc.getLocation();
+        //Calculate whether we are mining efficiently; used in the miner effectiveness count to calibrate output
+        //TODO: can we refactor this into the effectiveness count?
         miningEfficiently = (rc.senseOre(myLocation) > 0.5*GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE);
         
         // Code that runs in every robot (including buildings, excepting missiles)
@@ -63,8 +65,10 @@ public class Miner extends MiningUnit {
         if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
+            //Mining probability decreases with the increasing number of miners and the decreasing amount of ore
             //double miningProbability = 1 - 1/(1+2.0*ore/(GameConstants.MINER_MINE_MAX*GameConstants.MINER_MINE_RATE));
             if(ore >= MIN_ORE_WORTH_MINING) {//rand.nextDouble() <= miningProbability) {
+
                 robotState = RobotState.MINE;
             }
         }
@@ -96,19 +100,6 @@ public class Miner extends MiningUnit {
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
-    private static void minerWander() throws GameActionException {
-        //Vigilance
-        checkForEnemies();
-        
-        //Hill climb ore distribution while being repelled from other units
-        updateFriendlyInRange(8);
-        updateEnemyInSight();
-        goTowardsOre();
-        
-        //Distribute supply
-        distributeSupply(suppliabilityMultiplier_Preattack);
-    }
-
     private static void minerMine() throws GameActionException {
         //Vigilance
         checkForEnemies();
@@ -120,7 +111,21 @@ public class Miner extends MiningUnit {
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
-    //Other methods =========================================================
+    private static void minerWander() throws GameActionException {
+       //Vigilance
+       checkForEnemies();
+
+       //Hill climb ore distribution while being repelled from other units
+       updateFriendlyInRange(15);
+       updateEnemyInSight();
+       goTowardsOre();
+
+       //Distribute supply
+       distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+    
+    
+    //Other methods ===========================================================
     
     // Vigilance: stops everything and attacks when enemies are in attack range.
     private static void checkForEnemies() throws GameActionException {
@@ -135,11 +140,12 @@ public class Miner extends MiningUnit {
         }
     }
     
-    //Parameters ==============================================================
     
+    //Parameters ==============================================================
+
     /**
-     * The importance rating that enemy units of each RobotType should be attacked 
-     * (so higher means attack first). Needs to be adjusted dynamically based on 
+     * The importance rating that enemy units of each RobotType should be attacked
+     * (so higher means attack first). Needs to be adjusted dynamically based on
      * defence strategy.
      */
     private static int[] attackPriorities = {
@@ -150,10 +156,10 @@ public class Miner extends MiningUnit {
         14/*16:DRONE*/,     17/*17:TANK*/,      18/*18:COMMANDER*/, 11/*19:LAUNCHER*/,
         19/*20:MISSILE*/
     };
-    
+
     /**
-     * Multipliers for the effective supply capacity for friendly unit robotTypes, by 
-     * which the dispenseSupply() and distributeSupply() methods allocate supply (so 
+     * Multipliers for the effective supply capacity for friendly unit robotTypes, by
+     * which the dispenseSupply() and distributeSupply() methods allocate supply (so
      * higher means give more supply to units of that type).
      */
     private static double[] suppliabilityMultiplier_Conservative = {
@@ -164,7 +170,7 @@ public class Miner extends MiningUnit {
         0/*16:DRONE*/,      0/*17:TANK*/,       0/*18:COMMANDER*/,  0/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };
-    
+
     private static double[] suppliabilityMultiplier_Preattack = {
         0/*0:HQ*/,          0/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
         0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
@@ -173,6 +179,4 @@ public class Miner extends MiningUnit {
         1/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };
-    
-    
 }

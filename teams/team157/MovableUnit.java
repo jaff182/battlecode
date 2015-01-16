@@ -1,4 +1,5 @@
 package team157;
+import team157.Utility.*;
 import battlecode.common.*;
 
 public class MovableUnit extends RobotPlayer {
@@ -7,14 +8,16 @@ public class MovableUnit extends RobotPlayer {
     
     //Movement ================================================================
     
+    public static final int towerAttackRadius = 24;
+    public static int HQAttackRadius = 35;
+    
     // For pathing
     private static PathingState pathingState = PathingState.BUGGING;
     private static boolean turnClockwise = rand.nextBoolean();
     private static double startDistance; //distance squared before hugging
     private static Direction startTargetDir; //target direction before hugging.
-    private static Direction previousDir; //previous direction in hugging
-    private static int[] prohibitedDir = new int[2];
     private static final int noDir = 8;
+    private static int[] prohibitedDir = {noDir, noDir};
     private static boolean goneAround = false;
     //Previously moved direction
     public static Direction previousDirection = Direction.NONE;
@@ -64,6 +67,60 @@ public class MovableUnit extends RobotPlayer {
      * TODO: is this a dangerous behaviour?
      */
     public static MapLocation moveTargetLocation = enemyHQLocation;
+    
+    /**
+     * Returns true if robot can move in input direction, return false otherwise.
+     * @param dir target direction
+     * @return true if robot can move in dir, false otherwise.
+     */
+    private static boolean movePossible(Direction dir) {
+        if (Map.getInternalMap(myLocation.add(dir)) > 1 ) {
+            return false;
+        } else if (rc.canMove(dir)) {
+                return true;
+        }
+        return false;
+    }
+    
+    
+    /**
+     * Initialize internal map when units are spawned, to bug around tower and hq attack radius.
+     */
+    public static void initInternalMap() {
+        int towerID = 7;
+        for (MapLocation tower: enemyTowers) {
+            for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, towerAttackRadius)) {
+                if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
+                    Map.setInternalMapWithoutSymmetry(inSightOfTower, towerID);
+                }
+            }
+            towerID++;
+        }
+        if (towerID < 9) {
+            HQAttackRadius = 24;
+        }
+        for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,HQAttackRadius)) {
+            if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
+                Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
+            }   
+        }
+    }
+    
+    /**
+     * Set all MapLocations in attack radius of tower or hq as pathable.
+     * @param target MapLocation of tower or hq.
+     * @param targetAttackRadiusSquared attack radius squared of target tower or hq.
+     */
+    public static void setTargetToTowerOrHQ(MapLocation target, int targetAttackRadiusSquared) {
+        int targetID = Map.getInternalMap(target);
+        for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, targetAttackRadiusSquared)) {          
+            if (!rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
+                if (Map.getInternalMap(inSightOfTarget) <= targetID) {
+                    Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
+                }        
+            }
+        }
+    }
     
     /**
      * Sense terrain while moving.
@@ -119,11 +176,30 @@ public class MovableUnit extends RobotPlayer {
     }
     
     /**
+     * Move around randomly.
+     * @throws GameActionException
+     */
+    public static void wander() throws GameActionException {
+        if(rc.isCoreReady()) {
+            int dirInt = rand.nextInt(8);
+            int offsetIndex = 0;
+            while (offsetIndex < 8 && !rc.canMove(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
+                offsetIndex++;
+            }
+            if (offsetIndex < 8) {
+                Direction dirToMove = directions[(dirInt+offsets[offsetIndex]+8)%8];
+                rc.move(dirToMove);
+                previousDirection = dirToMove;
+            }
+        }
+    }
+    
+    /**
      * Return preferred direction to move in given input Direction, based on mapStats.
      * @param x x coordinate of robot position in internal map
      * @param y y coordinate of robot position in internal map
      * @param targetDir desired direction to move in.
-     * @return preferred direction to move in, or null if cannot move into 3 forward directions.
+     * @return preferred direction to move in, or NONE if cannot move into 3 forward directions.
      * @throws GameActionException
      */
     private static Direction chooseForwardDir(int x, int y, Direction targetDir) throws GameActionException {
@@ -140,8 +216,11 @@ public class MovableUnit extends RobotPlayer {
                 return directions[i];
             }
         }
-        return null;
+        return Direction.NONE;
     }
+    
+    // Retreating ==============================================================
+    
     
     /**
      * Return preferred enemy/obstacle avoidance direction based on mapStats.
@@ -166,30 +245,42 @@ public class MovableUnit extends RobotPlayer {
         return bestDir;
     }
     
-    
     /**
-     * Move around randomly.
+     * Retreat in preference of direction with least enemies
      * @throws GameActionException
      */
-    public static void wander() throws GameActionException {
-        if(rc.isCoreReady()) {
-            int dirInt = rand.nextInt(8);
-            int offsetIndex = 0;
-            while (offsetIndex < 8 && !rc.canMove(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
-                offsetIndex++;
+    public static void retreat() throws GameActionException {
+        if (rc.isCoreReady()) {
+            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+            int[] enemiesInDir = new int[8];
+            for (RobotInfo info: enemies) {
+                enemiesInDir[myLocation.directionTo(info.location).ordinal()]++;
             }
-            if (offsetIndex < 8) {
-                Direction dirToMove = directions[(dirInt+offsets[offsetIndex]+8)%8];
-                rc.move(dirToMove);
-                previousDirection = dirToMove;
+            int minDirScore = 30;
+            int dirScore = 0;
+            int maxIndex = 0;
+            for (int i = 0; i < 8; i++) {
+                dirScore = enemiesInDir[i] + enemiesInDir[(i+7)%8] + enemiesInDir[(i+1)%8];
+                if (dirScore <= minDirScore && movePossible(directions[maxIndex])) {
+                        minDirScore = dirScore;
+                        maxIndex = i;         
+                }
+            }
+            if (movePossible(directions[maxIndex])) {
+                rc.move(directions[maxIndex]);
             }
         }
     }
     
+    
+    
+    // Bugging ==================================================================
+    
     /**
      * Return direction to bug in.
      * @param target location of target.
-     * @return next direction to move in, robot should be able to move in this direction.
+     * @return next direction to move in, robot should be able to move in this direction; 
+     * returns NONE if no directions possible.
      * @throws GameActionException
      */
     public static Direction bugDirection(MapLocation target) throws GameActionException {
@@ -198,7 +289,7 @@ public class MovableUnit extends RobotPlayer {
         Direction targetDir = myLocation.directionTo(target);
         
         if (targetDir == Direction.NONE || targetDir == Direction.OMNI){
-            return null;
+            return Direction.NONE;
         }
         
         if (pathingState == PathingState.HUGGING){
@@ -214,11 +305,10 @@ public class MovableUnit extends RobotPlayer {
         switch(pathingState) {
         case BUGGING:
             rc.setIndicatorString(0,"bug " + targetDir);
-            
             int x = Map.locationToMapXIndex(myLocation.x);
             int y = Map.locationToMapYIndex(myLocation.y);
             Direction forwardDir = chooseForwardDir(x, y, targetDir);
-            if (forwardDir!= null) {
+            if (forwardDir!= Direction.NONE) {
                 return forwardDir;
             }
             pathingState = PathingState.HUGGING;
@@ -236,14 +326,14 @@ public class MovableUnit extends RobotPlayer {
                 goneAround = true;
             }
             Direction nextDir = hug(targetDir, false);
-            if (nextDir == null) {
+            if (nextDir == Direction.NONE) {
                 nextDir = targetDir;
             }
             return nextDir;
         default:
             break;
         }
-        return null;
+        return Direction.NONE;
     }
     
     /**
@@ -254,8 +344,8 @@ public class MovableUnit extends RobotPlayer {
     public static void bug(MapLocation target) throws GameActionException {
         if (rc.isCoreReady()) {
             Direction nextDir = bugDirection(target);
-            if ((nextDir != null) && bugMovePossible(nextDir)) {
-                previousDir = nextDir;
+            if ((nextDir != Direction.NONE) && bugMovePossible(nextDir)) {
+                previousDirection = nextDir;
                 rc.move(nextDir);
             }
         }
@@ -293,19 +383,21 @@ public class MovableUnit extends RobotPlayer {
         if (!bugMovePossible(tryDir) || rc.senseTerrainTile(tryLoc).equals(TerrainTile.OFF_MAP)) {
             turnClockwise = !turnClockwise;
             if (tried) {
-                // hugging has been tried in both directions
+             // hugging has been tried in both directions
                 if (prohibitedDir[0] != noDir && prohibitedDir[1] != noDir) {
-                    // We were prohibiting certain directions before.
-                    // try again allowing those directions
+                    // allow prohibited direction
                     prohibitedDir[1] = noDir;
                     return hug(targetDir, false);
+                } else if (rc.senseNearbyRobots(9, myTeam).length > 8) {
+                    // too many friendly units blocking
+                    return Direction.NONE;
                 } else {
-                    // Complete failure. Reset the state and start over.
+                    // reset and start over.
                     pathingState = PathingState.BUGGING;
                     prohibitedDir = new int[]{noDir, noDir};
                     goneAround = false;
                     
-                    return null;
+                    return Direction.NONE;
                 }
             }
             // hug the other direction
@@ -314,7 +406,7 @@ public class MovableUnit extends RobotPlayer {
         
         // store past two cardinal directions that were used in hugging to make
         // sure that these directions are not used again.
-        if (tryDir != previousDir && !tryDir.isDiagonal()) {
+        if (tryDir != previousDirection && !tryDir.isDiagonal()) {
             if (turn(turn(intToDirection[prohibitedDir[0]])) == tryDir) {
                 prohibitedDir[0] = tryDir.opposite().ordinal();
                 prohibitedDir[1] = noDir;
@@ -335,31 +427,91 @@ public class MovableUnit extends RobotPlayer {
     private static boolean bugMovePossible(Direction dir) {
         if (blockedDirs[prohibitedDir[0]][prohibitedDir[1]][dir.ordinal()]) {
             return false;
-        } else if (Map.getInternalMap(myLocation.add(dir)) > 1 ) {
+        } else if (Map.getInternalMap(myLocation.add(dir)) > 1 ) { //do not change!!!
             return false;
         } else if (rc.canMove(dir)) {
-                return true;
+            return true;
         }
         return false;
     }
 
+    
+
+    
+    // Following =============================================================
+    /**
+     * Follow target based on priority. Attacks target if in attack range, and moves towards it.
+     * @param enemies RobotInfo array of enemies in sensing range
+     * @param followOrder int array of follow priority rank for each corresponding RobotType ordinal in robotTypes
+     * @throws GameActionException
+     */
+    public static void followTarget(RobotInfo[] enemies, int[] followOrder) throws GameActionException {
+        //Initiate
+        int targetidx = 0, targettype = 1;
+        double minhp = 100000;
+        
+        //Check for weakest of highest priority enemy type
+        for(int i=0; i<enemies.length; i++) {
+            int type = enemies[i].type.ordinal();
+            if(followOrder[type] > targettype) {
+                //More important enemy to attack
+                targettype = followOrder[type];
+                minhp = enemies[i].health;
+                targetidx = i;
+            } else if(followOrder[type] == targettype && enemies[i].health < minhp) {
+                //Same priority enemy but lower health
+                minhp = enemies[i].health;
+                targetidx = i;
+            }
+        }    
+        MapLocation followTargetLoc = enemies[targetidx].location;
+        int followTargetDistance = followTargetLoc.distanceSquaredTo(myLocation);
+        if (followTargetDistance <= attackRange) {
+            if (rc.isWeaponReady()) {
+                // basicAttack(enemies);
+                rc.attackLocation(followTargetLoc);
+            }
+            if (followTargetDistance <= 2) {
+                retreat();
+            } else {
+                Direction dirToTarget = myLocation.directionTo(followTargetLoc);
+                Direction tryDir = turnTwice(dirToTarget);
+                if (movePossible(tryDir) && rc.isCoreReady()) {
+                    rc.move(tryDir);
+                } else {
+                    turnClockwise = !turnClockwise;
+                    tryDir = turnTwice(dirToTarget);
+                    if (movePossible(tryDir) && rc.isCoreReady()) {
+                        rc.move(tryDir);
+                    } else {
+                        retreat();
+                    }
+                }
+            } 
+        } else {
+            bug(followTargetLoc);
+        }
+    }
     
     /**
-     * Returns true if robot can move in input direction, return false otherwise.
-     * @param dir target direction
-     * @return true if robot can move in dir, false otherwise.
+     * Returns true if robot is building or is computer, and false otherwise.
+     * @param robotOrdinal ordinal of robot type.
+     * @return true if robot is building or is computer, and false otherwise.
      */
-    private static boolean movePossible(Direction dir) {
-        if (Map.getInternalMap(myLocation.add(dir)) > 1 ) {
-            return false;
-        } else if (rc.canMove(dir)) {
-                return true;
-        }
-        return false;
+    public static boolean isBuilding(int robotOrdinal) {
+        return (robotOrdinal < 11 || robotOrdinal == 12);
     }
 
 
-    
+    /**
+     * Returns rotated direction in clockwise direction if turnClockwise is true,
+     * or rotated direction in counter-clockwise direction otherwise.
+     * @param dir direction.
+     * @return rotated direction.
+     */
+    private static Direction turnTwice(Direction dir) {
+        return (turnClockwise ? dir.rotateRight().rotateRight() : dir.rotateLeft().rotateLeft());
+    }
     
     //Move and sense ==========================================================
     

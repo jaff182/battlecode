@@ -9,7 +9,7 @@ public class HQ extends Structure {
 
     private final static RobotType[] buildOrder1 = {
             //RobotType.BARRACKS, RobotType.BARRACKS,
-            RobotType.MINERFACTORY,
+            RobotType.MINERFACTORY, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
@@ -60,15 +60,34 @@ public class HQ extends Structure {
         queue = new BuildingQueue(buildOrder1, RobotType.SUPPLYDEPOT);
         
 
-        //Initiate radio map TODO: towers locations?
+        //Initiate radio map TODO: towers locations?  
+        
+        // set all maplocations within enemy tower or HQ attack radius as unpathable
+        int towerID = 7;
+        for (MapLocation tower: enemyTowers) {
+            for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 24)) {
+                if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
+                    Map.setMaps(inSightOfTower.x, inSightOfTower.y, towerID);
+                }
+            }
+            towerID++;
+        }
+        for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,35)) {
+            if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
+                Map.setMaps(inSightOfHQ.x, inSightOfHQ.y, towerID);
+            }   
+        }
+        //TODO need to reset radio map when a tower falls
+        
         Map.setMaps(HQLocation.x,HQLocation.y,3);
-        Map.setMaps(enemyHQLocation.x,enemyHQLocation.y,2);
+        //Map.setMaps(enemyHQLocation.x,enemyHQLocation.y,2);
         // TODO: add some distance radius in case the location is not exactly symmetrical
         if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
-            Map.symmetry = 3;
-            rc.broadcast(Channels.MAP_SYMMETRY,3);
+            Map.symmetry = 3;//Map.rotationSymmetry;
+            rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
         }
+
         
         // Init LastAttackedLocations
         team157.Utility.LastAttackedLocationsReport.HQinit();
@@ -97,7 +116,11 @@ public class HQ extends Structure {
     // TODO:  Just for thought - modify this method so that we can reserve some minimum amounts of emergency fund.
     private static boolean hasFunds(double cost)
     {
-        return rc.getTeamOre() > cost*3;//1.5;
+        if (Clock.getRoundNum() < 200) { //TODO edit this out if necessary
+            return rc.getTeamOre() > cost;
+        } else {
+            return rc.getTeamOre() > cost*2;
+        }
     }
 
     /**
@@ -135,7 +158,7 @@ public class HQ extends Structure {
 
     private static boolean hasFewBeavers() throws GameActionException
     {
-        return RobotCount.read(RobotType.BEAVER) < 5;
+        return RobotCount.read(RobotType.BEAVER) < 2;
     }
     
     private static void loop() throws GameActionException {

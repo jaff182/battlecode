@@ -9,17 +9,16 @@ public class Drone extends MovableUnit {
     //General methods =========================================================
 
     private static MapLocation target = RobotPlayer.enemyHQLocation;
-    private static MapLocation[] tempEnemyLoc;
-    private static int numberOfEnemies = 0;
+    private static int numberOfEnemiesInSight = 0;
     private static RobotInfo[] enemiesInSight;
-    private static boolean switchTarget = false;
-    private static MapLocation previousTarget = target;
     private static int indexInWaypoints = 0;
     private static int waypointTimeout = 100; // timeout before waypoint changes
     private static final int roundNumAttack = 1750; // round number when end game attack starts
     private static final int numberInSwarm = 5; // minimum size of group for drones to start swarming
     private static boolean keepAwayFromTarget = false; // true if target is tower or hq, false otherwise
-    private static DroneState robotState = DroneState.UNSWARM;
+    private static DroneState droneState = DroneState.UNSWARM;
+    private static int retreatTimeout = 5; // number of rounds before changing from retreat to unswarm state.
+    private static RobotInfo attackTarget; // current attack target
     
     public static void start() throws GameActionException {
         init();
@@ -31,7 +30,11 @@ public class Drone extends MovableUnit {
     
     private static void init() throws GameActionException {  
         if (Clock.getRoundNum() < roundNumAttack) {
-            initUnswarmState();
+            // set all locations within sight range of tower and hq as void in internal map
+            initInternalMap();
+
+        } else {
+            droneState = DroneState.KAMIKAZE;
         }
         
         Waypoints.refreshLocalCache();
@@ -48,30 +51,24 @@ public class Drone extends MovableUnit {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
-        if (Clock.getRoundNum() == roundNumAttack) {
-            Map.resetInternalMap();
+        if (Clock.getRoundNum() > roundNumAttack) {
+            droneState = DroneState.KAMIKAZE;
         }
         
         enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
-        numberOfEnemies = enemiesInSight.length;
-        
+        numberOfEnemiesInSight = enemiesInSight.length;
+        enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+
         setTargetToWayPoints();
         
-        switch (robotState) {
-            case UNSWARM:
-                switchStateFromUnswarmState();
-                break;
-            case SWARM:
-                switchStateFromSwarmState();
-                break;
-            default:
-                throw new IllegalStateException();
-        }
+        // switch state based on number of enemies in sight
+        droneSwitchState();
         
         //Display state
-        rc.setIndicatorString(1, "In state: " + robotState);
+        rc.setIndicatorString(1, "In state: " + droneState);
         
-        droneMoveAttack(target);
+        droneMove(target);
+        RobotCount.report();
     }
     
     /**
@@ -79,11 +76,31 @@ public class Drone extends MovableUnit {
      * @throws GameActionException
      */
     private static void setTargetToWayPoints() throws GameActionException {
+        if (Clock.getRoundNum() > roundNumAttack) {
+            // end game attack on towers and then hq
+            MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
+            int enemyAttackRadius = towerAttackRadius;
+            if (rc.senseEnemyTowerLocations().length != 0) {
+                target = towerLoc[0];
+            } else {
+                target = rc.senseEnemyHQLocation();
+                enemyAttackRadius = HQAttackRadius;
+            }
+            // set area around target as pathable
+            int targetID = Map.getInternalMap(target);
+            for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, enemyAttackRadius)) {          
+                if (!rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
+                    if (Map.getInternalMap(inSightOfTarget) <= targetID) {
+                        Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
+                    }        
+                }
+            }
+        }
+        
 		// switch target to next waypoint if timeout is reached or close to target but
 		// no enemies in sight
         if (waypointTimeout <= 0 ||
-                (myLocation.distanceSquaredTo(target) < 24 && numberOfEnemies == 0)) {
-            previousTarget = target;
+                (myLocation.distanceSquaredTo(target) < 24 && numberOfEnemiesInSight == 0)) {
             indexInWaypoints = Math.min(indexInWaypoints + 1, Waypoints.numberOfWaypoints - 1);
             target = Waypoints.waypoints[indexInWaypoints];
             if (targetIsTowerOrHQ(target)) {
@@ -93,7 +110,6 @@ public class Drone extends MovableUnit {
             }
             waypointTimeout = 100;
         }
-        switchTarget = !target.equals(previousTarget);
     }
     
     /**
@@ -101,22 +117,8 @@ public class Drone extends MovableUnit {
      * if not in ATTACK state and continuously attacks if in ATTACK state.
      * @throws GameActionException
      */
-    private static void checkForEnemies() throws GameActionException
-    {
-        enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-        if (robotState != DroneState.ATTACK){
-            // hit once only and run
-            if (enemies.length > 0) {
-                if (rc.isWeaponReady()) {
-                    // basicAttack(enemies);
-                    priorityAttack(enemies, attackPriorities);
-                }
-                updateEnemyInRange(attackRange);
-                enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-                RobotCount.report();
-                rc.yield();
-            }
-        } else {
+    private static void checkForEnemies() throws GameActionException {
+        if (droneState == DroneState.KAMIKAZE){
             // continually attacks when enemies are in attack range.
             while (enemies.length > 0) {
                 if (rc.isWeaponReady()) {
@@ -124,28 +126,114 @@ public class Drone extends MovableUnit {
                     priorityAttack(enemies, attackPriorities);
                 }
                 enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-                RobotCount.report();
                 rc.yield();
             }
+        } else {
+            if (enemies.length > 0) {
+                if (rc.isWeaponReady()) {
+                    // basicAttack(enemies);
+                    priorityAttack(enemies, attackPriorities);
+                }
+            }
         }
-        
     }
-
     
-    private static void droneMoveAttack(MapLocation target) throws GameActionException
-    {
-        checkForEnemies();
-
-        switch(robotState) {
+    //TODO: switch to swarm only if drone units are nearby
+    /**
+     * Switches drone state based on number of enemies in sight
+     */
+    private static void droneSwitchState() {
+        switch (droneState) {
         case UNSWARM:
-            if (numberOfEnemies > 1) {
-                droneRetreat();
-            } else {
-                droneUnswarmPathing(target);
+            if (numberOfEnemiesInSight == 1 && !isBuilding(enemiesInSight[0].type.ordinal())) {
+                // lone enemy in sight which is not a building
+                droneState = DroneState.FOLLOW;
+            } else if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
+                // Switches to swarm state when >4 friendly units within sensing radius.
+                droneState = DroneState.SWARM;
+            } else if (numberOfEnemiesInSight > 1) {
+             // goes into retreat state if there are enemies in sight range
+                droneState = DroneState.RETREAT;
             }
             break;
         case SWARM:
-            droneSwarmPathing(target);
+            if (numberOfEnemiesInSight == 1 && !isBuilding(enemiesInSight[0].type.ordinal())) {
+                // lone enemy in sight which is not a building
+                droneState = DroneState.FOLLOW;
+            } else if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length < numberInSwarm) {
+             // switch to unswarm state when <5 friendly units within sensing radius.
+                droneState = DroneState.UNSWARM;
+            }
+            break;
+        case KAMIKAZE:
+            break;
+        case FOLLOW:
+            if (numberOfEnemiesInSight == 0 || numberOfEnemiesInSight > 2) {
+                // lost sight of follow target or too many enemies
+                droneState = DroneState.UNSWARM;
+            }
+            break;
+        case RETREAT:
+            if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
+                // switch to swarm state when enough friendly units in range
+                droneState = DroneState.SWARM;
+            } else if (retreatTimeout < 0) {
+                // switch to unswarm state when in stationary retreat for enough turns without encountering any enemy
+                droneState = DroneState.UNSWARM;
+            }
+            break;
+        case SCOUT:
+            //TODO
+            break;
+        default:
+            throw new IllegalStateException();
+        }
+    }
+
+    /**
+     * Attacks or move to target based on drone state.
+     * @param target target to move to.
+     * @throws GameActionException
+     */
+    private static void droneMove(MapLocation target) throws GameActionException{
+        // first check for enemies and attacks if there are
+        checkForEnemies();
+
+        switch(droneState) {
+        case UNSWARM:
+            // defensive state for lone drones, stays away from target and waits for reinforcements.
+            if (keepAwayFromTarget) {
+                // target is tower or hq
+                if(myLocation.distanceSquaredTo(target) < 35) {
+                    return;
+                }
+            } else {
+                if(myLocation.distanceSquaredTo(target) < 16) {
+                    return;
+                }
+            }
+            bug(target);
+            break;
+        case SWARM:
+            // aggressive state, bugs toward target
+            bug(target);
+            break;
+        case KAMIKAZE:
+            bug(target);
+            break;
+        case FOLLOW:
+            followTarget(enemiesInSight, followPriorities);
+            break;
+        case RETREAT:
+            if (enemies.length == 0) {
+                retreatTimeout--;
+            } else {
+                retreat();
+                retreatTimeout = 5;
+            }
+            break;
+        case SCOUT:
+            // TODO scout not implemented yet!
             break;
         default:
             throw new IllegalStateException();
@@ -153,142 +241,6 @@ public class Drone extends MovableUnit {
 
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
-    
-    
-    // switch states =============================================================
-    
-    /**
-     * Switches state to swarm state when >4 friendly units within sensing radius.
-     */
-    private static void switchStateFromUnswarmState() {
-        if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
-            robotState = DroneState.SWARM;
-            initAttackState(target);
-        }
-    }
-    
-    /**
-     * Switches state to unswarm state when <=4 friendly units within sensing radius
-     * or when moving to a new target.
-     */
-    private static void switchStateFromSwarmState() {
-        if (switchTarget || rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length < numberInSwarm) {
-            if (Clock.getRoundNum() < roundNumAttack) {
-                robotState = DroneState.UNSWARM;
-                initUnswarmState();
-            }
-        }
-    }
-    
-    
-    // init states =======================================================================
-    
-    /**
-     * Set all locations within sight range of enemy tower and hq as void in internal map.
-     */
-    private static void initUnswarmState() {
-        // set all locations within sight range of tower and hq as void in internal map
-        for (MapLocation tower: rc.senseEnemyTowerLocations()) {
-            for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 24)) {
-                if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
-                    Map.setInternalMapWithoutSymmetry(inSightOfTower, 9);
-                }          
-            }
-        }
-        for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(rc.senseEnemyHQLocation(),24)) {
-            if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
-                Map.setInternalMapWithoutSymmetry(inSightOfHQ, 7);
-            }   
-        }
-    }
-    
-    /**
-     * Set all locations within sight of input target as pathable unless target is tower or hq.
-     * @param target attack target.
-     */
-    private static void initAttackState(MapLocation target) {
-        // check if target is tower or hq
-        if (keepAwayFromTarget) {
-            return;
-        }
-        for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, 35)) {
-            if (!rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
-                Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
-            }
-            
-        }
-    }
-    
-    
-    // Movement methods =================================================================
-
-    
-    /**
-     * Drone pathing to input target, avoiding enemy tower and hq, staying at distance
-     * >= 7 squares from target.
-     * @param target target location.
-     * @throws GameActionException
-     */
-    private static void droneUnswarmPathing(MapLocation target) throws GameActionException {
-        if (keepAwayFromTarget) {
-            // stay at distance >= 7 squares from target if not attacking yet.
-            if(myLocation.distanceSquaredTo(target) < 35) {
-                return;
-            }
-        } else {
-            if(myLocation.distanceSquaredTo(target) < 15) {
-                return;
-            }
-        }
-
-        if (Clock.getRoundNum() < roundNumAttack) {
-            bug(target);
-        } else {
-            exploreRandom(target);
-        }
-        
-    }
-    
-    /**
-     * Drone swarm pathing to input target.
-     * @param target target location
-     * @throws GameActionException
-     */
-    private static void droneSwarmPathing(MapLocation target) throws GameActionException {        
-        if (Clock.getRoundNum() < roundNumAttack) {
-            bug(target);
-        } else {
-            exploreRandom(target);
-        }
-    }
-    
-    /**
-     * Retreat method for drones, choosing direction with least enemies.
-     * @throws GameActionException
-     */
-    private static void droneRetreat() throws GameActionException {
-        //System.out.println("retreat!" + Clock.getBytecodeNum());
-        tempEnemyLoc = new MapLocation[numberOfEnemies]; //store location of enemies in sight
-        MapLocation enemyLoc;
-        int i = 0;
-        while(i < numberOfEnemies) {
-            enemyLoc = enemiesInSight[i].location;
-            tempEnemyLoc[i] = enemyLoc;
-            Map.setInternalMap(enemyLoc, 1);
-            i++;
-        }
-        //System.out.println(Clock.getBytecodeNum());
-        Direction chosenDir = Direction.NONE;
-        if (rc.isCoreReady()) {
-            chosenDir = chooseAvoidanceDir(myLocation);
-            if (chosenDir!= Direction.NONE && chosenDir!= Direction.OMNI){
-                rc.move(chosenDir);
-            }
-        }
-        //System.out.println(Clock.getBytecodeNum());
-    }
-    
-    
     
     //Misc. =========================================================
     
@@ -350,6 +302,20 @@ public class Drone extends MovableUnit {
         1/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };
+    
+    /**
+     * The importance rating that enemy units of each RobotType should be followed 
+     * (so higher means follow first).
+     */
+    private static int[] followPriorities = {
+        0/*0:HQ*/,         0/*1:TOWER*/,      0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,   1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   3/*13:SOLDIER*/,   4/*14:BASHER*/,    2/*15:MINER*/,
+        9/*16:DRONE*/,     6/*17:TANK*/,      5/*18:COMMANDER*/, 7/*19:LAUNCHER*/,
+        8/*20:MISSILE*/
+    };
+    
     
     
     

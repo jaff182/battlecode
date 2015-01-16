@@ -48,18 +48,24 @@ public class Waypoints {
      * @throws GameActionException
      */
     public static void refreshLocalCache() throws GameActionException {
-        int numberOfEventsThatHaveOccurred = LastAttackedLocationsReport
-                .getNumberOfEventsThatHaveOccurred();
+        int numberOfEventsThatHaveOccurred = LastAttackedLocationsReport.getNumberOfEventsThatHaveOccurred();
+
         if (numberOfEventsThatHaveOccurred != numberOfEventsThatHaveOccurredWhenLastUpdated) {
             // Dirty!
             numberOfEventsThatHaveOccurredWhenLastUpdated = numberOfEventsThatHaveOccurred;
 
             int i = 0;
-            
-            if (RobotPlayer.rand.nextInt(5) == 0) { // 1 in 5 drones go to HQ
+
+            // 1 in 5 drones go to HQ
+            // TODO: I assume that the var i is accessed statically by all robots, because else it does not make sense
+            // as i = 0 all the time.
+            if (RobotPlayer.rand.nextInt(5) == 0) {
                 waypoints[i] = RobotPlayer.HQLocation;
                 ++i;
             }
+
+            // TODO: should we wait until all robots have finished this step? do we have to worry about race condition?
+
             // build new waypoints array
             for (; i < LAST_ATTACKED_LOCATIONS_USED; ++i) {
                 int x = LastAttackedLocationsReport.getLastAttackXCoordinate(i);
