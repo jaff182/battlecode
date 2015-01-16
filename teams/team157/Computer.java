@@ -16,7 +16,7 @@ public class Computer extends MovableUnit {
     }
     
     private static void init() throws GameActionException {
-        rc.setIndicatorString(0,"hello i'm a computer.");
+        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
         
     }
     

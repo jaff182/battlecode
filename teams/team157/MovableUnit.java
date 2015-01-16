@@ -68,12 +68,14 @@ public class MovableUnit extends RobotPlayer {
      */
     public static MapLocation moveTargetLocation = enemyHQLocation;
     
+    
+    
     /**
      * Returns true if robot can move in input direction, return false otherwise.
      * @param dir target direction
      * @return true if robot can move in dir, false otherwise.
      */
-    private static boolean movePossible(Direction dir) {
+    protected static boolean movePossible(Direction dir) {
         if (Map.getInternalMap(myLocation.add(dir)) > 1 ) {
             return false;
         } else if (rc.canMove(dir)) {
