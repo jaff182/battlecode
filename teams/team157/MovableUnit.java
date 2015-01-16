@@ -90,9 +90,7 @@ public class MovableUnit extends RobotPlayer {
         int towerID = 7;
         for (MapLocation tower: enemyTowers) {
             for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, towerAttackRadius)) {
-                if (!rc.senseTerrainTile(inSightOfTower).equals(TerrainTile.OFF_MAP)) {
-                    Map.setInternalMapWithoutSymmetry(inSightOfTower, towerID);
-                }
+                Map.setInternalMapWithoutSymmetry(inSightOfTower, towerID);
             }
             towerID++;
         }
@@ -100,9 +98,7 @@ public class MovableUnit extends RobotPlayer {
             HQAttackRadius = 24;
         }
         for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,HQAttackRadius)) {
-            if (!rc.senseTerrainTile(inSightOfHQ).equals(TerrainTile.OFF_MAP)) {
-                Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
-            }   
+            Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);   
         }
     }
     
@@ -114,11 +110,9 @@ public class MovableUnit extends RobotPlayer {
     public static void setTargetToTowerOrHQ(MapLocation target, int targetAttackRadiusSquared) {
         int targetID = Map.getInternalMap(target);
         for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, targetAttackRadiusSquared)) {          
-            if (!rc.senseTerrainTile(inSightOfTarget).equals(TerrainTile.OFF_MAP)) {
-                if (Map.getInternalMap(inSightOfTarget) <= targetID) {
+            if (Map.getInternalMap(inSightOfTarget) <= targetID) {
                     Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
-                }        
-            }
+            }        
         }
     }
     
