@@ -29,7 +29,6 @@ public class Soldier extends MovableUnit {
         // todo refactor
         switch (state) {
         case ATTACK_MOVE:
-            
             break;
         case RETREAT:
             break;
