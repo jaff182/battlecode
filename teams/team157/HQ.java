@@ -63,6 +63,8 @@ public class HQ extends Structure {
         //Initiate radio map TODO: towers locations?  
         
         // set all maplocations within enemy tower or HQ attack radius as unpathable
+        // TODO method takes too much bytecode in first few rounds
+        /**
         int towerID = 7;
         for (MapLocation tower: enemyTowers) {
             for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, 24)) {
@@ -77,6 +79,7 @@ public class HQ extends Structure {
                 Map.setMaps(inSightOfHQ.x, inSightOfHQ.y, towerID);
             }   
         }
+        **/
         //TODO need to reset radio map when a tower falls
         
         Map.setMaps(HQLocation.x,HQLocation.y,3);
@@ -183,9 +186,9 @@ public class HQ extends Structure {
             build(nextBuilding); // Read javadoc of build for caveats
         }
         
-        if (hasFewBeavers())
+        if (hasFewBeavers()) { 
             trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
-        
+        }
         
         dispenseSupply(suppliabilityMultiplier);
         //if(Clock.getRoundNum() == 1500) debug_printRadioMap();
