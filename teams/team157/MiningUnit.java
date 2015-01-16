@@ -131,6 +131,7 @@ public class MiningUnit extends MovableUnit {
             }
             
             //Find most preferred direction
+            rc.setIndicatorString(2,"dirpri = "+directionPriority[0]+", "+directionPriority[1]+", "+directionPriority[2]+", "+directionPriority[3]+", "+directionPriority[4]+", "+directionPriority[5]+", "+directionPriority[6]+", "+directionPriority[7]);
             int[] bestDirInts = {-1,-1,-1,-1,-1,-1,-1,-1};
             int maxCount = 0;
             double bestdirectionPriority = -10000000;
