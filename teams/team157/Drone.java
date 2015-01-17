@@ -43,7 +43,8 @@ public class Drone extends MovableUnit {
     
     
     private static void loop() throws GameActionException {
-        myLocation = rc.getLocation();
+        updateMyLocation();
+
         waypointTimeout--;
         // rc.setIndicatorString(1, "Waypoint timeout " + waypointTimeout + " " + indexInWaypoints + " " + Waypoints.numberOfWaypoints
         //        + " x: " + target.x + "y: " + target.y);
@@ -70,7 +71,8 @@ public class Drone extends MovableUnit {
         droneMove(target);
         RobotCount.report();
     }
-    
+
+    // TODO: consider refactoring this method, seems useful
     /**
      * Set target based on waypoints.
      * @throws GameActionException
@@ -81,7 +83,7 @@ public class Drone extends MovableUnit {
             MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
             int distanceToClosestTower = Integer.MAX_VALUE;
             int enemyAttackRadius = towerAttackRadius;
-            if (rc.senseEnemyTowerLocations().length != 0) {
+            if (towerLoc.length != 0) {
                 for (MapLocation loc: towerLoc) {
                     int towerDist = myLocation.distanceSquaredTo(loc);
                     if (towerDist <= distanceToClosestTower) {
@@ -93,6 +95,7 @@ public class Drone extends MovableUnit {
                 target = rc.senseEnemyHQLocation();
                 enemyAttackRadius = HQAttackRadius;
             }
+
             // set area around target as pathable
             int targetID = Map.getInternalMap(target);
             for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, enemyAttackRadius)) {          
@@ -250,7 +253,8 @@ public class Drone extends MovableUnit {
     //Misc. =========================================================
     
     
-    
+
+    // TODO: refactor this method, looks useful
     /**
      * Returns true if current target is an enemy tower or HQ, and false otherwise.
      * @param target current target
