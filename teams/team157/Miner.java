@@ -9,7 +9,7 @@ public class Miner extends MiningUnit {
     //Global variables ========================================================
     
     /**
-     * Is this miner mining efficiently? That is, is it mining at 0.75*3?
+     * Is this miner mining efficiently? That is, is it mining at all?
      */
     public static boolean miningEfficiently = true;
     

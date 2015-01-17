@@ -145,16 +145,19 @@ public class Beaver extends MiningUnit {
     }
     
     private static void beaverWander() throws GameActionException {
-       //Vigilance
-       checkForEnemies();
-
-       //Hill climb ore distribution while being repelled from other units
-       updateFriendlyInRange(15);
-       updateEnemyInSight();
-       goTowardsOre();
-
-       //Distribute supply
-       distributeSupply(suppliabilityMultiplier_Preattack);
+        //Vigilance
+        checkForEnemies();
+        
+        //Hill climb ore distribution while being repelled from other units
+        if(RobotCount.read(RobotType.MINERFACTORY) == 0) {
+            updateFriendlyInRange(15);
+            goTowardsOre();
+        } else {
+            wander();
+        }
+        
+        //Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
     // TODO: this is identical to miner's mine

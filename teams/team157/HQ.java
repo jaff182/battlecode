@@ -5,8 +5,9 @@ import battlecode.common.*;
 
 public class HQ extends Structure {
 
-    //General methods =========================================================
-
+    //Global variables ========================================================
+    
+    //Building Request implementation -----------------------------------------
     private final static RobotType[] buildOrder1 = {
             //RobotType.BARRACKS, RobotType.BARRACKS,
             RobotType.MINERFACTORY, RobotType.HELIPAD,
@@ -44,7 +45,14 @@ public class HQ extends Structure {
     private static BuildingRequestState buildingRequestState = BuildingRequestState.NO_PENDING_REQUEST;
 
     private static BuildingQueue queue;
-
+    
+    
+    //Declarative building implementation -------------------------------------
+    
+    
+    
+    //General methods =========================================================
+    
     public static void start() throws GameActionException {
         init();
         while(true) {
@@ -66,7 +74,6 @@ public class HQ extends Structure {
         
         Map.setMaps(HQLocation.x,HQLocation.y,3);
         //Map.setMaps(enemyHQLocation.x,enemyHQLocation.y,2);
-        // TODO: add some distance radius in case the location is not exactly symmetrical
         if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
             Map.symmetry = 3;//Map.rotationSymmetry;
@@ -76,12 +83,42 @@ public class HQ extends Structure {
         
         // Init LastAttackedLocations
         team157.Utility.LastAttackedLocationsReport.HQinit();
-        
         team157.Utility.LastAttackedLocationsReport.everyRobotInit();
-        
-        team157.Utility.BeaversBuildRequest.HQinit();
+        //team157.Utility.BeaversBuildRequest.HQinit();
     }
+    
+    private static void loop() throws GameActionException {
+        // Clean up robot count data for this round -- do not remove, will break invariants
+        RobotCount.reset();
+        MinerEffectivenessCount.reset();
 
+        // Code that runs in every robot (including buildings, excepting missiles)
+        sharedLoopCode();
+        
+        checkForEnemies();
+        
+        //Debug
+        debug_countTypes();
+        
+        RobotType nextBuilding = queue.getNextBuilding();
+
+        // In the future we can add some probabilistic constants so that we can switch between buildings and units
+        if(Clock.getRoundNum() < 1800) {
+            build(nextBuilding); // Read javadoc of build for caveats
+        }
+        
+        if (hasFewBeavers()) { 
+            trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
+        }
+        
+        //Dispense supply
+        dispenseSupply(suppliabilityMultiplier);
+        //if(Clock.getRoundNum() == 1500) debug_printRadioMap();
+
+    }
+    
+    //Other methods ===========================================================
+    
     // TODO: consider to refactor this method
     private static void checkForEnemies() throws GameActionException
     {
@@ -146,38 +183,15 @@ public class HQ extends Structure {
         return RobotCount.read(RobotType.BEAVER) < 2;
     }
     
-    private static void loop() throws GameActionException {
-        // Clean up robot count data for this round -- do not remove, will break invariants
-        RobotCount.reset();
-        MinerEffectivenessCount.reset();
-
-        // Code that runs in every robot (including buildings, excepting missiles)
-        sharedLoopCode();
-        
-        checkForEnemies();
-        
-        //Debug
-        //for (RobotType robotType: RobotType.values()) {
-        //    System.out.println("The number of " + robotType + " is " + RobotCount.read(robotType));
-        //}
-
-        RobotType nextBuilding = queue.getNextBuilding();
-
-        // In the future we can add some probabilistic constants so that we can switch between buildings and units
-        if(Clock.getRoundNum() < 1800) {
-            build(nextBuilding); // Read javadoc of build for caveats
+    
+    
+    public static void debug_countTypes() throws GameActionException {
+        for (RobotType robotType: RobotType.values()) {
+            System.out.println("The number of " + robotType + " is " + RobotCount.read(robotType));
         }
-        
-        if (hasFewBeavers()) { 
-            trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
-        }
-        
-        dispenseSupply(suppliabilityMultiplier);
-        //if(Clock.getRoundNum() == 1500) debug_printRadioMap();
-
     }
     
-    //Specific methods =========================================================
+    //Parameters ==============================================================
     
     /**
      * The importance rating that enemy units of each RobotType should be attacked 
@@ -189,8 +203,8 @@ public class HQ extends Structure {
         8/*4:BARRACKS*/,    9/*5:HELIPAD*/,     6/*6:TRNGFIELD*/,   10/*7:TANKFCTRY*/,
         5/*8:MINERFCTRY*/,  2/*9:HNDWSHSTN*/,   11/*10:AEROLAB*/,   13/*11:BEAVER*/,
         3/*12:COMPUTER*/,   15/*13:SOLDIER*/,   14/*14:BASHER*/,    12/*15:MINER*/,
-        16/*16:DRONE*/,     18/*17:TANK*/,      17/*18:COMMANDER*/, 19/*19:LAUNCHER*/,
-        20/*20:MISSILE*/
+        16/*16:DRONE*/,     18/*17:TANK*/,      17/*18:COMMANDER*/, 20/*19:LAUNCHER*/,
+        19/*20:MISSILE*/
     };
     
     /**
