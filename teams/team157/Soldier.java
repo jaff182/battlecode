@@ -79,8 +79,11 @@ public class Soldier extends MovableUnit {
             } else if (checkIfMoveTargetReached())
                 state = SoldierState.WAIT;
             break;
-        case WAIT: // No escape from WAIT, unless waypoint is moved (see
-                   // above)
+        case WAIT:
+            if (moveTargetLocation != SoldierGroup.waypointLocation) {
+                state = SoldierState.ATTACK_MOVE;
+                moveTargetLocation = SoldierGroup.waypointLocation;
+            }
             break;
         case JOIN_GROUP:
             if (myLocation.distanceSquaredTo(SoldierGroup.groupCenter) <= distanceSquaredFromCenterOfGroupBeforeLost) {
