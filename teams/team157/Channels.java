@@ -39,5 +39,11 @@ public class Channels {
      * 2 channels needed
      */
     public static final int EFFECTIVE_MINERS_COUNT = 17075; // 2 channels needed
+    
+    /**
+     * Starting channel for tank defense unit count system
+     * 19 channels needed
+     */
+    public static final int TANK_DEFENSE_COUNT = 17078;
 
 }

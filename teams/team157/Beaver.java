@@ -177,14 +177,14 @@ public class Beaver extends MiningUnit {
     private static void beaverBuild() throws GameActionException {
         //Vigilance
         checkForEnemies();
-        
+      
         // Go closer to build location.
         // When the beaver is there, we cans start building immediately
         int distance = myLocation.distanceSquaredTo(moveTargetLocation);
         if(distance == 0) bug(HQLocation); //move next to build spot
         else if(distance > 2) bug(moveTargetLocation); //travel to build spot
         else {
-            Direction dirToBuild = myLocation.directionTo(moveTargetLocation);
+            Direction dirToBuild = myLocation.directionTo(moveTargetLocation);  
             if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType) 
                 && rc.canBuild(dirToBuild,buildingType)) {
                 //Can build building

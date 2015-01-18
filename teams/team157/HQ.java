@@ -5,6 +5,10 @@ import battlecode.common.*;
 
 public class HQ extends Structure {
 
+    private static final int tankDefenseChannel = Channels.TANK_DEFENSE_COUNT;
+    private static int numberOfTanksNeeded = 5;
+    
+    
     //General methods =========================================================
 
     private final static RobotType[] buildOrder1 = {
@@ -28,6 +32,11 @@ public class HQ extends Structure {
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
+    };
+    
+    private final static RobotType[] buildOrder2 = {
+        RobotType.BARRACKS, RobotType.TANKFACTORY, RobotType.TANKFACTORY,
+        RobotType.TANKFACTORY,
     };
     
     /**
@@ -56,6 +65,8 @@ public class HQ extends Structure {
     
     private static void init() throws GameActionException {
         rc.setIndicatorString(0,"hello i'm a hq.");
+        // call for tank defense units
+        rc.broadcast(tankDefenseChannel, numberOfTanksNeeded);
 
         queue = new BuildingQueue(buildOrder1, RobotType.SUPPLYDEPOT);
         

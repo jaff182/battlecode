@@ -152,7 +152,9 @@ public class MiningUnit extends MovableUnit {
             if(maxCount > 0) {
                 Direction dirToMove = directions[bestDirInts[rand.nextInt(maxCount)]];
                 oreSearchDirInt = dirToMove.ordinal();
-                rc.move(dirToMove);
+                if (rc.canMove(dirToMove)) {
+                    rc.move(dirToMove);
+                }
             }
             
         }
