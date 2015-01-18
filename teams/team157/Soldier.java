@@ -51,49 +51,17 @@ public class Soldier extends MovableUnit {
         // Else, perform standard state transitions
         switch (state) {
         case ATTACK_MOVE:
-            if (myLocation.distanceSquaredTo(SoldierGroup.groupCenter) > distanceSquaredFromCenterOfGroupBeforeLost) {
-                // Override state if too far from group, to get it to
-                // regroup.
-                oldStateBeforeJoinGroupTriggered = state;
-                state = SoldierState.JOIN_GROUP;
-            } else if (!SoldierGroup.waypointLocation
-                    .equals(moveTargetLocation)) {
-                // Override state if waypoint has changed, update
-                // moveTargetLocation
-                state = SoldierState.ATTACK_MOVE;
-            } else if (checkIfMoveTargetReached())
-                state = SoldierState.WAIT;
-            break;
-        case RETREAT:
-            if (myLocation.distanceSquaredTo(SoldierGroup.groupCenter) > distanceSquaredFromCenterOfGroupBeforeLost) {
-                // Override state if too far from group, to get it to
-                // regroup.
-                oldStateBeforeJoinGroupTriggered = state;
-                state = SoldierState.JOIN_GROUP;
-            } else if (!SoldierGroup.waypointLocation
-                    .equals(moveTargetLocation)) {
-                // Override state if waypoint has changed, update
-                // moveTargetLocation
-                state = SoldierState.ATTACK_MOVE;
-                moveTargetLocation = SoldierGroup.waypointLocation;
-            } else if (checkIfMoveTargetReached())
+            if (SoldierGroup.hasSoldierGroupReachedWaypoint() && locationToWaypointHasHighDensity())
                 state = SoldierState.WAIT;
             break;
         case WAIT:
-            if (moveTargetLocation != SoldierGroup.waypointLocation) {
+            if (!SoldierGroup.hasSoldierGroupReachedWaypoint() || !locationToWaypointHasHighDensity())
                 state = SoldierState.ATTACK_MOVE;
-                moveTargetLocation = SoldierGroup.waypointLocation;
-            }
             break;
-        case JOIN_GROUP:
-            if (myLocation.distanceSquaredTo(SoldierGroup.groupCenter) <= distanceSquaredFromCenterOfGroupBeforeLost) {
-                state = oldStateBeforeJoinGroupTriggered; // Restore old
-                                                          // state
-            } else if (checkIfMoveTargetReached()) {
-                state = oldStateBeforeJoinGroupTriggered; 
-            }
-            break;
+        default:
+            throw new IllegalStateException("Illegal state " + state + " reached");
         }
+        rc.setIndicatorString(1, "Waypoint is reached: " + SoldierGroup.hasSoldierGroupReachedWaypoint() + ", Waypoint is filled: " +  locationToWaypointHasHighDensity());
         rc.setIndicatorString(2, "State " + state + ", moveTarget: " + moveTargetLocation + ", groupCenter: " + SoldierGroup.groupCenter);
         // Action
         // TODO: refactor
@@ -102,11 +70,11 @@ public class Soldier extends MovableUnit {
             if (enemies.length != 0 && rc.isWeaponReady())
                 priorityAttack(enemies, attackPriorities); // attack (if any)
             else if (enemies.length == 0)
-                bug(moveTargetLocation); // move (if can move, since no
+                bug(SoldierGroup.waypointLocation); // move (if can move, since no
                                          // cooldown)
             break;
         case RETREAT:
-            bug(moveTargetLocation); //move (if can move, since no cooldown)    
+            bug(SoldierGroup.waypointLocation); //move (if can move, since no cooldown)    
             break;
         case WAIT:
             priorityAttack(enemies, attackPriorities); //attack (if any)
@@ -121,13 +89,30 @@ public class Soldier extends MovableUnit {
     }
     
     /**
-     * Checks if the current moveTarget is reached.
+     * Checks whether the "area" around the waypoint this robot is trying to
+     * advance to is already 80% packed with friendly robots.
+     * 
+     * This "area" is formed by the imaginary square a robot is at the edge of,
+     * centered at the waypoint.
+     * 
+     * @return
+     */
+    public static boolean locationToWaypointHasHighDensity() {
+        final int distanceSquaredToWaypoint = myLocation.distanceSquaredTo(SoldierGroup.waypointLocation);
+        return RobotPlayer.rc.senseNearbyRobots(SoldierGroup.waypointLocation,
+                distanceSquaredToWaypoint, RobotPlayer.myTeam).length > 0.8*distanceSquaredToWaypoint;
+    }
+    
+    /**
+     * BUGGY, DO NOT USE..
+     * 
+     * Checks if the current location is reached.
      * 
      * A moveTarget is reached when both 1) The center of group is near the
-     * waypoint <br>
-     * 2) Bugging from the soldier to the soldier's individual
-     * moveTarget (which might be the waypoint, or group center), will not move
-     * the soldier closer to it<br>
+     * location <br>
+     * 2) Bugging from the soldier to the soldier's individual moveTarget (which
+     * might be the waypoint, or group center), will not move the soldier closer
+     * to it<br>
      * 
      * 
      * In ATTACK_MOVE and WAIT, this requires that no enemies are attackable by
@@ -138,28 +123,20 @@ public class Soldier extends MovableUnit {
      * @return true if they have been, and false otherwise
      * @throws GameActionException
      */
-    private static boolean checkIfMoveTargetReached() throws GameActionException {
-        switch (state) {
-        case ATTACK_MOVE:
-        case RETREAT:
-        case JOIN_GROUP:
-            final boolean centerOfGroupNearTarget = SoldierGroup.groupCenter
-                    .distanceSquaredTo(SoldierGroup.waypointLocation) < 10;
-            Direction bugDirection = MovableUnit
-                    .bugDirection(moveTargetLocation);
-            final boolean noPathToWaypoint = bugDirection == Direction.NONE
-                    || myLocation.distanceSquaredTo(moveTargetLocation)
-                            - myLocation.add(bugDirection).distanceSquaredTo(
-                                    moveTargetLocation) > 1; // Check that
-                                                             // bugging will be
-                                                             // in a direction
-                                                             // somewhat towards
-                                                             // waypoint
-            return noPathToWaypoint && centerOfGroupNearTarget;
-        case WAIT:
-            return false;
-        }
-        return false;
+    private static boolean checkIfLocationReached(MapLocation location)
+            throws GameActionException {
+        final boolean centerOfGroupNearTarget = SoldierGroup.groupCenter
+                .distanceSquaredTo(location) < 10;
+        Direction bugDirection = MovableUnit.bugDirection(moveTargetLocation);
+        final boolean noPathToWaypoint = bugDirection == Direction.NONE
+                || myLocation.distanceSquaredTo(moveTargetLocation)
+                        - myLocation.add(bugDirection).distanceSquaredTo(
+                                moveTargetLocation) > 1; // Check that
+                                                         // bugging will be
+                                                         // in a direction
+                                                         // somewhat towards
+                                                         // waypoint
+        return noPathToWaypoint && centerOfGroupNearTarget;
     }
 
     //Specific methods =========================================================

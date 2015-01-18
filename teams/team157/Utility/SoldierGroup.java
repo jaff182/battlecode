@@ -43,6 +43,12 @@ public class SoldierGroup {
     public static MapLocation groupCenter = RobotPlayer.myLocation;
     public static int groupSize;
     
+    // Constants defining behaviour of group =======================================================
+    /** Allowable distance squared between group center and waypoint before waypoint is designated as reached. */
+    public final static int WAYPOINT_REACHED_DISTANCE_SQUARE_TOLERANCE = 15;
+    /** Allowable radius about which waypoint has to be clear of enemies */
+    public final static int WAYPOINT_REACHED_ENEMIES_DISTANCE_CHECK = 25;
+
     /**
      * Called by all soldiers when initializing.
      * 
@@ -66,7 +72,7 @@ public class SoldierGroup {
                 rc.broadcast(Y_COORDINATE_GROUP_CHANNEL_SUM, 0);
                 rc.broadcast(GROUP_SIZE_CHANNEL, 0);
             }
-        }
+        }  
 
         // Code for the rest of the group (and also the leader, since it's also
         // part of the group)
@@ -106,14 +112,30 @@ public class SoldierGroup {
      * 
      * @param x
      * @param y
-     * @param moveType
+     * @param moveType ignored for now
      * @throws GameActionException
      */
     public static void setNextWaypoint(int x, int y, MoveType moveType) throws GameActionException {
         RobotPlayer.rc.broadcast(X_COORDINATE_WAYPOINT_CHANNEL, x);
         RobotPlayer.rc.broadcast(Y_COORDINATE_WAYPOINT_CHANNEL, y);
-    }
+    }    
     
+    /**
+     * Checks whether the group of soldiers have reached the waypoint. This
+     * occurs when the center of the group has distance squared less than
+     * WAYPOINT_DISTANCE_SQUARE_TOLERANCE, and no visible enemies are present
+     * within 25 radius squared of waypoint.
+     * 
+     * @return true when waypoint is reached, false otherwise
+     */
+    public static boolean hasSoldierGroupReachedWaypoint() {
+        return groupCenter.distanceSquaredTo(SoldierGroup.waypointLocation) < SoldierGroup.WAYPOINT_REACHED_DISTANCE_SQUARE_TOLERANCE
+                && RobotPlayer.rc.senseNearbyRobots(
+                        SoldierGroup.waypointLocation,
+                        WAYPOINT_REACHED_ENEMIES_DISTANCE_CHECK,
+                        RobotPlayer.enemyTeam).length == 0;
+    }
+
     public static enum MoveType {
         ATTACK, // Attack move to an area as a group.
         RALLY, // Build up forces in an area
