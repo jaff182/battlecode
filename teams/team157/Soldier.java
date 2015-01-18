@@ -39,6 +39,8 @@ public class Soldier extends MovableUnit {
         // Update any pertinent data structures
         myLocation = rc.getLocation();
 
+        enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+        
         SoldierGroup.sync(myLocation);
         
         // Code that runs in every robot (including buildings, excepting missiles)
@@ -46,42 +48,58 @@ public class Soldier extends MovableUnit {
         
         // Transition
         // TODO: refactor
-        if (myLocation.distanceSquaredTo(SoldierGroup.groupCenter) > distanceSquaredFromCenterOfGroupBeforeLost) {
-            // Override state if too far from group, to get it to regroup.
-            oldStateBeforeJoinGroupTriggered = state;
-            state = SoldierState.JOIN_GROUP;
-            moveTargetLocation = SoldierGroup.groupCenter;
-        } else if (!SoldierGroup.waypointLocation.equals(moveTargetLocation)) { 
+        if (!SoldierGroup.waypointLocation.equals(moveTargetLocation)) { 
             // Override state if waypoint has changed, update moveTargetLocation
             state = SoldierState.ATTACK_MOVE;
             moveTargetLocation = SoldierGroup.waypointLocation;
-        } else { 
+        } else {
             // Else, perform standard state transitions
             switch (state) {
             case ATTACK_MOVE:
-                if (checkIfMoveTargetReached())
+                if (myLocation.distanceSquaredTo(SoldierGroup.groupCenter) > distanceSquaredFromCenterOfGroupBeforeLost) {
+                    // Override state if too far from group, to get it to
+                    // regroup.
+                    oldStateBeforeJoinGroupTriggered = state;
+                    state = SoldierState.JOIN_GROUP;
+                    moveTargetLocation = SoldierGroup.groupCenter;
+                } else if (checkIfMoveTargetReached())
                     state = SoldierState.WAIT;
                 break;
             case RETREAT:
-                if (checkIfMoveTargetReached())
+                if (myLocation.distanceSquaredTo(SoldierGroup.groupCenter) > distanceSquaredFromCenterOfGroupBeforeLost) {
+                    // Override state if too far from group, to get it to
+                    // regroup.
+                    oldStateBeforeJoinGroupTriggered = state;
+                    state = SoldierState.JOIN_GROUP;
+                    moveTargetLocation = SoldierGroup.groupCenter;
+                } else if (checkIfMoveTargetReached())
                     state = SoldierState.WAIT;
                 break;
-            case WAIT: // No escape from WAIT, unless it gets left behind or waypoint is moved (see above)
+            case WAIT: // No escape from WAIT, unless waypoint is moved (see
+                       // above)
                 break;
-            case JOIN_GROUP: // We've already joined group (or this code wouldn't be here)
-                state = oldStateBeforeJoinGroupTriggered; //Restore old state
-                moveTargetLocation = SoldierGroup.waypointLocation; //Restore waypoint location
+            case JOIN_GROUP:
+                if (myLocation.distanceSquaredTo(SoldierGroup.groupCenter) <= distanceSquaredFromCenterOfGroupBeforeLost) {
+                    state = oldStateBeforeJoinGroupTriggered; // Restore old
+                                                              // state
+                    moveTargetLocation = SoldierGroup.waypointLocation; // Restore
+                                                                        // waypoint
+                                                                        // location
+                }
                 break;
             }
             
         }
-        
+        rc.setIndicatorString(2, "State " + state + ", moveTarget: " + moveTargetLocation);
         // Action
         // TODO: refactor
         switch (state) {
         case ATTACK_MOVE:
-            priorityAttack(enemies, attackPriorities); //attack (if any)
-            bug(moveTargetLocation); //move (if can move, since no cooldown)
+            if (enemies.length != 0 && rc.isWeaponReady())
+                priorityAttack(enemies, attackPriorities); // attack (if any)
+            else if (enemies.length == 0)
+                bug(moveTargetLocation); // move (if can move, since no
+                                         // cooldown)
             break;
         case RETREAT:
             bug(moveTargetLocation); //move (if can move, since no cooldown)
@@ -90,6 +108,10 @@ public class Soldier extends MovableUnit {
             priorityAttack(enemies, attackPriorities); //attack (if any)
             break;
         case JOIN_GROUP:
+            if (enemies.length != 0 && rc.isWeaponReady())
+                priorityAttack(enemies, attackPriorities); // attack (if any)
+            bug(moveTargetLocation); // move (if can move, since no
+                                         // cooldown)
             break;
         }
     }
@@ -107,18 +129,16 @@ public class Soldier extends MovableUnit {
      */
     private static boolean checkIfMoveTargetReached() throws GameActionException {
         switch (state) {
-        case ATTACK_MOVE: case RETREAT:
+        case ATTACK_MOVE: case RETREAT: case JOIN_GROUP:
             final boolean centerOfGroupNearTarget = SoldierGroup.groupCenter.distanceSquaredTo(SoldierGroup.waypointLocation) < 4;
             Direction bugDirection = MovableUnit.bugDirection(moveTargetLocation);
-            Direction directionToWaypoint = myLocation
-                    .directionTo(SoldierGroup.waypointLocation);
+            Direction directionToMoveTarget = myLocation
+                    .directionTo(Soldier.moveTargetLocation);
             final boolean noPathToWaypoint = bugDirection == Direction.NONE
-                    || Math.abs((directionToWaypoint.ordinal() - bugDirection
-                            .ordinal())) > 2; // Check that bugging will be in a direction somewhat towards waypoint
+                    || Math.abs((directionToMoveTarget.ordinal() - bugDirection
+                            .ordinal())) > 1; // Check that bugging will be in a direction somewhat towards waypoint
             return noPathToWaypoint && centerOfGroupNearTarget;
         case WAIT:
-            return false;
-        case JOIN_GROUP:
             return false;
         }
         return false;
