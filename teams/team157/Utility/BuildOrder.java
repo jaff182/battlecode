@@ -36,7 +36,7 @@ public class BuildOrder {
      * The number of rounds after which a timestamp expires and the building is 
      * considered destroyed and needs to be rebuilt.
      */
-    private static final int TIMESTAMP_EXPIRY = 5;
+    private static final int TIMESTAMP_EXPIRY = 2;
     
     
     //Conversion methods ======================================================

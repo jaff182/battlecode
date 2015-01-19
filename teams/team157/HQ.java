@@ -8,30 +8,17 @@ public class HQ extends Structure {
     //Global variables ========================================================
     
     private static final int tankDefenseChannel = Channels.TANK_DEFENSE_COUNT;
-    private static int numberOfTanksNeeded = 2;
+    private static int baseNumberOfTanksNeeded = 0;
+    private static int numberOfTanksNeeded = baseNumberOfTanksNeeded;
     
     //Old building request implementation -------------------------------------
     private final static RobotType[] buildOrder1 = {
             //RobotType.BARRACKS, RobotType.BARRACKS,
-            RobotType.MINERFACTORY, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
+            RobotType.HELIPAD,
+            RobotType.HELIPAD,
+            RobotType.HELIPAD,
+            RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
+            RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
     };
     
     private final static RobotType[] buildOrder2 = {
@@ -125,10 +112,19 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
             BuildOrder.add(RobotType.TRAININGFIELD);
         }
-        if(Clock.getRoundNum() == 200) {
+        if(Clock.getRoundNum() == 225) {
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
+        }
+        if(Clock.getRoundNum() == 350) {
+            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        }
+        if(Clock.getRoundNum() == 500) {
             BuildOrder.add(RobotType.BARRACKS);
             BuildOrder.add(RobotType.TANKFACTORY);
-            
+            BuildOrder.add(RobotType.TANKFACTORY);
+            //BuildOrder.printBuildOrder();
         }
         
         
@@ -165,7 +161,11 @@ public class HQ extends Structure {
     }
     
     private static boolean hasFewBeavers() throws GameActionException {
-        return RobotCount.read(RobotType.BEAVER) < 5;
+        if (Clock.getRoundNum() < 122) { 
+        //hard code initial miner factory and helipad
+            return RobotCount.read(RobotType.BEAVER)<1;
+        }
+        return RobotCount.read(RobotType.BEAVER) < 3;
     }
 
     // TODO:  Just for thought - modify this method so that we can reserve some minimum amounts of emergency fund.
@@ -227,6 +227,8 @@ public class HQ extends Structure {
     private static void callForTankReinforcements() {
         if (rc.senseNearbyRobots(81, enemyTeam).length > 10) {
             numberOfTanksNeeded += 2;
+        } else {
+            numberOfTanksNeeded = baseNumberOfTanksNeeded;
         }
     }
     
