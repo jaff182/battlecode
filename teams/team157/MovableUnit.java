@@ -11,6 +11,7 @@ public class MovableUnit extends RobotPlayer {
     // Attacking
     public static final int towerAttackRadius = 24;
     public static int HQAttackRadius = 35;
+    // TODO: be careful with using this variable - what does "target" mean? should this be in its own class
     public static MapLocation target = RobotPlayer.enemyHQLocation; //attack target
     public static int numberOfEnemiesInSight = 0;
     public static RobotInfo[] enemiesInSight;

@@ -21,7 +21,6 @@ public class Missile extends MovableUnit {
     
     private static void init() throws GameActionException {
         rc.setIndicatorString(0,"hello i'm a missile.");
-        
     }
     
     private static void loop() throws GameActionException {

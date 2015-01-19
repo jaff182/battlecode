@@ -6,7 +6,13 @@ import battlecode.common.*;
 public class Launcher extends MovableUnit {
     
     //General methods =========================================================
-    
+
+    public enum LauncherState {
+        FIRING, NOT_FIRING;
+    }
+
+    public static LauncherState state = LauncherState.NOT_FIRING;
+
     public static void start() throws GameActionException {
         init();
         while(true) {
@@ -17,13 +23,22 @@ public class Launcher extends MovableUnit {
     
     private static void init() throws GameActionException {
         initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
-        
+        state = LauncherState.NOT_FIRING;
+        target = enemyHQLocation;
     }
     
     private static void loop() throws GameActionException {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
-        
+        updateMyLocation();
+        switch (state) {
+            case FIRING:
+                Direction dir0 = myLocation.directionTo(target);
+                launchMissile(dir0);
+                break;
+            case NOT_FIRING:
+                break;
+        }
     }
     
     //Specific methods =========================================================
@@ -41,12 +56,24 @@ public class Launcher extends MovableUnit {
             for(int offset : offsets) {
                 int dirint = (dirint0+offset+8)%8;
                 if(rc.canSpawn(directions[dirint],RobotType.MISSILE)) {
+                    // Not sure if I can do this
+                    Missile.target = target;
                     rc.spawn(directions[dirint],RobotType.MISSILE);
                     break;
                 }
             }
         }
     }
-    
+
+    public static void stopFiring()
+    {
+        state = LauncherState.NOT_FIRING;
+    }
+
+    public static void fire(MapLocation location)
+    {
+        target = location;
+        state = LauncherState.FIRING;
+    }
     
 }
