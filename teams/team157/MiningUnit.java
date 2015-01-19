@@ -171,10 +171,9 @@ public class MiningUnit extends MovableUnit {
         if(rc.isPathable(myType,loc)) {
             double ore = rc.senseOre(loc);
             if(ore >= MIN_ORE_WORTH_MINING) directionPriority[dirInt] += ore;
-        } else {
+        } else if(myLocation.distanceSquaredTo(loc) <= 2) {
             //discourage the direction if obstructed
-            double force = 1000.0/(dx*dx+dy*dy);
-            directionPriority[dirInt] -= force;
+            directionPriority[dirInt] -= 1000;
         }
     }
     

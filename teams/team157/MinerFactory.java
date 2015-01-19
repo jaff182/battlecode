@@ -19,14 +19,19 @@ public class MinerFactory extends Structure {
     private static void init() throws GameActionException {
         rc.setIndicatorString(0,"hello i'm a minerfactory.");
         
+        //Check to see if built because of build order
+        checkBuildOrderPosition();
+        
     }
     
     private static void loop() throws GameActionException {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
-        //Spawn
+        //Report existence if built because of build order
+        claimBuildOrderEntry();
         
+        //Spawn
         int minerCount = RobotCount.read(RobotType.MINER);
         int effectiveMinerCount = MinerEffectivenessCount.read();
         if(minerCount < 40 && (minerCount == 0 || 1.0*effectiveMinerCount/minerCount > 0.25)) {

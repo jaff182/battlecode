@@ -18,11 +18,17 @@ public class Helipad extends Structure {
     
     private static void init() throws GameActionException {  
         spawnLocation = enemyHQLocation;
+        
+        //Check to see if built because of build order
+        checkBuildOrderPosition();
     }
     
     private static void loop() throws GameActionException {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
+        
+        //Report existence if built because of build order
+        claimBuildOrderEntry();
         
         //Spawn
         trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);

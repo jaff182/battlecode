@@ -2,11 +2,45 @@ package team157;
 
 import java.util.Random;
 import battlecode.common.*;
+import team157.Utility.*;
 
 public class Structure extends RobotPlayer {
     
+    //Global Variables ========================================================
+    
     protected static MapLocation spawnLocation;
-
+    
+    
+    //Building methods ========================================================
+    
+    /**
+     * The position on the build order that the building is meant to satisfy.
+     */
+    protected static int buildOrderIndex = -1;
+    
+    /**
+     * Every building runs this in their init code to check if they were built using 
+     * the build order, and so need to report their existence every round to claim 
+     * their build order entry.
+     */
+    protected static void checkBuildOrderPosition() throws GameActionException {
+        buildOrderIndex = BuildOrder.AmIOnBuildOrder();
+        //if(buildOrderIndex != -1) {
+        //    System.out.println("I just spawned! My build order is "+buildOrderIndex);
+        //}
+    }
+    
+    /**
+     * Every building runs this every round to report their existence and claim their 
+     * build order entry.
+     */
+    protected static void claimBuildOrderEntry() throws GameActionException {
+        if(buildOrderIndex != -1) {
+            BuildOrder.IAmTheBuilding(buildOrderIndex);
+        }
+    }
+    
+    
     //Spawning ================================================================
     
     /**

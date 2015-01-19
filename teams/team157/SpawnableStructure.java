@@ -7,7 +7,7 @@ import battlecode.common.RobotType;
 /**
  *
  */
-public class SpawnableStructure extends Structure{
+public class SpawnableStructure extends Structure {
 
     protected static MapLocation spawnLocation;
 
@@ -30,11 +30,17 @@ public class SpawnableStructure extends Structure{
         rc.setIndicatorString(0,"hello i'm a spawnable building:" + rc.getType().name());
         spawnLocation = mapLocation;
         spawnUnit = robotType;
+        
+        //Check to see if built because of build order
+        checkBuildOrderPosition();
     }
 
     private static void loop() throws GameActionException {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
+        
+        //Report existence if built because of build order
+        claimBuildOrderEntry();
 
         //Spawn
         trySpawn(myLocation.directionTo(spawnLocation), spawnUnit);
