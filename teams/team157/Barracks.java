@@ -29,7 +29,7 @@ public class Barracks extends SpawnableStructure {
         claimBuildOrderEntry();
 
         //Spawn
-        //trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.SOLDIER);
+        trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.SOLDIER);
 
         //Dispense Supply
         dispenseSupply(suppliabilityMultiplier_Preattack);

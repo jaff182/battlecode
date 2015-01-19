@@ -75,7 +75,8 @@ public class HQ extends Structure {
             rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
         }
 
-        
+        MapLocation soldierLoc = myLocation.add(myLocation.directionTo(enemyHQLocation), 7);
+        SoldierGroup.setNextWaypoint(soldierLoc.x, soldierLoc.y, null);
         // Init LastAttackedLocations
         team157.Utility.LastAttackedLocationsReport.HQinit();
         team157.Utility.LastAttackedLocationsReport.everyRobotInit();
@@ -120,11 +121,11 @@ public class HQ extends Structure {
             if (distanceBetweenHQs < SMALL_MAP_SIZE) {
                 BuildOrder.add(RobotType.MINERFACTORY);
             } else {
-                BuildOrder.add(RobotType.HELIPAD);
+                BuildOrder.add(RobotType.BARRACKS);
             }
         }
         if(Clock.getRoundNum() == 250) {
-            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
         if(Clock.getRoundNum() == 500) {
@@ -135,17 +136,8 @@ public class HQ extends Structure {
                 BuildOrder.add(RobotType.HELIPAD);
                 BuildOrder.add(RobotType.SUPPLYDEPOT);
                 BuildOrder.add(RobotType.SUPPLYDEPOT);
-            }
-            else if (distanceBetweenHQs < LARGE_MAP_SIZE) {
-                rc.setIndicatorString(1, "medium map");
-                BuildOrder.add(RobotType.HELIPAD);
-                BuildOrder.add(RobotType.BARRACKS);
-                BuildOrder.add(RobotType.TANKFACTORY);
-                BuildOrder.add(RobotType.SUPPLYDEPOT);
-            }
-            else {
+            } else {
                 rc.setIndicatorString(1, "large map");
-                BuildOrder.add(RobotType.BARRACKS);
                 BuildOrder.add(RobotType.TANKFACTORY);
                 BuildOrder.add(RobotType.TANKFACTORY);
                 BuildOrder.add(RobotType.SUPPLYDEPOT);
@@ -159,7 +151,7 @@ public class HQ extends Structure {
                 BuildOrder.add(RobotType.SUPPLYDEPOT);
                 BuildOrder.add(RobotType.SUPPLYDEPOT);
             } else {
-                BuildOrder.add(RobotType.HELIPAD);
+                BuildOrder.add(RobotType.TANKFACTORY);
                 BuildOrder.add(RobotType.TANKFACTORY);
                 BuildOrder.add(RobotType.SUPPLYDEPOT);
             }

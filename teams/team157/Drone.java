@@ -230,16 +230,13 @@ public class Drone extends MovableUnit {
             } else if (enemyDangerRating == 2) {
                 if (enemiesInSight[0].health < lowHP[enemyType]) {
                     droneState = DroneState.FOLLOW;
-                } else if (Clock.getRoundNum() > 500) {
-                    droneState = DroneState.RETREAT;
-                    retreatTimeout = 5;
                 }
             }
         } else {
             for (RobotInfo info: enemiesInSight) {
                 int enemyType = info.type.ordinal();
                 if (dangerRating[enemyType] == 2) {
-                    if (info.health > lowHP[enemyType] && Clock.getRoundNum()>500) {
+                    if (info.health > lowHP[enemyType]) {
                         droneState = DroneState.RETREAT;
                         retreatTimeout = 5;
                         return;
