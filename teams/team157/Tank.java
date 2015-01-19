@@ -1,11 +1,8 @@
 package team157;
 
-import java.util.Random;
-
 import team157.Utility.Map;
 import team157.Utility.RobotCount;
 import team157.Utility.TankDefenseCount;
-import team157.Utility.Waypoints;
 import battlecode.common.*;
 
 public class Tank extends MovableUnit {
@@ -441,8 +438,14 @@ public class Tank extends MovableUnit {
         9/*16:DRONE*/,     6/*17:TANK*/,      5/*18:COMMANDER*/, 7/*19:LAUNCHER*/,
         8/*20:MISSILE*/
     };
-    
-   
-    
-    
+
+
+    public static enum TankState {
+        DEFEND, // defense state for defending a friendly unit
+        SWARM, // aggressive mode for drones in a group
+        UNSWARM, // defensive mode for lone drones, stays away from target waits for reinforcements
+        FOLLOW, // following enemy
+        KAMIKAZE; // all out attack
+
+    }
 }

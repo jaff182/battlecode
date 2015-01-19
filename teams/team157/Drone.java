@@ -2,7 +2,6 @@ package team157;
 
 import team157.Utility.*;
 import battlecode.common.*;
-import team157.Utility.*;
 
 public class Drone extends MovableUnit {
 
@@ -352,8 +351,14 @@ public class Drone extends MovableUnit {
         9/*16:DRONE*/,     6/*17:TANK*/,      5/*18:COMMANDER*/, 7/*19:LAUNCHER*/,
         8/*20:MISSILE*/
     };
-    
-    
-    
-    
+
+
+    public static enum DroneState {
+        SWARM, // aggressive mode for drones in a group
+        UNSWARM, // defensive mode for lone drones, stays away from target waits for reinforcements
+        FOLLOW, // following enemy
+        KAMIKAZE, // all out attack
+        RETREAT, // retreats when enemy is in sight range and then stays still.
+        SCOUT // scouting map for enemies or terrain
+    }
 }
