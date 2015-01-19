@@ -6,7 +6,7 @@ import battlecode.common.*;
 public class HQ extends Structure {
 
     private static final int tankDefenseChannel = Channels.TANK_DEFENSE_COUNT;
-    private static int numberOfTanksNeeded = 5;
+    private static int numberOfTanksNeeded = 2;
     
     
     //General methods =========================================================
@@ -68,7 +68,7 @@ public class HQ extends Structure {
         // call for tank defense units
         rc.broadcast(tankDefenseChannel, numberOfTanksNeeded);
 
-        queue = new BuildingQueue(buildOrder1, RobotType.SUPPLYDEPOT);
+        queue = new BuildingQueue(buildOrder2, RobotType.TANKFACTORY);
         
 
         //Initiate radio map TODO: towers locations?  
@@ -165,7 +165,9 @@ public class HQ extends Structure {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
+        callForTankReinforcements();
         checkForEnemies();
+        
         
         //Debug
         //for (RobotType robotType: RobotType.values()) {
@@ -186,6 +188,12 @@ public class HQ extends Structure {
         dispenseSupply(suppliabilityMultiplier);
         //if(Clock.getRoundNum() == 1500) debug_printRadioMap();
 
+    }
+    
+    private static void callForTankReinforcements() {
+        if (rc.senseNearbyRobots(81, enemyTeam).length > 10) {
+            numberOfTanksNeeded += 2;
+        }
     }
     
     //Specific methods =========================================================
