@@ -61,8 +61,8 @@ public class Soldier extends MovableUnit {
         default:
             throw new IllegalStateException("Illegal state " + state + " reached");
         }
-        rc.setIndicatorString(1, "Waypoint is reached: " + SoldierGroup.hasSoldierGroupReachedWaypoint() + ", Waypoint is filled: " +  locationToWaypointHasHighDensity());
-        rc.setIndicatorString(2, "State " + state + ", moveTarget: " + moveTargetLocation + ", groupCenter: " + SoldierGroup.groupCenter);
+//        rc.setIndicatorString(1, "Waypoint is reached: " + SoldierGroup.hasSoldierGroupReachedWaypoint() + ", Waypoint is filled: " +  locationToWaypointHasHighDensity());
+//        rc.setIndicatorString(2, "State " + state + ", moveTarget: " + moveTargetLocation + ", groupCenter: " + SoldierGroup.groupCenter);
         // Action
         // TODO: refactor
         switch (state) {
@@ -101,6 +101,16 @@ public class Soldier extends MovableUnit {
         final int distanceSquaredToWaypoint = myLocation.distanceSquaredTo(SoldierGroup.waypointLocation);
         return RobotPlayer.rc.senseNearbyRobots(SoldierGroup.waypointLocation,
                 distanceSquaredToWaypoint, RobotPlayer.myTeam).length > 0.8*distanceSquaredToWaypoint;
+    }
+    
+    /**
+     * Checks if group is dispersed.
+     * 
+     * @return
+     */
+    public static boolean isGroupDispersed() {
+        return RobotPlayer.rc.senseNearbyRobots(SoldierGroup.groupCenter,
+                SoldierGroup.groupSize, RobotPlayer.myTeam).length < 0.8*SoldierGroup.groupSize;
     }
     
     /**
