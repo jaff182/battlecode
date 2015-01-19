@@ -213,7 +213,7 @@ public class HQ extends Structure {
         return RobotCount.read(RobotType.BEAVER) < 3;
     }
 
-    // TODO:  Just for thought - modify this method so that we can reserve some minimum amounts of emergency fund.
+    // We have enough fund above some baselines
     private static boolean hasFunds(double cost)
     {
         if (Clock.getRoundNum() < 200) { //TODO edit this out if necessary
