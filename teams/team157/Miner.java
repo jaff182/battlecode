@@ -9,7 +9,7 @@ public class Miner extends MiningUnit {
     //Global variables ========================================================
     
     /**
-     * Is this miner mining efficiently? That is, is it mining at 0.75*3?
+     * Is this miner mining efficiently? That is, is it mining at all?
      */
     public static boolean miningEfficiently = true;
     
@@ -31,7 +31,9 @@ public class Miner extends MiningUnit {
         MIN_ORE_WORTH_MINING = MIN_MINING_RATE*GameConstants.MINER_MINE_RATE;
         MIN_ORE_WORTH_CONSIDERING = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.MINER_MINE_RATE;
         
-        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
+        //set locations within attack radius of enemy tower or hq as unpathable
+        //Commented out because uses too much bytecode.
+        //initInternalMap();
         
     }
     

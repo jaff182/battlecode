@@ -10,15 +10,24 @@ public class TankFactory extends SpawnableStructure {
     //General methods =========================================================
     
     public static void start() throws GameActionException {
+        init();
         while(true) {
             loop();
             rc.yield(); //Yield the round
         }
     }
     
+    private static void init() throws GameActionException {
+        //Check to see if built because of build order
+        checkBuildOrderPosition();
+    }
+    
     private static void loop() throws GameActionException {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
+        
+        //Report existence if built because of build order
+        claimBuildOrderEntry();
 
         //Spawn
         trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.TANK);

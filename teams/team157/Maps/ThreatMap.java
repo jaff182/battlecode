@@ -8,6 +8,9 @@ import battlecode.common.RobotController;
 import team157.*;
 
 public class ThreatMap {
+    /**
+     * INCOMPLETE, DO NOT USE.
+     */
 
     /**
      * Length of edge of each grid square inside this map.
