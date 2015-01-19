@@ -10,6 +10,7 @@ public class HQ extends Structure {
     private static final int tankDefenseChannel = Channels.TANK_DEFENSE_COUNT;
     private static int baseNumberOfTanksNeeded = 0;
     private static int numberOfTanksNeeded = baseNumberOfTanksNeeded;
+    private static int numberOfTowers = rc.senseTowerLocations().length;
         
     //Old building request implementation -------------------------------------
     private final static RobotType[] buildOrder1 = {
@@ -94,6 +95,7 @@ public class HQ extends Structure {
         // Clean up robot count data for this round -- do not remove, will break invariants
         RobotCount.reset();
         MinerEffectivenessCount.reset();
+        numberOfTowers = rc.senseTowerLocations().length;
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -194,6 +196,32 @@ public class HQ extends Structure {
             updateEnemyInRange(attackRange);
             rc.yield();
         }
+        
+        if (numberOfTowers > 4) {
+            //can do splash damage
+            RobotInfo[] enemiesInSplashRange = rc.senseNearbyRobots(37, enemyTeam);
+            if (enemiesInSplashRange.length > 0) {
+                int[] enemiesInDir = new int[8];
+                for (RobotInfo info: enemiesInSplashRange) {
+                    enemiesInDir[myLocation.directionTo(info.location).ordinal()]++;
+                }
+                int maxDirScore = 0;
+                int maxIndex = 0;
+                for (int i = 0; i < 8; i++) {
+                    if (enemiesInDir[i] >= maxDirScore) {
+                        maxDirScore = enemiesInDir[i];
+                        maxIndex = i;
+                    }
+                }
+                MapLocation attackLoc = myLocation.add(directions[maxIndex],5);
+                if (rc.isWeaponReady() && rc.canAttackLocation(attackLoc)) {
+                    rc.attackLocation(attackLoc);
+                }
+                
+            }
+            
+        }
+  
     }
     
     private static boolean hasFewBeavers() throws GameActionException {
