@@ -8,17 +8,8 @@ public class Drone extends MovableUnit {
 
     //General methods =========================================================
 
-    private static MapLocation target = RobotPlayer.enemyHQLocation;
-    private static int numberOfEnemiesInSight = 0;
-    private static RobotInfo[] enemiesInSight;
-    private static int indexInWaypoints = 0;
-    private static int waypointTimeout = 100; // timeout before waypoint changes
-    private static final int roundNumAttack = 1750; // round number when end game attack starts
-    private static final int numberInSwarm = 5; // minimum size of group for drones to start swarming
-    private static boolean keepAwayFromTarget = false; // true if target is tower or hq, false otherwise
     private static DroneState droneState = DroneState.UNSWARM;
     private static int retreatTimeout = 5; // number of rounds before changing from retreat to unswarm state.
-    private static RobotInfo attackTarget; // current attack target
     
     public static void start() throws GameActionException {
         init();
@@ -72,53 +63,6 @@ public class Drone extends MovableUnit {
         RobotCount.report();
     }
 
-    // TODO: consider refactoring this method, seems useful
-    /**
-     * Set target based on waypoints.
-     * @throws GameActionException
-     */
-    private static void setTargetToWayPoints() throws GameActionException {
-        if (Clock.getRoundNum() > roundNumAttack) {
-            // end game attack on towers and then hq
-            MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
-            int distanceToClosestTower = Integer.MAX_VALUE;
-            int enemyAttackRadius = towerAttackRadius;
-            if (towerLoc.length != 0) {
-                for (MapLocation loc: towerLoc) {
-                    int towerDist = myLocation.distanceSquaredTo(loc);
-                    if (towerDist <= distanceToClosestTower) {
-                        target = loc;
-                        distanceToClosestTower = towerDist;
-                    }
-                }
-            } else {
-                target = rc.senseEnemyHQLocation();
-                enemyAttackRadius = HQAttackRadius;
-            }
-
-            // set area around target as pathable
-            int targetID = Map.getInternalMap(target);
-            for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, enemyAttackRadius)) {          
-                if (Map.getInternalMap(inSightOfTarget) == targetID) {
-                    Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
-                }
-            }
-        }
-        
-		// switch target to next waypoint if timeout is reached or close to target but
-		// no enemies in sight
-        if (waypointTimeout <= 0 ||
-                (myLocation.distanceSquaredTo(target) < 24 && numberOfEnemiesInSight == 0)) {
-            indexInWaypoints = Math.min(indexInWaypoints + 1, Waypoints.numberOfWaypoints - 1);
-            target = Waypoints.waypoints[indexInWaypoints];
-            if (targetIsTowerOrHQ(target)) {
-                keepAwayFromTarget = true;
-            } else{
-                keepAwayFromTarget = false;
-            }
-            waypointTimeout = 100;
-        }
-    }
     
     /**
      * Checks for enemies in attack range and attacks them. Attacks only once
@@ -151,25 +95,21 @@ public class Drone extends MovableUnit {
      * Switches drone state based on number of enemies in sight
      */
     private static void droneSwitchState() {
+        checkForDanger();
+        
         switch (droneState) {
         case UNSWARM:
-            if (numberOfEnemiesInSight == 1 && !isBuilding(enemiesInSight[0].type.ordinal())) {
-                // lone enemy in sight which is not a building
-                droneState = DroneState.FOLLOW;
-            } else if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
+            if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
                 // Switches to swarm state when >4 friendly units within sensing radius.
                 droneState = DroneState.SWARM;
-            } else if (numberOfEnemiesInSight > 1) {
+            } else if (numberOfEnemiesInSight > 2) {
              // goes into retreat state if there are enemies in sight range
                 droneState = DroneState.RETREAT;
             }
             break;
         case SWARM:
-            if (numberOfEnemiesInSight == 1 && !isBuilding(enemiesInSight[0].type.ordinal())) {
-                // lone enemy in sight which is not a building
-                droneState = DroneState.FOLLOW;
-            } else if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length < numberInSwarm) {
-             // switch to unswarm state when <5 friendly units within sensing radius.
+            if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length < numberInSwarm) {
+                // switch to unswarm state when <5 friendly units within sensing radius.
                 droneState = DroneState.UNSWARM;
             }
             break;
@@ -216,7 +156,7 @@ public class Drone extends MovableUnit {
                     return;
                 }
             } else {
-                if(myLocation.distanceSquaredTo(target) < 16) {
+                if(myLocation.distanceSquaredTo(target) < 25) {
                     return;
                 }
             }
@@ -233,7 +173,7 @@ public class Drone extends MovableUnit {
             followTarget(enemiesInSight, followPriorities);
             break;
         case RETREAT:
-            if (enemies.length == 0) {
+            if (numberOfEnemiesInSight == 0) {
                 retreatTimeout--;
             } else {
                 retreat();
@@ -250,30 +190,118 @@ public class Drone extends MovableUnit {
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
-    //Misc. =========================================================
-    
-    
-
-    // TODO: refactor this method, looks useful
     /**
-     * Returns true if current target is an enemy tower or HQ, and false otherwise.
-     * @param target current target
-     * @return true if current target is enemy tower or HQ, and false otherwise.
+     * TODO untested
+     * If there is only 1 or 2 enemies in sight, decide whether to follow it or not
+     * based on danger rating and health of enemy.
      */
-    private static boolean targetIsTowerOrHQ(MapLocation target) {
-        for (MapLocation tower: rc.senseEnemyTowerLocations()) {
-            if (target.equals(tower)) {
-                return true;
+    private static void switchToFollowState(RobotInfo[] enemiesInSight, int numberOfEnemiesInSight) {
+        if (numberOfEnemiesInSight == 1) {
+            int enemyType = enemiesInSight[0].type.ordinal();
+            if (dangerRating[enemyType] == 1) {
+                droneState = DroneState.FOLLOW;
+            } else if (dangerRating[enemyType] == 2) {
+                if (enemiesInSight[0].health < lowHP[enemyType]) {
+                    droneState = DroneState.FOLLOW;
+                }
+            }
+        } else if (numberOfEnemiesInSight == 2) {
+            if (dangerRating[enemiesInSight[0].type.ordinal()] == 0) {
+                switchToFollowState(new RobotInfo[]{enemiesInSight[1]}, 1);
+            } else if (dangerRating[enemiesInSight[1].type.ordinal()] == 0) {
+                switchToFollowState(new RobotInfo[]{enemiesInSight[0]}, 1);
             }
         }
-        if (target.equals(rc.senseEnemyHQLocation())) {
-            return true;
+    }
+    
+    /**
+     * If there is only 1 enemy in sight, decide whether to follow it or not
+     * based on danger rating and health of enemy. If there are more than 1
+     * enemy in sight, decides if retreat is necessary based on danger rating.
+     * @return true if switching to follow state, false otherwise.
+     */
+    private static void checkForDanger() {
+        if (numberOfEnemiesInSight == 0) {
+            return;
+        } else if (numberOfEnemiesInSight == 1) {
+            int enemyType = enemiesInSight[0].type.ordinal();
+            int enemyDangerRating = dangerRating[enemyType];
+            if (enemyDangerRating == 1) {
+                droneState = DroneState.FOLLOW;
+            } else if (enemyDangerRating == 2) {
+                if (enemiesInSight[0].health < lowHP[enemyType]) {
+                    droneState = DroneState.FOLLOW;
+                } else {
+                    droneState = DroneState.RETREAT;
+                    retreatTimeout = 5;
+                }
+            }
+        } else {
+            for (RobotInfo info: enemiesInSight) {
+                int enemyType = info.type.ordinal();
+                if (dangerRating[enemyType] == 2) {
+                    if (info.health > lowHP[enemyType]) {
+                        droneState = DroneState.RETREAT;
+                        retreatTimeout = 5;
+                    }
+                }
+            }
         }
-        return false;
+        
+    }
+    
+    /**
+     * Returns true if one should retreat from enemies in sight and 
+     * false otherwise, based on danger rating and health of enemy.
+     * @return
+     */
+    private static boolean shouldRetreat() {
+        if (numberOfEnemiesInSight == 0) {
+            return false;
+        } else if (numberOfEnemiesInSight == 1) {
+            int enemyType = enemiesInSight[0].type.ordinal();
+            int enemyDangerRating = dangerRating[enemyType];
+            if (enemyDangerRating == 0 || enemyDangerRating == 1) {
+                return false;
+            } else if (enemyDangerRating == 2) {
+                if (enemiesInSight[0].health < lowHP[enemyType]) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
     
 
     //Parameters ==============================================================
+    
+    /**
+     * Danger rating is 3 if one should retreat from it.
+     * Danger rating is 2 if one can attack it if it has low hp.
+     * Danger rating is 1 if one should follow and attack it.
+     * Danger rating is 0 if one should ignore it.
+     */
+    private static int[] dangerRating = {
+        3/*0:HQ*/,         3/*1:TOWER*/,      0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     1/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
+        1/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,   1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,
+        2/*16:DRONE*/,     2/*17:TANK*/,      2/*18:COMMANDER*/, 2/*19:LAUNCHER*/,
+        2/*20:MISSILE*/
+    };
+    
+    /**
+     * Values of hp if respective units such that if the unit has lower hp, then
+     * one should attack it.
+     */
+    private static int[] lowHP = {
+        100/*0:HQ*/,         100/*1:TOWER*/,      8/*2:SUPPLYDPT*/,   8/*3:TECHINST*/,
+        100/*4:BARRACKS*/,    100/*5:HELIPAD*/,     50/*6:TRNGFIELD*/,   100/*7:TANKFCTRY*/,
+        100/*8:MINERFCTRY*/,  8/*9:HNDWSHSTN*/,   100/*10:AEROLAB*/,   40/*11:BEAVER*/,
+        8/*12:COMPUTER*/,   20/*13:SOLDIER*/,   20/*14:BASHER*/,    50/*15:MINER*/,
+        30/*16:DRONE*/,     40/*17:TANK*/,      40/*18:COMMANDER*/, 40/*19:LAUNCHER*/,
+        2/*20:MISSILE*/
+    };
     
     /**
      * The importance rating that enemy units of each RobotType should be attacked 

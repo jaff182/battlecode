@@ -5,11 +5,21 @@ import battlecode.common.*;
 public class MovableUnit extends RobotPlayer {
     
     
+    // Parameters ===========================================================
+
     
-    //Movement ================================================================
-    
+    // Attacking
     public static final int towerAttackRadius = 24;
     public static int HQAttackRadius = 35;
+    public static MapLocation target = RobotPlayer.enemyHQLocation; //attack target
+    public static int numberOfEnemiesInSight = 0;
+    public static RobotInfo[] enemiesInSight;
+    public static int indexInWaypoints = 0;
+    public static int waypointTimeout = 100; // timeout before waypoint changes
+    public static final int roundNumAttack = 1750; // round number when end game attack starts
+    public static int numberInSwarm = 5; // minimum size of group for units to start swarming
+    public static boolean keepAwayFromTarget = false; // true if target is tower or hq, false otherwise
+    public static RobotInfo attackTarget; // current attack target
     
     // For pathing
     private static PathingState pathingState = PathingState.BUGGING;
@@ -252,18 +262,25 @@ public class MovableUnit extends RobotPlayer {
             for (RobotInfo info: enemies) {
                 enemiesInDir[myLocation.directionTo(info.location).ordinal()]++;
             }
-            int minDirScore = 30;
+            int minDirScore = 50;
             int dirScore = 0;
             int minIndex = 0;
             for (int i = 0; i < 8; i++) {
                 dirScore = enemiesInDir[i] + enemiesInDir[(i+7)%8] + enemiesInDir[(i+1)%8] + enemiesInDir[(i+6)%8] + enemiesInDir[(i+2)%8];
-                if (dirScore <= minDirScore && movePossible(directions[minIndex])) {
+                if (dirScore <= minDirScore && movePossible(directions[i])) {
                         minDirScore = dirScore;
                         minIndex = i;         
                 }
             }
             if (movePossible(directions[minIndex])) {
                 rc.move(directions[minIndex]);
+            } else {
+                if (enemies.length > 0) {
+                    if (rc.isWeaponReady()) {
+                        // basicAttack(enemies);
+                        priorityAttack(enemies, attackPriorities);
+                    }
+                }
             }
         }
     }
@@ -382,9 +399,10 @@ public class MovableUnit extends RobotPlayer {
              // hugging has been tried in both directions
                 if (prohibitedDir[0] != noDir && prohibitedDir[1] != noDir) {
                     // allow prohibited direction
+                    prohibitedDir[0] = noDir;
                     prohibitedDir[1] = noDir;
                     return hug(targetDir, false);
-                } else if (rc.senseNearbyRobots(9, myTeam).length > 8) {
+                } else if (rc.senseNearbyRobots(8, myTeam).length > 8) {
                     // too many friendly units blocking
                     return Direction.NONE;
                 } else {
@@ -467,9 +485,10 @@ public class MovableUnit extends RobotPlayer {
                 // basicAttack(enemies);
                 rc.attackLocation(followTargetLoc);
             }
-            if (followTargetDistance <= 2) {
+            boolean shouldRetreat = shouldRetreat();
+            if (followTargetDistance <= 2 && shouldRetreat) {
                 retreat();
-            } else {
+            } else if (shouldRetreat){
                 Direction dirToTarget = myLocation.directionTo(followTargetLoc);
                 Direction tryDir = turnTwice(dirToTarget);
                 if (movePossible(tryDir) && rc.isCoreReady()) {
@@ -497,6 +516,7 @@ public class MovableUnit extends RobotPlayer {
     public static boolean isBuilding(int robotOrdinal) {
         return (robotOrdinal < 11 || robotOrdinal == 12);
     }
+    
 
 
     /**
@@ -507,6 +527,134 @@ public class MovableUnit extends RobotPlayer {
      */
     private static Direction turnTwice(Direction dir) {
         return (turnClockwise ? dir.rotateRight().rotateRight() : dir.rotateLeft().rotateLeft());
+    }
+    
+    
+    
+    /**
+     * Returns true if one should retreat from enemies in sight and 
+     * false otherwise, based on danger rating and health of enemy.
+     * @return
+     */
+    private static boolean shouldRetreat() {
+        if (numberOfEnemiesInSight == 0) {
+            return false;
+        } else if (numberOfEnemiesInSight == 1) {
+            int enemyType = enemiesInSight[0].type.ordinal();
+            int enemyDangerRating = dangerRating[enemyType];
+            if (enemyDangerRating == 0 || enemyDangerRating == 1) {
+                return false;
+            } else if (enemyDangerRating == 2) {
+                if (enemiesInSight[0].health < lowHP[enemyType]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+
+    /**
+     * Danger rating is 3 if one should retreat from it.
+     * Danger rating is 2 if one can attack it if it has low hp.
+     * Danger rating is 1 if one should follow and attack it.
+     * Danger rating is 0 if one should ignore it.
+     */
+    private static int[] dangerRating = {
+        3/*0:HQ*/,         3/*1:TOWER*/,      0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     1/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
+        1/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,   1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,
+        2/*16:DRONE*/,     2/*17:TANK*/,      2/*18:COMMANDER*/, 2/*19:LAUNCHER*/,
+        2/*20:MISSILE*/
+    };
+    
+    /**
+     * Values of hp if respective units such that if the unit has lower hp, then
+     * one should attack it.
+     */
+    private static int[] lowHP = {
+        100/*0:HQ*/,         100/*1:TOWER*/,      8/*2:SUPPLYDPT*/,   8/*3:TECHINST*/,
+        100/*4:BARRACKS*/,    100/*5:HELIPAD*/,     50/*6:TRNGFIELD*/,   100/*7:TANKFCTRY*/,
+        100/*8:MINERFCTRY*/,  8/*9:HNDWSHSTN*/,   100/*10:AEROLAB*/,   40/*11:BEAVER*/,
+        8/*12:COMPUTER*/,   20/*13:SOLDIER*/,   20/*14:BASHER*/,    50/*15:MINER*/,
+        30/*16:DRONE*/,     40/*17:TANK*/,      40/*18:COMMANDER*/, 40/*19:LAUNCHER*/,
+        2/*20:MISSILE*/
+    };
+    
+    // Attacking =============================================================
+    
+    /**
+     * Sets target to closest enemy tower, or the enemy hq if there are no towers remaining. 
+     * Sets area around the target as pathable in the internal map.
+     * @throws GameActionException
+     */
+    public static void setTargetToClosestTowerOrHQ() throws GameActionException {
+        MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
+        int distanceToClosestTower = Integer.MAX_VALUE;
+        int enemyAttackRadius = towerAttackRadius;
+        if (towerLoc.length != 0) {
+            for (MapLocation loc: towerLoc) {
+                int towerDist = myLocation.distanceSquaredTo(loc);
+                if (towerDist <= distanceToClosestTower) {
+                    target = loc;
+                    distanceToClosestTower = towerDist;
+                }
+            }
+        } else {
+            target = rc.senseEnemyHQLocation();
+            enemyAttackRadius = HQAttackRadius;
+        }
+        
+     // set area around target as pathable
+        int targetID = Map.getInternalMap(target);
+        for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, enemyAttackRadius)) {          
+            if (Map.getInternalMap(inSightOfTarget) == targetID) {
+                Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
+            }
+        }
+    }
+
+    /**
+     * Set target based on waypoints. If round number is greater than cutoff for end game attack, then
+     * set target to closest tower or hq (if no towers remaining).
+     * @throws GameActionException
+     */
+    public static void setTargetToWayPoints() throws GameActionException {
+        if (Clock.getRoundNum() > roundNumAttack) {
+            // end game attack on towers and then hq
+            setTargetToClosestTowerOrHQ();
+        } else if (waypointTimeout <= 0 ||
+                (myLocation.distanceSquaredTo(target) < 24 && numberOfEnemiesInSight == 0)) {
+            // switch target to next waypoint if timeout is reached or close to target but no enemies in sight
+            indexInWaypoints = Math.min(indexInWaypoints + 1, Waypoints.numberOfWaypoints - 1);
+            target = Waypoints.waypoints[indexInWaypoints];
+            if (targetIsTowerOrHQ(target)) {
+                keepAwayFromTarget = true;
+            } else{
+                keepAwayFromTarget = false;
+            }
+            waypointTimeout = 100;
+        }
+    }
+    
+    
+    // TODO: refactor this method, looks useful
+    /**
+     * Returns true if current target is an enemy tower or HQ, and false otherwise.
+     * @param target current target
+     * @return true if current target is enemy tower or HQ, and false otherwise.
+     */
+    public static boolean targetIsTowerOrHQ(MapLocation target) {
+        for (MapLocation tower: rc.senseEnemyTowerLocations()) {
+            if (target.equals(tower)) {
+                return true;
+            }
+        }
+        if (target.equals(rc.senseEnemyHQLocation())) {
+            return true;
+        }
+        return false;
     }
     
     //Move and sense ==========================================================

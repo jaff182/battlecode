@@ -8,7 +8,7 @@ public class HQ extends Structure {
     //Global variables ========================================================
     
     private static final int tankDefenseChannel = Channels.TANK_DEFENSE_COUNT;
-    private static int numberOfTanksNeeded = 5;
+    private static int numberOfTanksNeeded = 2;
     
     //Old building request implementation -------------------------------------
     private final static RobotType[] buildOrder1 = {
@@ -77,7 +77,7 @@ public class HQ extends Structure {
 
         //old building code
         //queue = new BuildingQueue(buildOrder1, RobotType.SUPPLYDEPOT);
-        
+
 
         //Initiate radio map TODO: towers locations?
         Map.setMaps(HQLocation.x,HQLocation.y,3);
@@ -105,6 +105,7 @@ public class HQ extends Structure {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
+        callForTankReinforcements();
         checkForEnemies();
         
         
@@ -214,6 +215,7 @@ public class HQ extends Structure {
         }
     }
     
+
     
     public static void debug_countTypes() throws GameActionException {
         for (RobotType robotType: RobotType.values()) {
@@ -221,6 +223,14 @@ public class HQ extends Structure {
         }
     }
     
+
+    private static void callForTankReinforcements() {
+        if (rc.senseNearbyRobots(81, enemyTeam).length > 10) {
+            numberOfTanksNeeded += 2;
+        }
+    }
+    
+
     //Parameters ==============================================================
     
     /**

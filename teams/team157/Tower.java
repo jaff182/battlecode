@@ -8,7 +8,7 @@ import team157.Utility.*;
 public class Tower extends Structure {
     
     private static int tankDefenseChannel;
-    private static int numberOfTanksNeeded = 10;
+    private static int numberOfTanksNeeded = 5;
     
     //General methods =========================================================
     
@@ -37,6 +37,8 @@ public class Tower extends Structure {
         //Vigilance
         //Stops everything and attacks when enemies are in attack range.
         updateEnemyInRange(attackRange);
+        callForTankReinforcements();
+        
         while(enemies.length > 0) {
             if(rc.isWeaponReady()) {
                 //basicAttack(enemies);
@@ -69,6 +71,12 @@ public class Tower extends Structure {
                 rc.broadcast(tankDefenseChannel + 2, myLocation.y);
                 return;
             }
+        }
+    }
+    
+    private static void callForTankReinforcements() {
+        if (rc.senseNearbyRobots(81, enemyTeam).length > 10) {
+            numberOfTanksNeeded += 2;
         }
     }
     
