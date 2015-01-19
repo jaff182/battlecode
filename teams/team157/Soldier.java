@@ -104,6 +104,16 @@ public class Soldier extends MovableUnit {
     }
     
     /**
+     * Checks if group is dispersed.
+     * 
+     * @return
+     */
+    public static boolean isGroupDispersed() {
+        return RobotPlayer.rc.senseNearbyRobots(SoldierGroup.groupCenter,
+                SoldierGroup.groupSize, RobotPlayer.myTeam).length < 0.8*SoldierGroup.groupSize;
+    }
+    
+    /**
      * BUGGY, DO NOT USE..
      * 
      * Checks if the current location is reached.
