@@ -8,7 +8,8 @@ import team157.Utility.*;
 public class Tower extends Structure {
     
     private static int tankDefenseChannel;
-    private static int numberOfTanksNeeded = 5;
+    private static int baseNumberOfTanksNeeded = 0;
+    private static int numberOfTanksNeeded = baseNumberOfTanksNeeded;
     
     //General methods =========================================================
     
@@ -77,6 +78,8 @@ public class Tower extends Structure {
     private static void callForTankReinforcements() {
         if (rc.senseNearbyRobots(81, enemyTeam).length > 10) {
             numberOfTanksNeeded += 2;
+        } else {
+            numberOfTanksNeeded = baseNumberOfTanksNeeded;
         }
     }
     
