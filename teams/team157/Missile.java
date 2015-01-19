@@ -23,17 +23,24 @@ public class Missile extends MovableUnit {
         rc.setIndicatorString(0,"hello i'm a missile.");
     }
     
+    //Specific methods =========================================================
+    
     private static void loop() throws GameActionException {
         updateMyLocation();
-        if (targetLocation != null && Measure.distance(targetLocation, myLocation) < CONTACT_RADIUS)
+        if (sensedEnemyNearBy())
         {
             rc.explode();
         }
     }
-    
-    //Specific methods =========================================================
-    
 
-    
-    
+    private static boolean isCloseToTargetLocation()
+    {
+        return (targetLocation != null && Measure.distance(targetLocation, myLocation) < CONTACT_RADIUS);
+    }
+
+    private static boolean sensedEnemyNearBy()
+    {
+        updateEnemyInRange(2);
+        return (enemies.length > 4);
+    }
 }
