@@ -248,9 +248,7 @@ public class RobotPlayer {
         //Check for weakest of highest priority enemy type
         for(int i=0; i<enemies.length; i++) {
             int type = enemies[i].type.ordinal();
-            myLocation = rc.getLocation();
-            if(myLocation.distanceSquaredTo(enemies[i].location) <= attackRange) {
-                
+            if(rc.canAttackLocation(enemies[i].location)) {         
                 if(atkorder[type] > targettype) {
                     //More important enemy to attack
                     targettype = atkorder[type];
@@ -268,6 +266,43 @@ public class RobotPlayer {
         }
         return null;
     }
+    
+    
+    /**
+     * Choose priority attack target on nearby enemies to location of friendly unit to defend
+     * @param defendLoc location of friendly unit to defend
+     * @param enemies RobotInfo array of enemies in sight range of defended unit
+     * @param atkorder int array of attack priority rank (0 to 20, allowing ties) for each corresponding RobotType ordinal in robotTypes (eg: atkorder[1] = 5 means TOWERs are the 6th most important RobotType to attack)
+     * @return RobotInfo representing chosen priority attack target.
+     * @throws GameActionException
+     */
+    public static RobotInfo chooseDefensePriorityAttackTarget(MapLocation defendLoc, RobotInfo[] enemies, int[] atkorder) {
+      //Initiate
+        int targetidx = -1, targettype = 1;
+        double minhp = 100000;
+        
+        //Check for weakest of highest priority enemy type
+        for(int i=0; i<enemies.length; i++) {
+            int type = enemies[i].type.ordinal();
+            if(rc.canAttackLocation(enemies[i].location)) {
+                if(atkorder[type] > targettype) {
+                    //More important enemy to attack
+                    targettype = atkorder[type];
+                    minhp = enemies[i].health;
+                    targetidx = i;
+                } else if(atkorder[type] == targettype && enemies[i].health < minhp) {
+                    //Same priority enemy but lower health
+                    minhp = enemies[i].health;
+                    targetidx = i;
+                }
+            }
+        }
+        if (targetidx != -1) {
+            return enemies[targetidx];
+        }
+        return null;
+    }
+    
     
     //Tests ===================================================================
     

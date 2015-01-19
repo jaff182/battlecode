@@ -8,6 +8,6 @@ public class Barracks extends SpawnableStructure {
     //General methods =========================================================
     
     public static void start() throws GameActionException {
-       SpawnableStructure.start(RobotType.SOLDIER);
+        SpawnableStructure.start(RobotType.SOLDIER);
     }
 }

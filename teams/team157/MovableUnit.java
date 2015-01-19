@@ -254,16 +254,16 @@ public class MovableUnit extends RobotPlayer {
             }
             int minDirScore = 30;
             int dirScore = 0;
-            int maxIndex = 0;
+            int minIndex = 0;
             for (int i = 0; i < 8; i++) {
-                dirScore = enemiesInDir[i] + enemiesInDir[(i+7)%8] + enemiesInDir[(i+1)%8];
-                if (dirScore <= minDirScore && movePossible(directions[maxIndex])) {
+                dirScore = enemiesInDir[i] + enemiesInDir[(i+7)%8] + enemiesInDir[(i+1)%8] + enemiesInDir[(i+6)%8] + enemiesInDir[(i+2)%8];
+                if (dirScore <= minDirScore && movePossible(directions[minIndex])) {
                         minDirScore = dirScore;
-                        maxIndex = i;         
+                        minIndex = i;         
                 }
             }
-            if (movePossible(directions[maxIndex])) {
-                rc.move(directions[maxIndex]);
+            if (movePossible(directions[minIndex])) {
+                rc.move(directions[minIndex]);
             }
         }
     }

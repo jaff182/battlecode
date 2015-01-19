@@ -41,8 +41,8 @@ public class BeaversBuildRequest {
      */
     public static RobotType doIHaveToBuildABuilding() throws GameActionException {
         int robotType = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
-        final int thisBeaverNumber = RobotPlayer.rc.readBroadcast(BASE_CHANNEL+1);
-        RobotPlayer.rc.broadcast(BASE_CHANNEL+1, thisBeaverNumber-1);
+        final int thisBeaverNumber = RobotPlayer.rc.readBroadcast(BASE_CHANNEL+1)-1;
+        RobotPlayer.rc.broadcast(BASE_CHANNEL+1, thisBeaverNumber);
             if (robotType != Integer.MAX_VALUE) {// Maybe..
                 final int beaverNumberSelected = RobotPlayer.rc.readBroadcast(BASE_CHANNEL+2);
 //                System.out.println("Look! A request for beaver " + beaverNumberSelected +", and i'm " + thisBeaverNumber);
@@ -71,7 +71,7 @@ public class BeaversBuildRequest {
      *            the total number of beavers present
      * @param numberOfBeaverToBuildBuilding
      *            the beaver we want to build a building. must be a number
-     *            between 1 to totalBeavers inclusive.
+     *            between 0 to totalBeavers exclusive.
      * @throws GameActionException
      */
     public static void pleaseBuildABuilding(RobotType buildingType,

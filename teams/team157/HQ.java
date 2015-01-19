@@ -7,6 +7,9 @@ public class HQ extends Structure {
 
     //Global variables ========================================================
     
+    private static final int tankDefenseChannel = Channels.TANK_DEFENSE_COUNT;
+    private static int numberOfTanksNeeded = 5;
+    
     //Old building request implementation -------------------------------------
     private final static RobotType[] buildOrder1 = {
             //RobotType.BARRACKS, RobotType.BARRACKS,
@@ -29,6 +32,11 @@ public class HQ extends Structure {
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
             RobotType.SUPPLYDEPOT, RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
+    };
+    
+    private final static RobotType[] buildOrder2 = {
+        RobotType.BARRACKS, RobotType.TANKFACTORY, RobotType.TANKFACTORY,
+        RobotType.TANKFACTORY,
     };
     
     /**
@@ -64,6 +72,8 @@ public class HQ extends Structure {
     
     private static void init() throws GameActionException {
         rc.setIndicatorString(0,"hello i'm a hq.");
+        // call for tank defense units
+        rc.broadcast(tankDefenseChannel, numberOfTanksNeeded);
 
         //old building code
         //queue = new BuildingQueue(buildOrder1, RobotType.SUPPLYDEPOT);
@@ -83,6 +93,7 @@ public class HQ extends Structure {
         team157.Utility.LastAttackedLocationsReport.everyRobotInit();
         //team157.Utility.BeaversBuildRequest.HQinit();
         
+        //Add MinerFactory at the start
         BuildOrder.add(RobotType.MINERFACTORY);
     }
     
@@ -105,6 +116,20 @@ public class HQ extends Structure {
             build(nextBuilding); // Read javadoc of build for caveats
         }
         //*///-----------------------------------------------------------------
+        
+        
+        //Testing new build system
+        //Add 2 Helipads on round 100, 1 Barracks on round 500
+        if(Clock.getRoundNum() == 100) {
+            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.HELIPAD);
+        }
+        if(Clock.getRoundNum() == 200) {
+            BuildOrder.add(RobotType.BARRACKS);
+            BuildOrder.add(RobotType.TANKFACTORY);
+            //BuildOrder.printBuildOrder();
+        }
+        
         
         //Spawn beavers
         if (hasFewBeavers()) { 
