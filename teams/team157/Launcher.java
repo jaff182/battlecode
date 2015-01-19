@@ -1,17 +1,14 @@
 package team157;
 
-import java.util.Random;
 import battlecode.common.*;
 
 public class Launcher extends MovableUnit {
     
     //General methods =========================================================
 
-    public enum LauncherState {
-        FIRING, NOT_FIRING;
-    }
+    public static int missileCount = 0;
 
-    public static LauncherState state = LauncherState.NOT_FIRING;
+    public static final int defaultMissileCount = 5;
 
     public static void start() throws GameActionException {
         init();
@@ -23,21 +20,20 @@ public class Launcher extends MovableUnit {
     
     private static void init() throws GameActionException {
         initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
-        state = LauncherState.NOT_FIRING;
         target = enemyHQLocation;
+        missileCount = 0;
     }
     
     private static void loop() throws GameActionException {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         updateMyLocation();
-        switch (state) {
-            case FIRING:
-                Direction dir0 = myLocation.directionTo(target);
-                launchMissile(dir0);
-                break;
-            case NOT_FIRING:
-                break;
+
+        if (missileCount > 0)
+        {
+            Direction dir0 = myLocation.directionTo(target);
+            launchMissile(dir0);
+            missileCount--;
         }
     }
     
@@ -61,13 +57,25 @@ public class Launcher extends MovableUnit {
 
     public static void stopFiring()
     {
-        state = LauncherState.NOT_FIRING;
+        missileCount = 0;
+    }
+
+    public static void fire(MapLocation location, int numMissile)
+    {
+        target = location;
+        missileCount = numMissile;
     }
 
     public static void fire(MapLocation location)
     {
         target = location;
-        state = LauncherState.FIRING;
+        missileCount = defaultMissileCount;
+    }
+
+    public static void fireEnemyHQ()
+    {
+        target = enemyHQLocation;
+        missileCount = defaultMissileCount;
     }
     
 }
