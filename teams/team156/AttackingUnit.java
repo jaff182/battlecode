@@ -62,7 +62,7 @@ public class AttackingUnit extends MovableUnit{
         RobotController rc = RobotPlayer.rc; // bring rc into local scope
         
         // State transitions
-        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(40))<1.5) {
+        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30))<1.3) {
             state = MovableUnitState.RETREATING;
         } else {
             RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(40,

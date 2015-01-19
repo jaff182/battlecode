@@ -117,13 +117,13 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
-        if(Clock.getRoundNum() == 350) {
+        if(Clock.getRoundNum() == 550) {
             BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
 
         }
-        if(Clock.getRoundNum() == 500) {
+        if(Clock.getRoundNum() == 800) {
             BuildOrder.add(RobotType.HELIPAD);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
 
