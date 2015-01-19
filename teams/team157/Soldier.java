@@ -1,7 +1,5 @@
 package team157;
 
-import java.util.Random;
-
 import team157.Utility.SoldierGroup;
 import battlecode.common.*;
 
@@ -184,5 +182,12 @@ public class Soldier extends MovableUnit {
             14/*16:DRONE*/,     17/*17:TANK*/,      18/*18:COMMANDER*/, 11/*19:LAUNCHER*/,
             19/*20:MISSILE*/
         };
-    
+
+    public static enum SoldierState {
+        WAIT, // Stay stationary
+        ATTACK_MOVE, // Move towards a location, attacking units it sees
+        RETREAT, // Move towards a location, without attacking
+        JOIN_GROUP, // Too far from center of group (from distanceSquaredFromCenterOfGroupBeforeLost)
+                    // Will keep trying to join the group we've lost, no matter the cost.
+    }
 }
