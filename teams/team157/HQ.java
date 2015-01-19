@@ -10,7 +10,7 @@ public class HQ extends Structure {
     private static final int tankDefenseChannel = Channels.TANK_DEFENSE_COUNT;
     private static int baseNumberOfTanksNeeded = 0;
     private static int numberOfTanksNeeded = baseNumberOfTanksNeeded;
-    
+        
     //Old building request implementation -------------------------------------
     private final static RobotType[] buildOrder1 = {
             //RobotType.BARRACKS, RobotType.BARRACKS,
@@ -80,8 +80,14 @@ public class HQ extends Structure {
         team157.Utility.LastAttackedLocationsReport.everyRobotInit();
         //team157.Utility.BeaversBuildRequest.HQinit();
         
-        //Add MinerFactory at the start
-        BuildOrder.add(RobotType.MINERFACTORY);
+        if (distanceBetweenHQs < SMALL_MAP_SIZE) {
+            // drone rush on small map
+            BuildOrder.add(RobotType.HELIPAD);
+        } else {
+            //Add MinerFactory at the start
+            BuildOrder.add(RobotType.MINERFACTORY);
+        }
+
     }
     
     private static void loop() throws GameActionException {
@@ -108,21 +114,53 @@ public class HQ extends Structure {
         
         //Testing new build system
         //Add 2 Helipads on round 100, 1 Barracks on round 500
-        /**
-        if(Clock.getRoundNum() == 225) {
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.HELIPAD);
+        if(Clock.getRoundNum() == 100) {
+            if (distanceBetweenHQs < SMALL_MAP_SIZE) {
+                BuildOrder.add(RobotType.MINERFACTORY);
+            } else {
+                BuildOrder.add(RobotType.HELIPAD);
+            }
         }
-        if(Clock.getRoundNum() == 350) {
+        if(Clock.getRoundNum() == 250) {
             BuildOrder.add(RobotType.HELIPAD);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
-        **/
         if(Clock.getRoundNum() == 500) {
-            BuildOrder.add(RobotType.BARRACKS);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            //BuildOrder.printBuildOrder();
+            // change strategy based on map size
+            if (distanceBetweenHQs < SMALL_MAP_SIZE) {
+                rc.setIndicatorString(1, "small map");
+                BuildOrder.add(RobotType.HELIPAD);
+                BuildOrder.add(RobotType.HELIPAD);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+            }
+            else if (distanceBetweenHQs < LARGE_MAP_SIZE) {
+                rc.setIndicatorString(1, "medium map");
+                BuildOrder.add(RobotType.HELIPAD);
+                BuildOrder.add(RobotType.BARRACKS);
+                BuildOrder.add(RobotType.TANKFACTORY);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+            }
+            else {
+                rc.setIndicatorString(1, "large map");
+                BuildOrder.add(RobotType.BARRACKS);
+                BuildOrder.add(RobotType.TANKFACTORY);
+                BuildOrder.add(RobotType.TANKFACTORY);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+            }
+        }
+        
+        if(Clock.getRoundNum() == 1000 || Clock.getRoundNum() == 1200 && rc.getTeamOre() > 1000) {
+            if (distanceBetweenHQs < SMALL_MAP_SIZE) {
+                BuildOrder.add(RobotType.HELIPAD);
+                BuildOrder.add(RobotType.HELIPAD);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+            } else {
+                BuildOrder.add(RobotType.HELIPAD);
+                BuildOrder.add(RobotType.TANKFACTORY);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+            }
         }
         
         
@@ -159,7 +197,7 @@ public class HQ extends Structure {
     }
     
     private static boolean hasFewBeavers() throws GameActionException {
-        if (Clock.getRoundNum() < 122) { 
+        if (Clock.getRoundNum() < 150) { 
         //hard code initial miner factory and helipad
             return RobotCount.read(RobotType.BEAVER)<1;
         }

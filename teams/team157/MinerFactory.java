@@ -34,7 +34,7 @@ public class MinerFactory extends Structure {
         //Spawn
         int minerCount = RobotCount.read(RobotType.MINER);
         int effectiveMinerCount = MinerEffectivenessCount.read();
-        if(minerCount < 40 && (minerCount == 0 || 1.0*effectiveMinerCount/minerCount > 0.25)) {
+        if(Clock.getRoundNum() > 150 && minerCount < 40 && (minerCount == 0 || 1.0*effectiveMinerCount/minerCount > 0.25)) {
             trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.MINER);
         }
         

@@ -102,7 +102,7 @@ public class Drone extends MovableUnit {
             if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
                 // Switches to swarm state when >4 friendly units within sensing radius.
                 droneState = DroneState.SWARM;
-            } else if (numberOfEnemiesInSight > 2) {
+            } else if (numberOfEnemiesInSight > 2 && Clock.getRoundNum() > 500) {
              // goes into retreat state if there are enemies in sight range
                 droneState = DroneState.RETREAT;
             }
@@ -231,7 +231,7 @@ public class Drone extends MovableUnit {
             } else if (enemyDangerRating == 2) {
                 if (enemiesInSight[0].health < lowHP[enemyType]) {
                     droneState = DroneState.FOLLOW;
-                } else {
+                } else if (Clock.getRoundNum() > 500) {
                     droneState = DroneState.RETREAT;
                     retreatTimeout = 5;
                 }
@@ -240,9 +240,10 @@ public class Drone extends MovableUnit {
             for (RobotInfo info: enemiesInSight) {
                 int enemyType = info.type.ordinal();
                 if (dangerRating[enemyType] == 2) {
-                    if (info.health > lowHP[enemyType]) {
+                    if (info.health > lowHP[enemyType] && Clock.getRoundNum()>500) {
                         droneState = DroneState.RETREAT;
                         retreatTimeout = 5;
+                        return;
                     }
                 }
             }

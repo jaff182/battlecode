@@ -359,7 +359,7 @@ public class Tank extends MovableUnit {
             targetAttackRadius = HQAttackRadius;
         }
         keepAwayFromTarget= true;
-        if (myLocation.distanceSquaredTo(target) < 48 && tankState == TankState.SWARM){
+        if (tankState == TankState.KAMIKAZE || (myLocation.distanceSquaredTo(target) < 48 && tankState == TankState.SWARM)){
             setAreaAroundTargetAsPathable();
         }
     }

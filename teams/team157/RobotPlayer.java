@@ -8,6 +8,7 @@ import battlecode.common.*;
 public class RobotPlayer {
     
     //Global variables ========================================================
+  
     //Unset Variables
     public static RobotController rc;
     public static MapLocation HQLocation, enemyHQLocation, myLocation; //locations
@@ -16,6 +17,10 @@ public class RobotPlayer {
     public static RobotType myType;
     public static int sightRange, attackRange; //ranges
     public static Random rand;
+    public static int distanceBetweenHQs;
+    
+    public static final int SMALL_MAP_SIZE = 2000;
+    public static final int LARGE_MAP_SIZE = 5000;
     
     public final static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST}; //call directions[i] for the ith direction
     public final static int[] offsets = {0,1,-1,2,-2,3,-3,4};
@@ -43,6 +48,7 @@ public class RobotPlayer {
         enemyHQLocation = rc.senseEnemyHQLocation();
         myTowers = rc.senseTowerLocations();
         enemyTowers = rc.senseEnemyTowerLocations();
+        distanceBetweenHQs = HQLocation.distanceSquaredTo(enemyHQLocation);
         updateMyLocation();
         
         //get teams

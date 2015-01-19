@@ -168,8 +168,12 @@ public class Beaver extends MiningUnit {
         //Vigilance
         checkForEnemies();
         
-        //Randomly wander around
-        wander();
+        // wander around near HQ
+        if (myLocation.distanceSquaredTo(HQLocation) > 35) {
+            bug(HQLocation);
+        } else {
+            wander();
+        }
         
         //Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
