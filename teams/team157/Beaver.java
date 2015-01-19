@@ -103,14 +103,19 @@ public class Beaver extends MiningUnit {
     //State switching =========================================================
     
     private static void switchStateFromWanderState() throws GameActionException {
-        //check if need to build stuff
+      //check if need to build stuff
         int index = BuildOrder.doIHaveToBuildABuilding();
         if(index != -1) {
-                //Respond
                 buildOrderIndex = index;
-                BuildOrder.IAmTheBuilding(buildOrderIndex);
                 int value = BuildOrder.get(buildOrderIndex);
                 buildingType = robotTypes[BuildOrder.decodeTypeOrdinal(value)];
+                
+        }
+        
+        if (index != -1 && rc.getTeamOre() >= buildingType.oreCost) {
+                //Respond
+                BuildOrder.IAmTheBuilding(buildOrderIndex);
+
                 moveTargetLocation = null;
                 robotState = RobotState.BUILD;
         } else if (rc.isCoreReady()) {
@@ -127,11 +132,16 @@ public class Beaver extends MiningUnit {
         //check if need to build stuff
         int index = BuildOrder.doIHaveToBuildABuilding();
         if(index != -1) {
-                //Respond
                 buildOrderIndex = index;
-                BuildOrder.IAmTheBuilding(buildOrderIndex);
                 int value = BuildOrder.get(buildOrderIndex);
                 buildingType = robotTypes[BuildOrder.decodeTypeOrdinal(value)];
+                
+        }
+        
+        if (index != -1 && rc.getTeamOre() >= buildingType.oreCost) {
+                //Respond
+                BuildOrder.IAmTheBuilding(buildOrderIndex);
+
                 moveTargetLocation = null;
                 robotState = RobotState.BUILD;
         } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10 
