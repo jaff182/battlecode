@@ -1,5 +1,6 @@
 package team157;
 
+import droneBot.Drone.DroneState;
 import team157.Utility.*;
 import battlecode.common.*;
 
@@ -230,6 +231,8 @@ public class Drone extends MovableUnit {
             } else if (enemyDangerRating == 2) {
                 if (enemiesInSight[0].health < lowHP[enemyType]) {
                     droneState = DroneState.FOLLOW;
+                }else {
+                    droneState = DroneState.RETREAT;
                 }
             }
         } else {

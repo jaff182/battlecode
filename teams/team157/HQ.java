@@ -75,7 +75,7 @@ public class HQ extends Structure {
             rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
         }
 
-        MapLocation soldierLoc = myLocation.add(myLocation.directionTo(enemyHQLocation), 7);
+        MapLocation soldierLoc = myLocation.add(myLocation.directionTo(enemyHQLocation), 6);
         SoldierGroup.setNextWaypoint(soldierLoc.x, soldierLoc.y, null);
         // Init LastAttackedLocations
         team157.Utility.LastAttackedLocationsReport.HQinit();
@@ -124,10 +124,6 @@ public class HQ extends Structure {
                 BuildOrder.add(RobotType.BARRACKS);
             }
         }
-        if(Clock.getRoundNum() == 250) {
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-        }
         if(Clock.getRoundNum() == 500) {
             // change strategy based on map size
             if (distanceBetweenHQs < SMALL_MAP_SIZE) {
@@ -144,7 +140,7 @@ public class HQ extends Structure {
             }
         }
         
-        if(Clock.getRoundNum() == 1000 || Clock.getRoundNum() == 1200 && rc.getTeamOre() > 1000) {
+        if(Clock.getRoundNum() == 800 || Clock.getRoundNum() == 1200 && rc.getTeamOre() > 1000) {
             if (distanceBetweenHQs < SMALL_MAP_SIZE) {
                 BuildOrder.add(RobotType.HELIPAD);
                 BuildOrder.add(RobotType.HELIPAD);

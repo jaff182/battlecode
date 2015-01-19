@@ -2,6 +2,7 @@ package team157;
 
 import java.util.Random;
 
+import team157.Utility.RobotCount;
 import battlecode.common.*;
 
 public class Barracks extends SpawnableStructure {
@@ -29,7 +30,9 @@ public class Barracks extends SpawnableStructure {
         claimBuildOrderEntry();
 
         //Spawn
-        trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.SOLDIER);
+        if (RobotCount.read(RobotType.SOLDIER) < 10) {
+            trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.SOLDIER);
+        }
 
         //Dispense Supply
         dispenseSupply(suppliabilityMultiplier_Preattack);
