@@ -19,8 +19,9 @@ public class Tank extends MovableUnit {
     private static MapLocation defendPositioning;
     private static int bugTimeout = 15;
     private static int targetAttackRadius = towerAttackRadius;
-    private static int numberInSwarm = 3;
+    private static int numberInSwarm = 5;
     private static int swarmRange = 35;
+    private static int distanceBetweenHQs = HQLocation.distanceSquaredTo(enemyHQLocation);
     
     
     public static void start() throws GameActionException {
@@ -41,7 +42,6 @@ public class Tank extends MovableUnit {
     
     private static void loop() throws GameActionException {
         myLocation = rc.getLocation();
-        waypointTimeout--;
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -113,15 +113,11 @@ public class Tank extends MovableUnit {
                 }
                 if (numberOfFriendlyTanks >= numberInSwarm) {
                     tankState = TankState.SWARM;
-                    setAreaAroundTargetAsPathable();
                 } 
             }
             break;
         case SWARM:
-            if (numberOfEnemiesInSight == 1 && !isBuilding(enemiesInSight[0].type.ordinal())) {
-                // lone enemy in sight which is not a building
-                tankState = TankState.FOLLOW;
-            } else if (rc.senseNearbyRobots(swarmRange, RobotPlayer.myTeam).length < numberInSwarm) {
+            if (rc.senseNearbyRobots(swarmRange, RobotPlayer.myTeam).length < numberInSwarm) {
              // switch to unswarm state when <3 friendly units within sensing radius.
                 tankState = TankState.UNSWARM;
             }
@@ -171,6 +167,17 @@ public class Tank extends MovableUnit {
             break;
         case UNSWARM:
             checkForEnemies();
+            int distanceToHQ = myLocation.distanceSquaredTo(enemyHQLocation);
+            if (distanceToHQ > distanceBetweenHQs/2) {
+                if (distanceToHQ <= 0.6*distanceBetweenHQs) {
+                    return;
+                } else {
+                    bug(enemyHQLocation);
+                }
+            } else {
+                bug(HQLocation);
+            }
+            /**
             // defensive state for lone tanks, stays away from target and waits for reinforcements.
             if (keepAwayFromTarget) {
                 // target is tower or hq
@@ -183,6 +190,7 @@ public class Tank extends MovableUnit {
                 }
             }
             bug(target);
+            **/
             break;
         case SWARM:
             checkForEnemies();

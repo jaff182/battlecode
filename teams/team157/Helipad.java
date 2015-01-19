@@ -32,7 +32,7 @@ public class Helipad extends Structure {
         claimBuildOrderEntry();
         
         //Spawn
-        if(RobotCount.read(RobotType.DRONE) < 60) {
+        if(RobotCount.read(RobotType.DRONE) < 50) {
             trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);
         }
         

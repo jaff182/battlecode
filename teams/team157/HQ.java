@@ -108,10 +108,7 @@ public class HQ extends Structure {
         
         //Testing new build system
         //Add 2 Helipads on round 100, 1 Barracks on round 500
-        if(Clock.getRoundNum() == 100) {
-            BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
-            BuildOrder.add(RobotType.TRAININGFIELD);
-        }
+        /**
         if(Clock.getRoundNum() == 225) {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.HELIPAD);
@@ -120,6 +117,7 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.HELIPAD);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
+        **/
         if(Clock.getRoundNum() == 500) {
             BuildOrder.add(RobotType.BARRACKS);
             BuildOrder.add(RobotType.TANKFACTORY);
