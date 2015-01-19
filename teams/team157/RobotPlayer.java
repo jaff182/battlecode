@@ -75,9 +75,9 @@ public class RobotPlayer {
                 case BARRACKS: Barracks.start(); break;
                 case BASHER: Basher.start(); break;
                 case BEAVER: Beaver.start(); break;
-                case COMMANDER: Commander.start(); break;
+                case COMMANDER: AttackingUnit.start(); break;
                 case COMPUTER: Computer.start(); break;
-                case DRONE: Drone.start(); break;
+                case DRONE: AttackingUnit.start(); break;
                 case HANDWASHSTATION: HandwashStation.start(); break;
                 case HELIPAD: Helipad.start(); break;
                 case HQ: HQ.start(); break;
@@ -85,9 +85,9 @@ public class RobotPlayer {
                 case MINER: Miner.start(); break;
                 case MINERFACTORY: MinerFactory.start(); break;
                 case MISSILE: Missile.start(); break;
-                case SOLDIER: Soldier.start(); break;
+                case SOLDIER: AttackingUnit.start(); break;
                 case SUPPLYDEPOT: SupplyDepot.start(); break;
-                case TANK: Tank.start(); break;
+                case TANK: AttackingUnit.start(); break;
                 case TANKFACTORY: TankFactory.start(); break;
                 case TECHNOLOGYINSTITUTE: TechnologyInstitute.start(); break;
                 case TOWER: Tower.start(); break;
