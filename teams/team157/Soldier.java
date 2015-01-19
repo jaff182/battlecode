@@ -61,8 +61,8 @@ public class Soldier extends MovableUnit {
         default:
             throw new IllegalStateException("Illegal state " + state + " reached");
         }
-        rc.setIndicatorString(1, "Waypoint is reached: " + SoldierGroup.hasSoldierGroupReachedWaypoint() + ", Waypoint is filled: " +  locationToWaypointHasHighDensity());
-        rc.setIndicatorString(2, "State " + state + ", moveTarget: " + moveTargetLocation + ", groupCenter: " + SoldierGroup.groupCenter);
+//        rc.setIndicatorString(1, "Waypoint is reached: " + SoldierGroup.hasSoldierGroupReachedWaypoint() + ", Waypoint is filled: " +  locationToWaypointHasHighDensity());
+//        rc.setIndicatorString(2, "State " + state + ", moveTarget: " + moveTargetLocation + ", groupCenter: " + SoldierGroup.groupCenter);
         // Action
         // TODO: refactor
         switch (state) {
