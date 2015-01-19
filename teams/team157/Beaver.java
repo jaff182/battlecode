@@ -52,7 +52,8 @@ public class Beaver extends MiningUnit {
         //Set building parameters
         CHECKERBOARD_PARITY = (HQLocation.x+HQLocation.y)%2;
         
-        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
+        //set locations within attack radius of enemy tower or hq as unpathable
+        initInternalMap();
         
         //initialSense(rc.getLocation());
     }

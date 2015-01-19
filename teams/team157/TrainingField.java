@@ -29,6 +29,10 @@ public class TrainingField extends Structure {
         //Report existence if built because of build order
         claimBuildOrderEntry();
         
+        if(!rc.hasCommander()) {
+            trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.COMMANDER);
+        }
+        
     }
     
     //Specific methods =========================================================
