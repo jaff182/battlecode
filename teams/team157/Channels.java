@@ -59,6 +59,6 @@ public class Channels {
      * Starting channel for tank defense unit count system
      * 19 channels needed
      */
-    public static final int TANK_DEFENSE_COUNT = 17078;
+    public static final int TANK_DEFENSE_COUNT = 17097;
 
 }

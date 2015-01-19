@@ -18,6 +18,10 @@ public class Tank extends MovableUnit {
     private static int defendRadius = 15;
     private static MapLocation defendPositioning;
     private static int bugTimeout = 15;
+    private static int targetAttackRadius = towerAttackRadius;
+    private static int numberInSwarm = 5;
+    private static int swarmRange = 35;
+    private static int distanceBetweenHQs = HQLocation.distanceSquaredTo(enemyHQLocation);
     
     
     public static void start() throws GameActionException {
@@ -29,20 +33,15 @@ public class Tank extends MovableUnit {
     }
     
     private static void init() throws GameActionException {
-        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
-        if (setDefendTarget()) {
-            tankState = TankState.DEFEND;
-        } else {
-            tankState = TankState.UNSWARM;
-            Waypoints.refreshLocalCache();
-            target = Waypoints.waypoints[0];
+        if (Clock.getRoundNum() < roundNumAttack) {
+            initInternalMap();//set locations within attack radius of enemy tower or hq as unpathable
         }
-        
+ 
+        tankState = TankState.UNSWARM;
     }
     
     private static void loop() throws GameActionException {
         myLocation = rc.getLocation();
-        waypointTimeout--;
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -57,37 +56,30 @@ public class Tank extends MovableUnit {
         
 
         // first check if need to switch states
-        if (Clock.getRoundNum()%10 == 5) {
-            switch(tankState) {
-            case DEFEND:
+        if (Clock.getRoundNum()%10 == 2) {
+            if (tankState == TankState.DEFEND){
                 if(!TankDefenseCount.report(defendChannel)) {
                     if (!setDefendTarget()) {
-                        tankState = TankState.UNSWARM;
-                        Waypoints.refreshLocalCache();
-                        target = Waypoints.waypoints[0];
+                        setTargetToTowerOrHQ();
                     }
                 }
-                break;
-            case UNSWARM:
+            } else {
+                setTargetToTowerOrHQ();
+            }
+        }
+        if (Clock.getRoundNum()%10 == 4) {
+            if (tankState == TankState.UNSWARM){
                 if (rc.getHealth() > 100) {
                     if (setDefendTarget()) {
                         tankState = TankState.DEFEND;
                         bugTimeout = 15;
                     }
                 }
-                break;
-            default:
-                break;
             }
         }
         
         // switch state based on number of enemies in sight
         tankSwitchState(); 
-        
-        if (tankState!=TankState.DEFEND){
-            setTargetToWayPoints();
-        }
-
         tankMove();
         
       //Display state
@@ -111,17 +103,22 @@ public class Tank extends MovableUnit {
             if (numberOfEnemiesInSight == 1 && !isBuilding(enemiesInSight[0].type.ordinal())) {
                 // lone enemy in sight which is not a building
                 tankState = TankState.FOLLOW;
-            } else if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
-                // Switches to swarm state when >4 friendly units within sensing radius.
-                tankState = TankState.SWARM;
+            } else {
+                // switches to swarm state when >4 friendly tanks in sight range.
+                int numberOfFriendlyTanks = 0;
+                for (RobotInfo info: rc.senseNearbyRobots(swarmRange, RobotPlayer.myTeam)) {
+                    if (info.type == RobotType.TANK){
+                        numberOfFriendlyTanks++;
+                    }
+                }
+                if (numberOfFriendlyTanks >= numberInSwarm) {
+                    tankState = TankState.SWARM;
+                } 
             }
             break;
         case SWARM:
-            if (numberOfEnemiesInSight == 1 && !isBuilding(enemiesInSight[0].type.ordinal())) {
-                // lone enemy in sight which is not a building
-                tankState = TankState.FOLLOW;
-            } else if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length < numberInSwarm) {
-             // switch to unswarm state when <5 friendly units within sensing radius.
+            if (rc.senseNearbyRobots(swarmRange, RobotPlayer.myTeam).length < numberInSwarm) {
+             // switch to unswarm state when <3 friendly units within sensing radius.
                 tankState = TankState.UNSWARM;
             }
             break;
@@ -170,7 +167,18 @@ public class Tank extends MovableUnit {
             break;
         case UNSWARM:
             checkForEnemies();
-            // defensive state for lone drones, stays away from target and waits for reinforcements.
+            int distanceToHQ = myLocation.distanceSquaredTo(enemyHQLocation);
+            if (distanceToHQ > distanceBetweenHQs/2) {
+                if (distanceToHQ <= 0.6*distanceBetweenHQs) {
+                    return;
+                } else {
+                    bug(enemyHQLocation);
+                }
+            } else {
+                bug(HQLocation);
+            }
+            /**
+            // defensive state for lone tanks, stays away from target and waits for reinforcements.
             if (keepAwayFromTarget) {
                 // target is tower or hq
                 if(myLocation.distanceSquaredTo(target) < 35) {
@@ -182,6 +190,7 @@ public class Tank extends MovableUnit {
                 }
             }
             bug(target);
+            **/
             break;
         case SWARM:
             checkForEnemies();
@@ -326,6 +335,44 @@ public class Tank extends MovableUnit {
             enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
             rc.yield();
         }
+    }
+    
+    /**
+     * Sets target to closest enemy tower, or the enemy hq if there are no towers remaining. 
+     * Sets area around the target as pathable in the internal map.
+     * @throws GameActionException
+     */
+    public static void setTargetToTowerOrHQ() throws GameActionException {
+        MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
+        int distanceToClosestTower = Integer.MAX_VALUE;
+        targetAttackRadius = towerAttackRadius;
+        if (towerLoc.length != 0) {
+            for (MapLocation loc: towerLoc) {
+                int towerDist = myLocation.distanceSquaredTo(loc);
+                if (towerDist <= distanceToClosestTower) {
+                    target = loc;
+                    distanceToClosestTower = towerDist;
+                }
+            }
+        } else {
+            target = rc.senseEnemyHQLocation();
+            targetAttackRadius = HQAttackRadius;
+        }
+        keepAwayFromTarget= true;
+        if (myLocation.distanceSquaredTo(target) < 48 && tankState == TankState.SWARM){
+            setAreaAroundTargetAsPathable();
+        }
+    }
+    
+    public static void setAreaAroundTargetAsPathable() {
+        // set area around target as pathable
+        int targetID = Map.getInternalMap(target);
+        for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, targetAttackRadius)) {          
+            if (Map.getInternalMap(inSightOfTarget) == targetID) {
+                Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
+            }
+        }
+        keepAwayFromTarget = false;
     }
     
     

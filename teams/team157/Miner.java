@@ -33,7 +33,7 @@ public class Miner extends MiningUnit {
         
         //set locations within attack radius of enemy tower or hq as unpathable
         //Commented out because uses too much bytecode.
-        //initInternalMap();
+        initInternalMap();
         
     }
     

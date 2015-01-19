@@ -2,6 +2,7 @@ package team157;
 
 import java.util.Random;
 
+import team157.Utility.RobotCount;
 import battlecode.common.*;
 
 public class Helipad extends Structure {
@@ -31,7 +32,9 @@ public class Helipad extends Structure {
         claimBuildOrderEntry();
         
         //Spawn
-        trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);
+        if(RobotCount.read(RobotType.DRONE) < 50) {
+            trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);
+        }
         
         //Dispense Supply
         dispenseSupply(suppliabilityMultiplier_Preattack);

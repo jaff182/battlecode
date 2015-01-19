@@ -38,13 +38,14 @@ public class TankFactory extends SpawnableStructure {
         
         /**
         if (Clock.getRoundNum()%100 ==7) {
-            System.out.println(rc.readBroadcast(TankDefenseCount.HQ_CHANNEL));
+            System.out.println(TankDefenseCount.HQ_CHANNEL + " " + rc.readBroadcast(TankDefenseCount.HQ_CHANNEL));
             for (int i=0; i< 20; i++) {
-                System.out.println(rc.readBroadcast(TankDefenseCount.TOWER_BASE_CHANNEL + i));
+                System.out.println(TankDefenseCount.TOWER_BASE_CHANNEL + i + " " + rc.readBroadcast(TankDefenseCount.TOWER_BASE_CHANNEL + i));
             }
             
         }
         **/
+
         
     }
 
