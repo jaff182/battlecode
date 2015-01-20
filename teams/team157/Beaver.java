@@ -45,9 +45,9 @@ public class Beaver extends MiningUnit {
         robotState = RobotState.WANDER;
         
         //Set mining parameters
-        MIN_MINING_RATE = GameConstants.BEAVER_MINE_MAX;
-        MIN_ORE_WORTH_MINING = MIN_MINING_RATE*GameConstants.BEAVER_MINE_RATE;
-        MIN_ORE_WORTH_CONSIDERING = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.BEAVER_MINE_RATE;
+        minMiningRate = GameConstants.BEAVER_MINE_MAX;
+        minOreWorthMining = minMiningRate*GameConstants.BEAVER_MINE_RATE;
+        minOreWorthConsidering = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.BEAVER_MINE_RATE;
         
         //Set building parameters
         CHECKERBOARD_PARITY = (HQLocation.x+HQLocation.y)%2;
@@ -116,8 +116,8 @@ public class Beaver extends MiningUnit {
         } else if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
-            double miningProbability = 0.5*(ore-MIN_ORE_WORTH_CONSIDERING)/(MIN_ORE_WORTH_MINING-MIN_ORE_WORTH_CONSIDERING);
-            if(ore >= MIN_ORE_WORTH_MINING || rand.nextDouble() <= miningProbability) {
+            double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
+            if(ore >= minOreWorthMining || rand.nextDouble() <= miningProbability) {
                 robotState = RobotState.MINE;
             }
         }
@@ -143,8 +143,8 @@ public class Beaver extends MiningUnit {
         } else if (rc.isCoreReady()) {
             //Transition to wandering around if ore level is too low
             double ore = rc.senseOre(myLocation);
-            double miningProbability = 0.5*(ore-MIN_ORE_WORTH_CONSIDERING)/(MIN_ORE_WORTH_MINING-MIN_ORE_WORTH_CONSIDERING);
-            if(ore < MIN_ORE_WORTH_MINING && rand.nextDouble() > miningProbability) {
+            double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
+            if(ore < minOreWorthMining && rand.nextDouble() > miningProbability) {
                 robotState = RobotState.WANDER;
             }
         }

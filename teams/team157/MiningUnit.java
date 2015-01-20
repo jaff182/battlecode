@@ -13,17 +13,17 @@ public class MiningUnit extends MovableUnit {
     /**
      * Minimum mining rate acceptable.
      */
-    public static double MIN_MINING_RATE;
+    public static double minMiningRate;
     
     /**
-     * Minimum ore that permits mining rate at least MIN_MINING_RATE.
+     * Minimum ore that permits mining rate at least minMiningRate.
      */
-    public static double MIN_ORE_WORTH_MINING;
+    public static double minOreWorthMining;
     
     /**
      * Minimum ore that permits mining rate at least GameConstants.MINIMUM_MINE_AMOUNT.
      */
-    public static double MIN_ORE_WORTH_CONSIDERING;
+    public static double minOreWorthConsidering;
     
     
     
@@ -172,7 +172,7 @@ public class MiningUnit extends MovableUnit {
         int dirInt = myLocation.directionTo(loc).ordinal();
         if(rc.isPathable(myType,loc)) {
             double ore = rc.senseOre(loc);
-            if(ore >= MIN_ORE_WORTH_MINING) directionPriority[dirInt] += ore;
+            if(ore >= minOreWorthMining) directionPriority[dirInt] += ore;
         } else if(myLocation.distanceSquaredTo(loc) <= 2) {
             //discourage the direction if obstructed
             directionPriority[dirInt] -= 1000;
