@@ -28,6 +28,8 @@ public class Drone extends MovableUnit {
             droneState = DroneState.KAMIKAZE;
         }
         
+        
+
         Waypoints.refreshLocalCache();
         target = Waypoints.waypoints[0];
     }

@@ -153,12 +153,26 @@ public class MovableUnit extends RobotPlayer {
         }
         if (towerID < 9) {
             HQAttackRadius = HQ0towerAttackRadius;
+            for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,HQAttackRadius)) {
+                Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);   
+            }
         } else if (towerID > 10) {
             HQAttackRadius = HQ5towerAttackRadius;
+            for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation, 52)) {
+                if (Math.abs(inSightOfHQ.x - enemyHQLocation.x) < 7 && Math.abs(inSightOfHQ.y - enemyHQLocation.y) < 7) {
+                    Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
+                } else {
+                    if (RobotPlayer.isInSplashRegion(inSightOfHQ, enemyHQLocation)) {
+                        Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
+                    }
+                }
+            }
+        } else {
+            for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,HQAttackRadius)) {
+                Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);   
+            }
         }
-        for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,HQAttackRadius)) {
-            Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);   
-        }
+        
     }
     
     /**
