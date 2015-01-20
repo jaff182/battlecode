@@ -270,10 +270,11 @@ public class MovableUnit extends RobotPlayer {
     /**
      * Retreat in preference of direction with least enemies
      * Update enemiesInSight before using!
+     * @return true if unit was moved by this function, false otherwise
      * @throws GameActionException
      */
-    public static void retreat() throws GameActionException {
-        if (rc.isCoreReady() && numberOfEnemiesInSight > 0) {
+    public static boolean retreat() throws GameActionException {
+        if (rc.isCoreReady() && enemiesInSight != null && enemiesInSight.length != 0) {
             int[] enemiesInDir = new int[8];
             for (RobotInfo info: enemiesInSight) {
                 enemiesInDir[myLocation.directionTo(info.location).ordinal()]++;
@@ -290,15 +291,18 @@ public class MovableUnit extends RobotPlayer {
             }
             if (movePossible(directions[minIndex])) {
                 rc.move(directions[minIndex]);
+                return true;
             } else {
                 if (enemies.length > 0) {
                     if (rc.isWeaponReady()) {
                         // basicAttack(enemies);
                         priorityAttack(enemies, attackPriorities);
+                        return false;
                     }
                 }
             }
         }
+        return false;
     }
     
     

@@ -136,7 +136,8 @@ public class AttackingUnit extends MovableUnit{
             if (myType.cooldownDelay == 0 && rc.isWeaponReady())
                 MovableUnit.basicAttack(rc.senseNearbyRobots(
                         myType.attackRadiusSquared, RobotPlayer.enemyTeam));
-            MovableUnit.retreat();
+            if (MovableUnit.retreat())
+                bug(retreatLocation);
             break;
         default:
             break;
