@@ -30,7 +30,6 @@ public class Beaver extends MiningUnit {
     private static int buildingID = 0;
     
     
-    
     // General methods =========================================================
     
     public static void start() throws GameActionException {
@@ -109,7 +108,6 @@ public class Beaver extends MiningUnit {
                 buildOrderIndex = index;
                 int value = BuildOrder.get(buildOrderIndex);
                 buildingType = robotTypes[BuildOrder.decodeTypeOrdinal(value)];
-                
         }
         
         if (index != -1 && rc.getTeamOre() >= buildingType.oreCost) {
@@ -344,6 +342,26 @@ public class Beaver extends MiningUnit {
     //Build methods ===========================================================
     
     /**
+     * Finds a direction to build.
+     * @param dir0 Preferred Direction
+     * @throws GameActionException
+     */
+    public static Direction findBuildDirection(Direction dir0) throws GameActionException {
+        myLocation = rc.getLocation();
+        int relativeParity = (myLocation.x+myLocation.y-CHECKERBOARD_PARITY+2)%2;
+        int dirInt0 = dir0.ordinal();
+        for(int offset : offsets) {
+            int dirInt = (dirInt0+offset+8)%8;
+            if((dirInt+relativeParity)%2 == 1 
+                && rc.canMove(directions[dirInt])) {
+                    return directions[dirInt];
+            }
+        }
+        return Direction.NONE;
+    }
+    
+    
+    /**
      * Build robot of type rbtype in direction dir0 if allowed
      * @param dir0 Direction to build at
      * @param robotType RobotType of building to build
@@ -351,15 +369,12 @@ public class Beaver extends MiningUnit {
      */
     public static void tryBuild(Direction dir0, RobotType robotType) throws GameActionException {
         if(rc.isCoreReady() && rc.hasBuildRequirements(robotType)) {
-            int relativeParity = (myLocation.x+myLocation.y-CHECKERBOARD_PARITY+2)%2;
-            int dirInt0 = dir0.ordinal();
-            for(int offset : offsets) {
-                int dirInt = (dirInt0+offset+8)%8;
-                if((dirInt+relativeParity)%2 == 1 
-                    && rc.canBuild(directions[dirInt],robotType)) {
-                        rc.build(directions[dirInt],robotType);
-                        break;
-                }
+            Direction dir = findBuildDirection(dir0);
+            if(dir.ordinal() < 8 && rc.canBuild(dir,robotType)) {
+                //Build!
+                rc.build(dir,robotType);
+            } else {
+                wander();
             }
         }
     }

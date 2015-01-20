@@ -152,7 +152,6 @@ public class BuildOrder {
         }
     }
     
-    
     /**
      * Clear the build order
      */
@@ -161,30 +160,87 @@ public class BuildOrder {
     }
     
     /**
-     * Returns the length of the build order
-     * @return Length of build order.
-     */
-    public static int size() throws GameActionException {
-        return RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
-    }
-    
-    /**
-     * Remove building of a certain type.
+     * Remove entry at a specified position in the build order.
      * @param index Position to remove entry.
      */
     public static void remove(int index) throws GameActionException {
         int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
-        if(index < length-1) {
-            //Shift up the entries past the index
-            for(int idx=index+1; idx<length; idx++) {
-                int channelFrom = BASE_CHANNEL+1+idx;
-                int value = RobotPlayer.rc.readBroadcast(channelFrom);
-                RobotPlayer.rc.broadcast(channelFrom-1,value);
+        if(index >= 0) {
+            if(index < length-1) {
+                //Shift up the entries past the index
+                for(int idx=index+1; idx<length; idx++) {
+                    int channelFrom = BASE_CHANNEL+1+idx;
+                    int value = RobotPlayer.rc.readBroadcast(channelFrom);
+                    RobotPlayer.rc.broadcast(channelFrom-1,value);
+                }
+            }
+            if(index <= length-1) {
+                //Decrement length
+                RobotPlayer.rc.broadcast(BASE_CHANNEL,length-1);
+            } else {
+                //Complain
+                System.out.println("Warning: Removing build order entry outside bounds.");
+            }
+        } else {
+            //Complain
+            System.out.println("Warning: Removing build order entry outside bounds.");
+        }
+    }
+    
+    /**
+     * Find the first occurrence of a building of a certain type.
+     * @param buildingType The building type to remove.
+     * @return The index of the first occurrence of buildingType. (-1 if not found)
+     */
+    public static int search(RobotType buildingType) throws GameActionException {
+        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int typeOrdinal = buildingType.ordinal();
+        //Search for building type
+        int index = -1;
+        for(int idx=0; idx<length; idx++) {
+            int channel = BASE_CHANNEL+1+idx;
+            int value = RobotPlayer.rc.readBroadcast(channel);
+            if(decodeTypeOrdinal(value) == typeOrdinal) {
+                return idx;
             }
         }
-        if(index <= length-1) {
-            //Decrement length
-            RobotPlayer.rc.broadcast(BASE_CHANNEL,length-1);
+        //Not found
+        return -1;
+    }
+    
+    /**
+     * Find the first occurrence of a building of a certain type.
+     * @param 
+     */
+    public static void remove(RobotType buildingType) throws GameActionException {
+        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int typeOrdinal = buildingType.ordinal();
+        //Search for building type
+        int index = -1;
+        for(int idx=0; idx<length; idx++) {
+            int channel = BASE_CHANNEL+1+idx;
+            int value = RobotPlayer.rc.readBroadcast(channel);
+            if(decodeTypeOrdinal(value) == typeOrdinal) {
+                index = idx;
+                break;
+            }
+        }
+        if(index >= 0) {
+            if(index < length-1) {
+                //Shift up the entries past the index
+                for(int idx=index+1; idx<length; idx++) {
+                    int channelFrom = BASE_CHANNEL+1+idx;
+                    int value = RobotPlayer.rc.readBroadcast(channelFrom);
+                    RobotPlayer.rc.broadcast(channelFrom-1,value);
+                }
+            }
+            if(index <= length-1) {
+                //Decrement length
+                RobotPlayer.rc.broadcast(BASE_CHANNEL,length-1);
+            } else {
+                //Complain
+                System.out.println("Warning: Removing build order entry outside bounds.");
+            }
         } else {
             //Complain
             System.out.println("Warning: Removing build order entry outside bounds.");
@@ -213,6 +269,14 @@ public class BuildOrder {
         int channel = BASE_CHANNEL+1+index;
         int value = encode(buildingTypeOrdinal,id);
         RobotPlayer.rc.broadcast(channel,value);
+    }
+    
+    /**
+     * Returns the length of the build order
+     * @return Length of build order.
+     */
+    public static int size() throws GameActionException {
+        return RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
     }
     
     /**
@@ -297,7 +361,7 @@ public class BuildOrder {
     /**
      * Prints the build order.
      */
-    public static void printBuildOrder() throws GameActionException {
+    public static void print() throws GameActionException {
         int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
         for(int idx=0; idx<length; idx++) {
             int value = get(idx);
