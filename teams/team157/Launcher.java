@@ -50,7 +50,6 @@ public class Launcher extends MovableUnit {
         if(rc.isCoreReady() && rc.getTeamOre() >= RobotType.MISSILE.oreCost) {
             if(rc.canSpawn(dir0,RobotType.MISSILE)) {
                 // Not sure if I can do this
-                Missile.target = target;
                 rc.spawn(dir0, RobotType.MISSILE);
                 missileCount--;
             }
