@@ -84,29 +84,30 @@ public class HQ extends Structure {
         
         // Testing new build system
         // Add 2 Helipads on round 100, 1 Barracks on round 500
+
+
         if (distanceBetweenHQs < SMALL_MAP_SIZE) {
             // drone rush on small map
-            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
+            BuildOrder.add(RobotType.TRAININGFIELD);
             BuildOrder.add(RobotType.MINERFACTORY);
         } else {
             BuildOrder.add(RobotType.MINERFACTORY);
-            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
+            BuildOrder.add(RobotType.TRAININGFIELD);
         }
-
+        
         BuildOrder.add(RobotType.HELIPAD);
+        BuildOrder.add(RobotType.HELIPAD);
+        BuildOrder.add(RobotType.SUPPLYDEPOT);
         BuildOrder.add(RobotType.SUPPLYDEPOT);
 
         // change strategy based on map size
         if (distanceBetweenHQs < SMALL_MAP_SIZE) {
             rc.setIndicatorString(1, "small map");
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.BARRACKS);
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.TANKFACTORY);
         } else {
             rc.setIndicatorString(1, "large map");
             BuildOrder.add(RobotType.BARRACKS);

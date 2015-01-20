@@ -48,7 +48,7 @@ public class Commander extends MovableUnit{
      * Code to init robot goes here.
      */
     private static void init() {
-        advanceLocation = RobotPlayer.HQLocation;
+        advanceLocation = RobotPlayer.enemyHQLocation;
         retreatLocation = RobotPlayer.HQLocation;
         state = MovableUnitState.ADVANCING;
         initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
@@ -63,7 +63,7 @@ public class Commander extends MovableUnit{
         updateMyLocation();
         
         // State transitions
-        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30))<1.3) {
+        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30))<1.5) {
             state = MovableUnitState.RETREATING;
         } else {
             RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30,

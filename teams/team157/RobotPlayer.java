@@ -81,7 +81,7 @@ public class RobotPlayer {
                 case BARRACKS: Barracks.start(); break;
                 case BASHER: Basher.start(); break;
                 case BEAVER: Beaver.start(); break;
-                case COMMANDER: Commander.start(); break;
+                case COMMANDER: AttackingUnit.start(); break;
                 case COMPUTER: Computer.start(); break;
                 case DRONE: Drone.start(); break;
                 case HANDWASHSTATION: HandwashStation.start(); break;
