@@ -25,6 +25,12 @@ public class RobotPlayer {
     public final static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST}; //call directions[i] for the ith direction
     public final static int[] offsets = {0,1,-1,2,-2,3,-3,4};
     public final static RobotType[] robotTypes = {RobotType.HQ,RobotType.TOWER,RobotType.SUPPLYDEPOT,RobotType.TECHNOLOGYINSTITUTE,RobotType.BARRACKS,RobotType.HELIPAD,RobotType.TRAININGFIELD,RobotType.TANKFACTORY,RobotType.MINERFACTORY,RobotType.HANDWASHSTATION,RobotType.AEROSPACELAB,RobotType.BEAVER,RobotType.COMPUTER,RobotType.SOLDIER,RobotType.BASHER,RobotType.MINER,RobotType.DRONE,RobotType.TANK,RobotType.COMMANDER,RobotType.LAUNCHER,RobotType.MISSILE}; //in order of ordinal
+        
+    /**
+     * One way to prevent ore hijacking is to make everybody wait for a fixed ore 
+     * level, that is more than the ore cost of anything.
+     */
+    public static final int UNIFIED_ORE_COST = 1000;
 
     // The number of robots produced before this robot.
     // Includes HQ and towers in count, also determines execution order ingame

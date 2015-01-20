@@ -14,20 +14,12 @@ public class Structure extends RobotPlayer {
     //Building methods ========================================================
     
     /**
-     * The position on the build order that the building is meant to satisfy.
-     */
-    protected static int buildOrderIndex = -1;
-    
-    /**
      * Every building runs this in their init code to check if they were built using 
      * the build order, and so need to report their existence every round to claim 
      * their build order entry.
      */
     protected static void checkBuildOrderPosition() throws GameActionException {
-        buildOrderIndex = BuildOrder.AmIOnBuildOrder();
-        //if(buildOrderIndex != -1) {
-        //    System.out.println("I just spawned! My build order is "+buildOrderIndex);
-        //}
+        //Nothing now
     }
     
     /**
@@ -35,6 +27,7 @@ public class Structure extends RobotPlayer {
      * build order entry.
      */
     protected static void claimBuildOrderEntry() throws GameActionException {
+        int buildOrderIndex = BuildOrder.AmIOnBuildOrder();
         if(buildOrderIndex != -1) {
             BuildOrder.IAmTheBuilding(buildOrderIndex);
         }

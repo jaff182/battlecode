@@ -45,7 +45,9 @@ public class HQ extends Structure {
         
         // Testing new build system
         // Add 2 Helipads on round 100, 1 Barracks on round 500
- 
+        
+        
+        //Initial building strategy -------------------------------------------
         
         if (distanceBetweenHQs < SMALL_MAP_SIZE) {
             // drone rush on small map
@@ -78,6 +80,8 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
+        
+        //---------------------------------------------------------------------
 
     }
     
@@ -95,11 +99,14 @@ public class HQ extends Structure {
         checkForEnemies();
         
         
-        if (Clock.getRoundNum() == 1000 & rc.getTeamOre() > 1000) {
+        //Building strategy ---------------------------------------------------
+        if(Clock.getRoundNum() == 1000) {
             BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
+        
+        //---------------------------------------------------------------------
 
         //Spawn beavers
         if (hasFewBeavers()) { 
