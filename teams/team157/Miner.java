@@ -55,6 +55,7 @@ public class Miner extends MiningUnit {
         switch (robotState) {
             case WANDER: switchStateFromWanderState(); break;
             case MINE: switchStateFromMineState(); break;
+            case RETREAT: switchStateFromRetreatState(); break;
         }
         
         //Display state
@@ -65,6 +66,7 @@ public class Miner extends MiningUnit {
             case ATTACK_MOVE: minerAttack(); break;
             case WANDER: minerWander(); break;
             case MINE: minerMine(); break;
+            case RETREAT: minerRetreat(); break;
             default: throw new IllegalStateException();
         }
     }
@@ -94,6 +96,12 @@ public class Miner extends MiningUnit {
         }
     }
     
+    private static void switchStateFromRetreatState() throws GameActionException {
+        if(enemies.length == 0) {
+            robotState = RobotState.WANDER;
+        }
+    }
+    
     //State methods ===========================================================
     
     private static void minerAttack() throws GameActionException {
@@ -119,15 +127,23 @@ public class Miner extends MiningUnit {
     }
     
     private static void minerWander() throws GameActionException {
-       //Vigilance
-       checkForEnemies();
+        //Vigilance
+        checkForEnemies();
 
-       //Hill climb ore distribution while being repelled from other units
-       updateFriendlyInRange(15);
-       goTowardsOre();
+        //Hill climb ore distribution while being repelled from other units
+        updateFriendlyInRange(15);
+        goTowardsOre();
 
-       //Distribute supply
-       distributeSupply(suppliabilityMultiplier_Preattack);
+        //Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+    
+    private static void minerRetreat() throws GameActionException {
+        //Vigilance
+        checkForEnemies();
+        
+        
+        
     }
     
     

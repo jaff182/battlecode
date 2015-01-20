@@ -104,10 +104,10 @@ public class MiningUnit extends MovableUnit {
                             double force = 1000/distance;
                             
                             directionPriority[dirInt] += force;
-                            directionPriority[(dirInt+1)%8] += 0.707*force;
-                            directionPriority[(dirInt+7)%8] += 0.707*force;
-                            directionPriority[(dirInt+3)%8] -= 0.707*force;
-                            directionPriority[(dirInt+5)%8] -= 0.707*force;
+                            directionPriority[(dirInt+1)%8] += force;
+                            directionPriority[(dirInt+7)%8] += force;
+                            directionPriority[(dirInt+3)%8] -= force;
+                            directionPriority[(dirInt+5)%8] -= force;
                             directionPriority[(dirInt+4)%8] -= force;
                         }
                     }
