@@ -93,8 +93,8 @@ public class Tower extends Structure {
         7/*4:BARRACKS*/,    8/*5:HELIPAD*/,    5/*6:TRNGFIELD*/,    9/*7:TANKFCTRY*/,
         4/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,  10/*10:AEROLAB*/,    12/*11:BEAVER*/,
         2/*12:COMPUTER*/,   14/*13:SOLDIER*/,  13/*14:BASHER*/,     11/*15:MINER*/,
-        17/*16:DRONE*/,     18/*17:TANK*/,     16/*18:COMMANDER*/,  15/*19:LAUNCHER*/,
-        19/*20:MISSILE*/
+        17/*16:DRONE*/,     17/*17:TANK*/,     16/*18:COMMANDER*/,  19/*19:LAUNCHER*/,
+        18/*20:MISSILE*/
     };
     
     /**

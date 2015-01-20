@@ -160,8 +160,8 @@ public class RobotPlayer {
     }
     
     /**
-     * Deprecated. Please update javadoc here still though until code has been
-     * replaced.
+     * Deprecated. Currently only Requests.java uses this. Please update javadoc here 
+     * still though until code has been replaced.
      * 
      * Use Channels.* to read and declare the channel directly.
      * 
@@ -217,6 +217,18 @@ public class RobotPlayer {
     public static RobotInfo[] friends;
     
     /**
+     * Checks whether loc is in the splash damage region of an HQ at hqloc.
+     * @param loc Location to test
+     * @param hqloc Location of HQ
+     * @return True iff in splash damage region
+     */
+    public static boolean isInSplashRegion(MapLocation loc, MapLocation hqloc) {
+        int dx = Math.abs(hqloc.x-loc.x);
+        int dy = Math.abs(hqloc.y-loc.y);
+        return (dx+dy==10 && Math.abs(dx-dy)<=2) || hqloc.distanceSquaredTo(loc) <= 48;
+    }
+    
+    /**
      * Basic attack on the first of detected nearby enemies
      * @param enemies RobotInfo array of enemies in attack range
      * @throws GameActionException
@@ -227,9 +239,11 @@ public class RobotPlayer {
     }
     
     /**
-     * Prioritized attack on the weakest of nearby enemies
+     * Prioritized attack on the weakest of nearby enemies based on rating 
+     * for each corresponding RobotType ordinal in robotTypes (eg: atkorder[1] = 20, 
+     * atkorder[2] = 19 means TOWERs are more important to attack than SUPPLYDEPOTs)
      * @param enemies RobotInfo array of enemies in attack range
-     * @param atkorder int array of attack priority rank (0 to 20, allowing ties) for each corresponding RobotType ordinal in robotTypes (eg: atkorder[1] = 5 means TOWERs are the 6th most important RobotType to attack)
+     * @param atkorder int array of attack priority rating
      * @throws GameActionException
      */
     public static void priorityAttack(RobotInfo[] enemies, int[] atkorder) throws GameActionException {
@@ -241,9 +255,11 @@ public class RobotPlayer {
     }
     
     /**
-     * Choose priority attack target on the weakest of nearby enemies
+     * Choose priority attack target on the weakest of nearby enemies based on rating 
+     * for each corresponding RobotType ordinal in robotTypes (eg: atkorder[1] = 20, 
+     * atkorder[2] = 19 means TOWERs are more important to attack than SUPPLYDEPOTs)
      * @param enemies RobotInfo array of enemies in attack range
-     * @param atkorder int array of attack priority rank (0 to 20, allowing ties) for each corresponding RobotType ordinal in robotTypes (eg: atkorder[1] = 5 means TOWERs are the 6th most important RobotType to attack)
+     * @param atkorder int array of attack priority rating
      * @return RobotInfo representing chosen priority attack target.
      * @throws GameActionException
      */
@@ -367,6 +383,8 @@ public class RobotPlayer {
         updateEnemyInRange(sightRange);
     }
 
+    //Parameters ==============================================================
+    
     /**
      * The importance rating that enemy units of each RobotType should be attacked
      * (so higher means attack first). Needs to be adjusted dynamically based on
