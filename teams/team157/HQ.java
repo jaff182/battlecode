@@ -33,7 +33,7 @@ public class HQ extends Structure {
         if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
             Map.symmetry = 3;//Map.rotationSymmetry;
-            rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
+            //rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
         }
 
         MapLocation soldierLoc = myLocation.add(myLocation.directionTo(enemyHQLocation), 6);
