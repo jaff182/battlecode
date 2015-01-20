@@ -95,6 +95,19 @@ public class MovableUnit extends RobotPlayer {
         return false;
     }
     
+    /**
+     * Returns true if robot can move to the input location, return false otherwise.
+     * @param location target location
+     * @return true if robot can move in dir, false otherwise.
+     */
+    protected static boolean movePossible(MapLocation location) {
+        if (Map.getInternalMap(location) > 1 ) {
+            return false;
+        } else if (rc.isPathable(myType, location)) {
+                return true;
+        }
+        return false;
+    }
     
     /**
      * Initialize internal map when units are spawned, to bug around tower and hq attack radius.
@@ -256,13 +269,13 @@ public class MovableUnit extends RobotPlayer {
     
     /**
      * Retreat in preference of direction with least enemies
+     * Update enemiesInSight before using!
      * @throws GameActionException
      */
     public static void retreat() throws GameActionException {
         if (rc.isCoreReady()) {
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
             int[] enemiesInDir = new int[8];
-            for (RobotInfo info: enemies) {
+            for (RobotInfo info: enemiesInSight) {
                 enemiesInDir[myLocation.directionTo(info.location).ordinal()]++;
             }
             int minDirScore = 50;

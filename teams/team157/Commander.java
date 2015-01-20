@@ -48,7 +48,7 @@ public class Commander extends MovableUnit{
      * Code to init robot goes here.
      */
     private static void init() {
-        advanceLocation = RobotPlayer.HQLocation;
+        advanceLocation = RobotPlayer.enemyHQLocation;
         retreatLocation = RobotPlayer.HQLocation;
         state = MovableUnitState.ADVANCING;
         initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
@@ -63,7 +63,7 @@ public class Commander extends MovableUnit{
         updateMyLocation();
         
         // State transitions
-        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30))<1.3) {
+        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30))<1.5) {
             state = MovableUnitState.RETREATING;
         } else {
             RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30,
@@ -148,8 +148,8 @@ public class Commander extends MovableUnit{
      * @return a positive score if area is safe, negative if dangerous
      */
     private static double macroScoringOfAdvantageInArea(RobotInfo[] robots) {
-        double yourHP = 0;
-        double yourDamageDealtPerUnitTime = 0;
+        double yourHP = rc.getHealth();
+        double yourDamageDealtPerUnitTime = myType.attackPower/myType.attackDelay;
 
         double enemyHP = 0;
         double enemyDamageDealtPerUnitTime = 0;
@@ -168,6 +168,7 @@ public class Commander extends MovableUnit{
                 }
             }
         }
+        rc.setIndicatorString(1, "AlliesHP: " + yourHP + " myDPR: " + yourDamageDealtPerUnitTime + " EnemyHP: " + enemyHP + " enemyDamage " + enemyDamageDealtPerUnitTime);
 
         if (enemyHP != 0 && enemyDamageDealtPerUnitTime !=0)
             return ((yourHP/enemyDamageDealtPerUnitTime) / (enemyHP/yourDamageDealtPerUnitTime));

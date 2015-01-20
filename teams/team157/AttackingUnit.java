@@ -61,8 +61,9 @@ public class AttackingUnit extends MovableUnit{
     private static void loop() throws GameActionException {
         RobotController rc = RobotPlayer.rc; // bring rc into local scope
         
+        double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25));
         // State transitions
-        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25))<1.3) {
+        if (macroScoringAdvantage<1.3) {
             state = MovableUnitState.RETREATING;
         } else {
             RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30,
@@ -91,6 +92,8 @@ public class AttackingUnit extends MovableUnit{
             bug(advanceLocation);
             break;
         case ATTACKING_UNIT:
+            rc.setIndicatorString(2, "State: " + state + " with target " + attackTarget.location);
+
             final int distanceToEnemySquared = myLocation.distanceSquaredTo(attackTarget.location);
             final double distanceToEnemy = Math.sqrt(distanceToEnemySquared);
             final double enemyAttackRadius = Math.sqrt(attackTarget.type.attackRadiusSquared);
@@ -107,17 +110,23 @@ public class AttackingUnit extends MovableUnit{
             else
                 enemyCooldownRate = 0.5;
             
-            if (distanceToEnemySquared <= myType.attackRadiusSquared) {
-                if (rc.isWeaponReady() && rc.canAttackLocation(attackTarget.location))
+            if (rc.canAttackLocation(attackTarget.location)) {
+                if (rc.isWeaponReady())
                         rc.attackLocation(attackTarget.location);
                 rc.setIndicatorString(1, "Attacking in range");
-            } else if ((myType.movementDelay*(distanceToEnemy-enemyAttackRadius)+myType.loadingDelay)/myCooldownRate <= attackTarget.weaponDelay/enemyCooldownRate) {
-                // Time until robot can move, close in on enemy, and then shoot
-                // it, lower than how long it takes for enemy to shoot you assuming it's stationary
+            } else if (macroScoringAdvantage > 1.5 || !attackTarget.type.canAttack()) {
                 bug(attackTarget.location);
-                rc.setIndicatorString(1, "Our moving+shooting delay<enemy shooting delay, advancing advantageous");
-            }
-            else
+            } else if ((myType.movementDelay
+                    * (distanceToEnemy - enemyAttackRadius) + myType.loadingDelay)
+                    / myCooldownRate <= attackTarget.weaponDelay
+                    / enemyCooldownRate) {
+                // Time until robot can move, close in on enemy, and then shoot
+                // it, lower than how long it takes for enemy to shoot you
+                // assuming it's stationary
+                bug(attackTarget.location);
+                rc.setIndicatorString(1,
+                        "Our moving+shooting delay<enemy shooting delay, advancing advantageous");
+            } else
                 rc.setIndicatorString(1, "No attack indicated, waiting here.");
             break;
         case RETREATING:
@@ -147,8 +156,8 @@ public class AttackingUnit extends MovableUnit{
      * @return a positive score if area is safe, negative if dangerous
      */
     private static double macroScoringOfAdvantageInArea(RobotInfo[] robots) {
-        double yourHP = 0;
-        double yourDamageDealtPerUnitTime = 0;
+        double yourHP = rc.getHealth();
+        double yourDamageDealtPerUnitTime = myType.attackPower/myType.attackDelay;
 
         double enemyHP = 0;
         double enemyDamageDealtPerUnitTime = 0;
