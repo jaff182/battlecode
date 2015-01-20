@@ -273,7 +273,7 @@ public class MovableUnit extends RobotPlayer {
      * @throws GameActionException
      */
     public static void retreat() throws GameActionException {
-        if (rc.isCoreReady()) {
+        if (rc.isCoreReady() && numberOfEnemiesInSight > 0) {
             int[] enemiesInDir = new int[8];
             for (RobotInfo info: enemiesInSight) {
                 enemiesInDir[myLocation.directionTo(info.location).ordinal()]++;
