@@ -27,9 +27,9 @@ public class Miner extends MiningUnit {
     private static void init() throws GameActionException {
 
         //Set mining parameters
-        MIN_MINING_RATE = GameConstants.MINER_MINE_MAX;
-        MIN_ORE_WORTH_MINING = MIN_MINING_RATE*GameConstants.MINER_MINE_RATE;
-        MIN_ORE_WORTH_CONSIDERING = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.MINER_MINE_RATE;
+        minMiningRate = GameConstants.MINER_MINE_MAX;
+        minOreWorthMining = minMiningRate*GameConstants.MINER_MINE_RATE;
+        minOreWorthConsidering = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.MINER_MINE_RATE;
         
         //set locations within attack radius of enemy tower or hq as unpathable
         //Commented out because uses too much bytecode.
@@ -55,6 +55,7 @@ public class Miner extends MiningUnit {
         switch (robotState) {
             case WANDER: switchStateFromWanderState(); break;
             case MINE: switchStateFromMineState(); break;
+            case RETREAT: switchStateFromRetreatState(); break;
         }
         
         //Display state
@@ -65,6 +66,7 @@ public class Miner extends MiningUnit {
             case ATTACK_MOVE: minerAttack(); break;
             case WANDER: minerWander(); break;
             case MINE: minerMine(); break;
+            case RETREAT: minerRetreat(); break;
             default: throw new IllegalStateException();
         }
     }
@@ -75,8 +77,8 @@ public class Miner extends MiningUnit {
         if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
-            double miningProbability = 0.5*(ore-MIN_ORE_WORTH_CONSIDERING)/(MIN_ORE_WORTH_MINING-MIN_ORE_WORTH_CONSIDERING);
-            if(ore >= MIN_ORE_WORTH_MINING || rand.nextDouble() <= miningProbability) {
+            double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
+            if(ore >= minOreWorthMining || rand.nextDouble() <= miningProbability) {
                 miningEfficiently = true;
                 robotState = RobotState.MINE;
             }
@@ -86,11 +88,17 @@ public class Miner extends MiningUnit {
     private static void switchStateFromMineState() throws GameActionException {
         if (rc.isCoreReady()) {
             double ore = rc.senseOre(myLocation);
-            double miningProbability = 0.5*(ore-MIN_ORE_WORTH_CONSIDERING)/(MIN_ORE_WORTH_MINING-MIN_ORE_WORTH_CONSIDERING);
-            if(ore < MIN_ORE_WORTH_MINING && rand.nextDouble() > miningProbability) {
+            double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
+            if(ore < minOreWorthMining && rand.nextDouble() > miningProbability) {
                 miningEfficiently = false;
                 robotState = RobotState.WANDER;
             }
+        }
+    }
+    
+    private static void switchStateFromRetreatState() throws GameActionException {
+        if(enemies.length == 0) {
+            robotState = RobotState.WANDER;
         }
     }
     
@@ -119,15 +127,23 @@ public class Miner extends MiningUnit {
     }
     
     private static void minerWander() throws GameActionException {
-       //Vigilance
-       checkForEnemies();
+        //Vigilance
+        checkForEnemies();
 
-       //Hill climb ore distribution while being repelled from other units
-       updateFriendlyInRange(15);
-       goTowardsOre();
+        //Hill climb ore distribution while being repelled from other units
+        updateFriendlyInRange(15);
+        goTowardsOre();
 
-       //Distribute supply
-       distributeSupply(suppliabilityMultiplier_Preattack);
+        //Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
+    }
+    
+    private static void minerRetreat() throws GameActionException {
+        //Vigilance
+        checkForEnemies();
+        
+        
+        
     }
     
     
