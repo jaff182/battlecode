@@ -193,7 +193,7 @@ public class AttackingUnit extends MovableUnit{
      *            all movable robots in an area (excluding HQ and towers)
      * @return a positive score if area is safe, negative if dangerous
      */
-    static double macroScoringOfAdvantageInArea(RobotInfo[] robots) {
+    public static double macroScoringOfAdvantageInArea(RobotInfo[] robots) {
         double yourHP = rc.getHealth();
         double yourDamageDealtPerUnitTime = myType.attackPower/myType.attackDelay;
 
