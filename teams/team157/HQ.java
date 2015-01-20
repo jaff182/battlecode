@@ -41,12 +41,9 @@ public class HQ extends Structure {
     private static BuildingRequestState buildingRequestState = BuildingRequestState.NO_PENDING_REQUEST;
 
     private static BuildingQueue queue;
-    
-    
+
     //Declarative building implementation -------------------------------------
-    
-    
-    
+
     //General methods =========================================================
     
     public static void start() throws GameActionException {
@@ -228,9 +225,7 @@ public class HQ extends Structure {
             return rc.getTeamOre() > cost*2;
         }
     }
-    
-    
-    
+
     //Old building implementation ---------------------------------------------
 
     /**
@@ -266,8 +261,6 @@ public class HQ extends Structure {
         }
     }
     
-
-    
     public static void debug_countTypes() throws GameActionException {
         for (RobotType robotType: RobotType.values()) {
             System.out.println("The number of " + robotType + " is " + RobotCount.read(robotType));
@@ -282,7 +275,12 @@ public class HQ extends Structure {
             numberOfTanksNeeded = baseNumberOfTanksNeeded;
         }
     }
-    
+
+    private static void fireMissiles(int numMissile, MapLocation target) throws GameActionException {
+        rc.broadcast(Channels.MISSILE_TARGET, numMissile);
+        rc.broadcast(Channels.MISSILE_TARGET + 1, target.x);
+        rc.broadcast(Channels.MISSILE_TARGET + 2, target.y);
+    }
 
     //Parameters ==============================================================
     

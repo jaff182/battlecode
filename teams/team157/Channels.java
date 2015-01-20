@@ -61,4 +61,9 @@ public class Channels {
      */
     public static final int TANK_DEFENSE_COUNT = 17097;
 
+    /**
+     * Starting channel for missile target
+     * 10 channels needed
+     */
+    public static final int MISSILE_TARGET = 17098;
 }
