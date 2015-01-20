@@ -1,12 +1,12 @@
-package team157;
+package team156;
 
 import java.util.Random;
-
-import team157.Utility.RobotCount;
 import battlecode.common.*;
 
-public class Barracks extends SpawnableStructure {
-
+public class TrainingField extends Structure {
+    
+    //General methods =========================================================
+    
     public static void start() throws GameActionException {
         init();
         while(true) {
@@ -15,27 +15,29 @@ public class Barracks extends SpawnableStructure {
         }
     }
     
-
-
     private static void init() throws GameActionException {
+        rc.setIndicatorString(0,"hello i'm a training field.");
+        
         //Check to see if built because of build order
         checkBuildOrderPosition();
     }
-
+    
     private static void loop() throws GameActionException {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
         //Report existence if built because of build order
         claimBuildOrderEntry();
-
-        //Spawn
-        if (RobotCount.read(RobotType.SOLDIER) < 10) {
-            trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.SOLDIER);
+        
+        if(!rc.hasCommander()) {
+            trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.COMMANDER);
         }
-
-        //Dispense Supply
-        dispenseSupply(suppliabilityMultiplier_Preattack);
+        
     }
+    
+    //Specific methods =========================================================
+    
+
+    
     
 }

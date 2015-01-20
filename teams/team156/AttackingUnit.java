@@ -1,8 +1,8 @@
-package team157;
-import team157.Utility.*;
+package team156;
+import team156.Utility.*;
 import battlecode.common.*;
 
-public class Commander extends MovableUnit{
+public class AttackingUnit extends MovableUnit{
     /**
      * AF:<br>
      * Represents an attack unit that has state represented by variable state. <br>
@@ -48,7 +48,7 @@ public class Commander extends MovableUnit{
      * Code to init robot goes here.
      */
     private static void init() {
-        advanceLocation = RobotPlayer.HQLocation;
+        advanceLocation = RobotPlayer.enemyHQLocation;
         retreatLocation = RobotPlayer.HQLocation;
         state = MovableUnitState.ADVANCING;
         initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
@@ -63,7 +63,7 @@ public class Commander extends MovableUnit{
         updateMyLocation();
         
         // State transitions
-        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30))<1.3) {
+        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25))<1.3) {
             state = MovableUnitState.RETREATING;
         } else {
             RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30,
@@ -112,6 +112,10 @@ public class Commander extends MovableUnit{
                 if (rc.isWeaponReady() && rc.canAttackLocation(attackTarget.location))
                         rc.attackLocation(attackTarget.location);
                 rc.setIndicatorString(1, "Attacking in range");
+            }
+            else if ((distanceToEnemy - enemyAttackRadius) > 1.0/myType.movementDelay) {
+                bug(attackTarget.location);
+                rc.setIndicatorString(1, "Enemy much too far, move closer");
             } else if ((myType.movementDelay*(distanceToEnemy-enemyAttackRadius)+myType.loadingDelay)/myCooldownRate <= attackTarget.weaponDelay/enemyCooldownRate) {
                 // Time until robot can move, close in on enemy, and then shoot
                 // it, lower than how long it takes for enemy to shoot you assuming it's stationary

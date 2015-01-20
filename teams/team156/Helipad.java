@@ -1,14 +1,11 @@
-package team157;
+package team156;
 
 import java.util.Random;
 
-import team157.Utility.BuildOrder;
-import team157.Utility.RobotCount;
+import team156.Utility.RobotCount;
 import battlecode.common.*;
 
 public class Helipad extends Structure {
-    
-    private static int maxNumberOfDrones = 50;
     
     //General methods =========================================================
     
@@ -22,10 +19,7 @@ public class Helipad extends Structure {
     
     private static void init() throws GameActionException {  
         spawnLocation = enemyHQLocation;
-        if (distanceBetweenHQs < SMALL_MAP_SIZE) {
-            // drone rush on small map
-            maxNumberOfDrones = 100;
-        }
+        
         //Check to see if built because of build order
         checkBuildOrderPosition();
     }
@@ -38,15 +32,13 @@ public class Helipad extends Structure {
         claimBuildOrderEntry();
         
         //Spawn
-        if(RobotCount.read(RobotType.DRONE) < maxNumberOfDrones) {
+        if(RobotCount.read(RobotType.DRONE) < 60) {
             trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);
         }
         
         //Dispense Supply
         dispenseSupply(suppliabilityMultiplier_Preattack);
     }
-    
-    
     
     //Specific methods =========================================================
     

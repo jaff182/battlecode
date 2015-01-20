@@ -1,6 +1,6 @@
-package team157;
+package team156;
 
-import team157.Utility.*;
+import team156.Utility.*;
 import battlecode.common.*;
 
 public class HQ extends Structure {
@@ -10,8 +10,7 @@ public class HQ extends Structure {
     private static final int tankDefenseChannel = Channels.TANK_DEFENSE_COUNT;
     private static int baseNumberOfTanksNeeded = 0;
     private static int numberOfTanksNeeded = baseNumberOfTanksNeeded;
-    private static int numberOfTowers = rc.senseTowerLocations().length;
-        
+    
     //Old building request implementation -------------------------------------
     private final static RobotType[] buildOrder1 = {
             //RobotType.BARRACKS, RobotType.BARRACKS,
@@ -75,56 +74,20 @@ public class HQ extends Structure {
             rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
         }
 
-        MapLocation soldierLoc = myLocation.add(myLocation.directionTo(enemyHQLocation), 6);
-        SoldierGroup.setNextWaypoint(soldierLoc.x, soldierLoc.y, null);
+        
         // Init LastAttackedLocations
-        team157.Utility.LastAttackedLocationsReport.HQinit();
-        team157.Utility.LastAttackedLocationsReport.everyRobotInit();
+        team156.Utility.LastAttackedLocationsReport.HQinit();
+        team156.Utility.LastAttackedLocationsReport.everyRobotInit();
         //team157.Utility.BeaversBuildRequest.HQinit();
         
-        // Testing new build system
-        // Add 2 Helipads on round 100, 1 Barracks on round 500
-        if (distanceBetweenHQs < SMALL_MAP_SIZE) {
-            // drone rush on small map
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.MINERFACTORY);
-        } else {
-            BuildOrder.add(RobotType.MINERFACTORY);
-            BuildOrder.add(RobotType.HELIPAD);
-        }
-
-        BuildOrder.add(RobotType.HELIPAD);
-        BuildOrder.add(RobotType.SUPPLYDEPOT);
-
-        // change strategy based on map size
-        if (distanceBetweenHQs < SMALL_MAP_SIZE) {
-            rc.setIndicatorString(1, "small map");
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-        } else {
-            rc.setIndicatorString(1, "large map");
-            BuildOrder.add(RobotType.BARRACKS);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-        }
-
+        //Add MinerFactory at the start
+        BuildOrder.add(RobotType.MINERFACTORY);
     }
     
     private static void loop() throws GameActionException {
         // Clean up robot count data for this round -- do not remove, will break invariants
         RobotCount.reset();
         MinerEffectivenessCount.reset();
-        numberOfTowers = rc.senseTowerLocations().length;
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -143,7 +106,35 @@ public class HQ extends Structure {
         //*///-----------------------------------------------------------------
         
         
+        //Testing new build system
+        //Add 2 Helipads on round 100, 1 Barracks on round 500
+        if(Clock.getRoundNum() == 100) {
+            BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
+            BuildOrder.add(RobotType.TRAININGFIELD);
+        }
+        if(Clock.getRoundNum() == 225) {
+            BuildOrder.add(RobotType.BARRACKS);
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        }
+        if(Clock.getRoundNum() == 550) {
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
 
+        }
+        if(Clock.getRoundNum() == 800) {
+            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+
+            //BuildOrder.printBuildOrder();
+        }
+        
+        
         //Spawn beavers
         if (hasFewBeavers()) { 
             trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
@@ -174,36 +165,10 @@ public class HQ extends Structure {
             updateEnemyInRange(attackRange);
             rc.yield();
         }
-        
-        if (numberOfTowers > 4) {
-            //can do splash damage
-            RobotInfo[] enemiesInSplashRange = rc.senseNearbyRobots(37, enemyTeam);
-            if (enemiesInSplashRange.length > 0) {
-                int[] enemiesInDir = new int[8];
-                for (RobotInfo info: enemiesInSplashRange) {
-                    enemiesInDir[myLocation.directionTo(info.location).ordinal()]++;
-                }
-                int maxDirScore = 0;
-                int maxIndex = 0;
-                for (int i = 0; i < 8; i++) {
-                    if (enemiesInDir[i] >= maxDirScore) {
-                        maxDirScore = enemiesInDir[i];
-                        maxIndex = i;
-                    }
-                }
-                MapLocation attackLoc = myLocation.add(directions[maxIndex],5);
-                if (rc.isWeaponReady() && rc.canAttackLocation(attackLoc)) {
-                    rc.attackLocation(attackLoc);
-                }
-                
-            }
-            
-        }
-  
     }
     
     private static boolean hasFewBeavers() throws GameActionException {
-        if (Clock.getRoundNum() < 150) { 
+        if (Clock.getRoundNum() < 122) { 
         //hard code initial miner factory and helipad
             return RobotCount.read(RobotType.BEAVER)<1;
         }

@@ -1,8 +1,9 @@
-package team157;
+package team156;
 
 import java.util.Random;
+
 import battlecode.common.*;
-import team157.Utility.Measure;
+import team156.Utility.Measure;
 
 public class Missile extends MovableUnit {
     
@@ -23,24 +24,17 @@ public class Missile extends MovableUnit {
         rc.setIndicatorString(0,"hello i'm a missile.");
     }
     
-    //Specific methods =========================================================
-    
     private static void loop() throws GameActionException {
         updateMyLocation();
-        if (sensedEnemyNearBy())
+        if (targetLocation != null && Measure.distance(targetLocation, myLocation) < CONTACT_RADIUS)
         {
             rc.explode();
         }
     }
+    
+    //Specific methods =========================================================
+    
 
-    private static boolean isCloseToTargetLocation()
-    {
-        return (targetLocation != null && Measure.distance(targetLocation, myLocation) < CONTACT_RADIUS);
-    }
-
-    private static boolean sensedEnemyNearBy()
-    {
-        updateEnemyInRange(2);
-        return (enemies.length > 4);
-    }
+    
+    
 }

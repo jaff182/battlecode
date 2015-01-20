@@ -1,14 +1,13 @@
-package team157;
+package team156;
 
 import java.util.Random;
 
-import team157.Utility.*;
+import team156.Utility.*;
 import battlecode.common.*;
 
 public class RobotPlayer {
     
     //Global variables ========================================================
-  
     //Unset Variables
     public static RobotController rc;
     public static MapLocation HQLocation, enemyHQLocation, myLocation; //locations
@@ -17,10 +16,6 @@ public class RobotPlayer {
     public static RobotType myType;
     public static int sightRange, attackRange; //ranges
     public static Random rand;
-    public static int distanceBetweenHQs;
-    
-    public static final int SMALL_MAP_SIZE = 2000;
-    public static final int LARGE_MAP_SIZE = 5000;
     
     public final static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST}; //call directions[i] for the ith direction
     public final static int[] offsets = {0,1,-1,2,-2,3,-3,4};
@@ -48,7 +43,6 @@ public class RobotPlayer {
         enemyHQLocation = rc.senseEnemyHQLocation();
         myTowers = rc.senseTowerLocations();
         enemyTowers = rc.senseEnemyTowerLocations();
-        distanceBetweenHQs = HQLocation.distanceSquaredTo(enemyHQLocation);
         updateMyLocation();
         
         //get teams
@@ -81,9 +75,9 @@ public class RobotPlayer {
                 case BARRACKS: Barracks.start(); break;
                 case BASHER: Basher.start(); break;
                 case BEAVER: Beaver.start(); break;
-                case COMMANDER: Commander.start(); break;
+                case COMMANDER: AttackingUnit.start(); break;
                 case COMPUTER: Computer.start(); break;
-                case DRONE: Drone.start(); break;
+                case DRONE: AttackingUnit.start(); break;
                 case HANDWASHSTATION: HandwashStation.start(); break;
                 case HELIPAD: Helipad.start(); break;
                 case HQ: HQ.start(); break;
@@ -91,9 +85,9 @@ public class RobotPlayer {
                 case MINER: Miner.start(); break;
                 case MINERFACTORY: MinerFactory.start(); break;
                 case MISSILE: Missile.start(); break;
-                case SOLDIER: Soldier.start(); break;
+                case SOLDIER: AttackingUnit.start(); break;
                 case SUPPLYDEPOT: SupplyDepot.start(); break;
-                case TANK: Tank.start(); break;
+                case TANK: AttackingUnit.start(); break;
                 case TANKFACTORY: TankFactory.start(); break;
                 case TECHNOLOGYINSTITUTE: TechnologyInstitute.start(); break;
                 case TOWER: Tower.start(); break;

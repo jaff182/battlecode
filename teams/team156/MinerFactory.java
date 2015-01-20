@@ -1,14 +1,11 @@
-package team157;
+package team156;
 
 import java.util.Random;
 
-import team157.Utility.BuildOrder;
-import team157.Utility.RobotCount;
 import battlecode.common.*;
+import team156.Utility.*;
 
-public class Helipad extends Structure {
-    
-    private static int maxNumberOfDrones = 50;
+public class MinerFactory extends Structure {
     
     //General methods =========================================================
     
@@ -20,14 +17,12 @@ public class Helipad extends Structure {
         }
     }
     
-    private static void init() throws GameActionException {  
-        spawnLocation = enemyHQLocation;
-        if (distanceBetweenHQs < SMALL_MAP_SIZE) {
-            // drone rush on small map
-            maxNumberOfDrones = 100;
-        }
+    private static void init() throws GameActionException {
+        rc.setIndicatorString(0,"hello i'm a minerfactory.");
+        
         //Check to see if built because of build order
         checkBuildOrderPosition();
+        
     }
     
     private static void loop() throws GameActionException {
@@ -38,15 +33,15 @@ public class Helipad extends Structure {
         claimBuildOrderEntry();
         
         //Spawn
-        if(RobotCount.read(RobotType.DRONE) < maxNumberOfDrones) {
-            trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);
+        int minerCount = RobotCount.read(RobotType.MINER);
+        int effectiveMinerCount = MinerEffectivenessCount.read();
+        if(minerCount < 40 && (minerCount == 0 || 1.0*effectiveMinerCount/minerCount > 0.25)) {
+            trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.MINER);
         }
         
         //Dispense Supply
         dispenseSupply(suppliabilityMultiplier_Preattack);
     }
-    
-    
     
     //Specific methods =========================================================
     

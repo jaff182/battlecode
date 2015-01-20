@@ -1,10 +1,9 @@
-package team157;
+package team156;
 
 import java.util.Random;
 import battlecode.common.*;
-import team157.Utility.*;
 
-public class MinerFactory extends Structure {
+public class SupplyDepot extends Structure {
     
     //General methods =========================================================
     
@@ -17,11 +16,10 @@ public class MinerFactory extends Structure {
     }
     
     private static void init() throws GameActionException {
-        rc.setIndicatorString(0,"hello i'm a minerfactory.");
+        rc.setIndicatorString(0,"hello i'm a supply depot.");
         
         //Check to see if built because of build order
         checkBuildOrderPosition();
-        
     }
     
     private static void loop() throws GameActionException {
@@ -31,32 +29,13 @@ public class MinerFactory extends Structure {
         //Report existence if built because of build order
         claimBuildOrderEntry();
         
-        //Spawn
-        int minerCount = RobotCount.read(RobotType.MINER);
-        int effectiveMinerCount = MinerEffectivenessCount.read();
-        if(Clock.getRoundNum() > 150 && minerCount < 40 && (minerCount == 0 || 1.0*effectiveMinerCount/minerCount > 0.25)) {
-            trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.MINER);
-        }
-        
-        //Dispense Supply
+        //Dispense supply
         dispenseSupply(suppliabilityMultiplier_Preattack);
     }
     
     //Specific methods =========================================================
     
-    /**
-     * Multipliers for the effective supply capacity for friendly unit robotTypes, by 
-     * which the dispenseSupply() and distributeSupply() methods allocate supply (so 
-     * higher means give more supply to units of that type).
-     */
-    private static double[] suppliabilityMultiplier_Conservative = {
-        0/*0:HQ*/,          1/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
-        1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
-        1/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,    0/*11:BEAVER*/,
-        0/*12:COMPUTER*/,   0/*13:SOLDIER*/,    0/*14:BASHER*/,     0/*15:MINER*/,
-        0/*16:DRONE*/,      0/*17:TANK*/,       0/*18:COMMANDER*/,  0/*19:LAUNCHER*/,
-        0/*20:MISSILE*/
-    };
+    //Parameters ===============================================================
     
     private static double[] suppliabilityMultiplier_Preattack = {
         0/*0:HQ*/,          0/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
@@ -66,6 +45,7 @@ public class MinerFactory extends Structure {
         1/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };
+
     
     
 }

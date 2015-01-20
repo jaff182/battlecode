@@ -1,6 +1,8 @@
-package team157;
+package team156;
 
-import team157.Utility.SoldierGroup;
+import java.util.Random;
+
+import team156.Utility.SoldierGroup;
 import battlecode.common.*;
 
 public class Soldier extends MovableUnit {
@@ -60,7 +62,7 @@ public class Soldier extends MovableUnit {
             throw new IllegalStateException("Illegal state " + state + " reached");
         }
 //        rc.setIndicatorString(1, "Waypoint is reached: " + SoldierGroup.hasSoldierGroupReachedWaypoint() + ", Waypoint is filled: " +  locationToWaypointHasHighDensity());
-        rc.setIndicatorString(2, "State " + state + ", moveTarget: " + moveTargetLocation + ", groupCenter: " + SoldierGroup.groupCenter);
+//        rc.setIndicatorString(2, "State " + state + ", moveTarget: " + moveTargetLocation + ", groupCenter: " + SoldierGroup.groupCenter);
         // Action
         // TODO: refactor
         switch (state) {
@@ -182,12 +184,5 @@ public class Soldier extends MovableUnit {
             14/*16:DRONE*/,     17/*17:TANK*/,      18/*18:COMMANDER*/, 11/*19:LAUNCHER*/,
             19/*20:MISSILE*/
         };
-
-    public static enum SoldierState {
-        WAIT, // Stay stationary
-        ATTACK_MOVE, // Move towards a location, attacking units it sees
-        RETREAT, // Move towards a location, without attacking
-        JOIN_GROUP, // Too far from center of group (from distanceSquaredFromCenterOfGroupBeforeLost)
-                    // Will keep trying to join the group we've lost, no matter the cost.
-    }
+    
 }

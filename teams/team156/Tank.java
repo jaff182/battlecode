@@ -1,8 +1,11 @@
-package team157;
+package team156;
 
-import team157.Utility.Map;
-import team157.Utility.RobotCount;
-import team157.Utility.TankDefenseCount;
+import java.util.Random;
+
+import team156.Utility.Map;
+import team156.Utility.RobotCount;
+import team156.Utility.TankDefenseCount;
+import team156.Utility.Waypoints;
 import battlecode.common.*;
 
 public class Tank extends MovableUnit {
@@ -16,9 +19,8 @@ public class Tank extends MovableUnit {
     private static MapLocation defendPositioning;
     private static int bugTimeout = 15;
     private static int targetAttackRadius = towerAttackRadius;
-    private static int numberInSwarm = 5;
+    private static int numberInSwarm = 3;
     private static int swarmRange = 35;
-    private static int distanceBetweenHQs = HQLocation.distanceSquaredTo(enemyHQLocation);
     
     
     public static void start() throws GameActionException {
@@ -39,6 +41,7 @@ public class Tank extends MovableUnit {
     
     private static void loop() throws GameActionException {
         myLocation = rc.getLocation();
+        waypointTimeout--;
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -110,11 +113,15 @@ public class Tank extends MovableUnit {
                 }
                 if (numberOfFriendlyTanks >= numberInSwarm) {
                     tankState = TankState.SWARM;
+                    setAreaAroundTargetAsPathable();
                 } 
             }
             break;
         case SWARM:
-            if (rc.senseNearbyRobots(swarmRange, RobotPlayer.myTeam).length < numberInSwarm) {
+            if (numberOfEnemiesInSight == 1 && !isBuilding(enemiesInSight[0].type.ordinal())) {
+                // lone enemy in sight which is not a building
+                tankState = TankState.FOLLOW;
+            } else if (rc.senseNearbyRobots(swarmRange, RobotPlayer.myTeam).length < numberInSwarm) {
              // switch to unswarm state when <3 friendly units within sensing radius.
                 tankState = TankState.UNSWARM;
             }
@@ -164,17 +171,6 @@ public class Tank extends MovableUnit {
             break;
         case UNSWARM:
             checkForEnemies();
-            int distanceToHQ = myLocation.distanceSquaredTo(enemyHQLocation);
-            if (distanceToHQ > distanceBetweenHQs/2) {
-                if (distanceToHQ <= 0.6*distanceBetweenHQs) {
-                    return;
-                } else {
-                    bug(enemyHQLocation);
-                }
-            } else {
-                bug(HQLocation);
-            }
-            /**
             // defensive state for lone tanks, stays away from target and waits for reinforcements.
             if (keepAwayFromTarget) {
                 // target is tower or hq
@@ -187,7 +183,6 @@ public class Tank extends MovableUnit {
                 }
             }
             bug(target);
-            **/
             break;
         case SWARM:
             checkForEnemies();
@@ -356,7 +351,7 @@ public class Tank extends MovableUnit {
             targetAttackRadius = HQAttackRadius;
         }
         keepAwayFromTarget= true;
-        if (tankState == TankState.KAMIKAZE || (myLocation.distanceSquaredTo(target) < 48 && tankState == TankState.SWARM)){
+        if (myLocation.distanceSquaredTo(target) < 48 && tankState == TankState.SWARM){
             setAreaAroundTargetAsPathable();
         }
     }
@@ -438,14 +433,8 @@ public class Tank extends MovableUnit {
         9/*16:DRONE*/,     6/*17:TANK*/,      5/*18:COMMANDER*/, 7/*19:LAUNCHER*/,
         8/*20:MISSILE*/
     };
-
-
-    public static enum TankState {
-        DEFEND, // defense state for defending a friendly unit
-        SWARM, // aggressive mode for drones in a group
-        UNSWARM, // defensive mode for lone drones, stays away from target waits for reinforcements
-        FOLLOW, // following enemy
-        KAMIKAZE; // all out attack
-
-    }
+    
+   
+    
+    
 }
