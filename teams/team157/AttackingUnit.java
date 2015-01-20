@@ -130,7 +130,10 @@ public class AttackingUnit extends MovableUnit{
                 rc.setIndicatorString(1, "No attack indicated, waiting here.");
             break;
         case RETREATING:
-            bug(retreatLocation);
+            if (myType.cooldownDelay == 0 && rc.isWeaponReady())
+                MovableUnit.basicAttack(rc.senseNearbyRobots(
+                        myType.attackRadiusSquared, RobotPlayer.enemyTeam));
+            MovableUnit.retreat();
             break;
         default:
             break;

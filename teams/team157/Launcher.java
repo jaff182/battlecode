@@ -26,6 +26,7 @@ public class Launcher extends MovableUnit {
     
     private static void loop() throws GameActionException {
         // Code that runs in every robot (including buildings, excepting missiles)
+        // TODO: add code to move launchers
         sharedLoopCode();
         updateMyLocation();
 
@@ -33,7 +34,6 @@ public class Launcher extends MovableUnit {
         {
             Direction dir0 = myLocation.directionTo(target);
             launchMissile(dir0);
-            missileCount--;
         }
     }
     
@@ -51,6 +51,7 @@ public class Launcher extends MovableUnit {
                 // Not sure if I can do this
                 Missile.target = target;
                 rc.spawn(dir0, RobotType.MISSILE);
+                missileCount--;
             }
         }
     }
