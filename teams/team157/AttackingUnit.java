@@ -128,7 +128,7 @@ public class AttackingUnit extends MovableUnit{
                 // assuming it's stationary
                 bug(attackTarget.location);
                 rc.setIndicatorString(1,
-                        "Our moving+shooting delay<enemy shooting delay, advancing advantageous");
+                        "advancing to attack");
             } else
                 rc.setIndicatorString(1, "No attack indicated, waiting here.");
             break;
@@ -136,7 +136,8 @@ public class AttackingUnit extends MovableUnit{
             if (myType.cooldownDelay == 0 && rc.isWeaponReady())
                 MovableUnit.basicAttack(rc.senseNearbyRobots(
                         myType.attackRadiusSquared, RobotPlayer.enemyTeam));
-            MovableUnit.retreat();
+            if (MovableUnit.retreat())
+                bug(retreatLocation);
             break;
         default:
             break;

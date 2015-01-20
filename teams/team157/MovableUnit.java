@@ -270,10 +270,11 @@ public class MovableUnit extends RobotPlayer {
     /**
      * Retreat in preference of direction with least enemies
      * Update enemiesInSight before using!
+     * @return true if unit was moved by this function, false otherwise
      * @throws GameActionException
      */
-    public static void retreat() throws GameActionException {
-        if (rc.isCoreReady() && numberOfEnemiesInSight > 0) {
+    public static boolean retreat() throws GameActionException {
+        if (rc.isCoreReady() && enemiesInSight != null && enemiesInSight.length != 0) {
             int[] enemiesInDir = new int[8];
             for (RobotInfo info: enemiesInSight) {
                 enemiesInDir[myLocation.directionTo(info.location).ordinal()]++;
@@ -290,15 +291,18 @@ public class MovableUnit extends RobotPlayer {
             }
             if (movePossible(directions[minIndex])) {
                 rc.move(directions[minIndex]);
+                return true;
             } else {
                 if (enemies.length > 0) {
                     if (rc.isWeaponReady()) {
                         // basicAttack(enemies);
                         priorityAttack(enemies, attackPriorities);
+                        return false;
                     }
                 }
             }
         }
+        return false;
     }
     
     
@@ -816,5 +820,27 @@ public class MovableUnit extends RobotPlayer {
             }
         }
     }
-    
+
+    /**
+     * AF:<br>
+     * Represents an attack unit that has state represented by variable state. <br>
+     *
+     * Three states are available:<br>
+     * 1) ATTACKING_UNIT, where the unit moves closer to attack the unit specified by attackTarget<br>
+     * 2) RETREATING, where the unit attempts to move to retreatLocation without firing its weapon<br>
+     * 3) ADVANCING, where the unit attempts to move towards advanceLocation without firing its weapon<br>
+     *
+     * RI:<br>
+     * When the unit is ATTACKING_UNIT, attackTarget may not be null.<br>
+     * Both advanceLocation, state and retreatLocation may never be null.<br>
+     *
+     * These rep invariants must be satisfied after init() is called.
+     */
+
+    // Variables controlling state ==============================
+    enum MovableUnitState {
+        ATTACKING_UNIT,
+        RETREATING,
+        ADVANCING
+    }
 }
