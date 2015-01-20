@@ -60,6 +60,7 @@ public class AttackingUnit extends MovableUnit{
      */
     private static void loop() throws GameActionException {
         RobotController rc = RobotPlayer.rc; // bring rc into local scope
+        updateMyLocation();
         
         // State transitions
         if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25))<1.3) {
