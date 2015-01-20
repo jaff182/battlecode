@@ -148,8 +148,8 @@ public class Commander extends MovableUnit{
      * @return a positive score if area is safe, negative if dangerous
      */
     private static double macroScoringOfAdvantageInArea(RobotInfo[] robots) {
-        double yourHP = 0;
-        double yourDamageDealtPerUnitTime = 0;
+        double yourHP = rc.getHealth();
+        double yourDamageDealtPerUnitTime = myType.attackPower/myType.attackDelay;
 
         double enemyHP = 0;
         double enemyDamageDealtPerUnitTime = 0;
