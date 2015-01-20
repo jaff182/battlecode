@@ -10,6 +10,7 @@ public class Drone extends MovableUnit {
 
     private static DroneState droneState = DroneState.UNSWARM;
     private static int retreatTimeout = 5; // number of rounds before changing from retreat to unswarm state.
+    private static int numberInSwarm = 8;
     
     public static void start() throws GameActionException {
         init();
@@ -296,10 +297,10 @@ public class Drone extends MovableUnit {
      */
     private static int[] lowHP = {
         100/*0:HQ*/,         100/*1:TOWER*/,      8/*2:SUPPLYDPT*/,   8/*3:TECHINST*/,
-        100/*4:BARRACKS*/,    100/*5:HELIPAD*/,     50/*6:TRNGFIELD*/,   100/*7:TANKFCTRY*/,
-        100/*8:MINERFCTRY*/,  8/*9:HNDWSHSTN*/,   100/*10:AEROLAB*/,   40/*11:BEAVER*/,
-        8/*12:COMPUTER*/,   20/*13:SOLDIER*/,   20/*14:BASHER*/,    50/*15:MINER*/,
-        30/*16:DRONE*/,     40/*17:TANK*/,      40/*18:COMMANDER*/, 40/*19:LAUNCHER*/,
+        100/*4:BARRACKS*/,    100/*5:HELIPAD*/,     100/*6:TRNGFIELD*/,   100/*7:TANKFCTRY*/,
+        100/*8:MINERFCTRY*/,  8/*9:HNDWSHSTN*/,   100/*10:AEROLAB*/,   30/*11:BEAVER*/,
+        8/*12:COMPUTER*/,   8/*13:SOLDIER*/,   8/*14:BASHER*/,    50/*15:MINER*/,
+        8/*16:DRONE*/,     8/*17:TANK*/,      8/*18:COMMANDER*/, 8/*19:LAUNCHER*/,
         2/*20:MISSILE*/
     };
     
@@ -347,9 +348,9 @@ public class Drone extends MovableUnit {
     private static int[] followPriorities = {
         0/*0:HQ*/,         0/*1:TOWER*/,      0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
         0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
-        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,   1/*11:BEAVER*/,
-        0/*12:COMPUTER*/,   3/*13:SOLDIER*/,   4/*14:BASHER*/,    2/*15:MINER*/,
-        9/*16:DRONE*/,     6/*17:TANK*/,      5/*18:COMMANDER*/, 7/*19:LAUNCHER*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,   6/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   5/*13:SOLDIER*/,   4/*14:BASHER*/,    7/*15:MINER*/,
+        5/*16:DRONE*/,     1/*17:TANK*/,      1/*18:COMMANDER*/, 1/*19:LAUNCHER*/,
         8/*20:MISSILE*/
     };
 
