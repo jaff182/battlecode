@@ -85,12 +85,40 @@ public class MovableUnit extends RobotPlayer {
      * Returns true if robot can move in input direction, return false otherwise.
      * @param dir target direction
      * @return true if robot can move in dir, false otherwise.
+     * @throws GameActionException 
      */
-    protected static boolean movePossible(Direction dir) {
-        if (Map.getInternalMap(myLocation.add(dir)) > 1 ) {
+    protected static boolean movePossible(Direction dir) throws GameActionException {
+        MapLocation loc = myLocation.add(dir);
+        int val = Map.getInternalMap(loc);
+        if (val > 1) {
             return false;
-        } else if (rc.canMove(dir)) {
+        } else if (val == 1) {
+            if(rc.canMove(dir)) {
                 return true;
+            }
+        } else if (val == 0) {
+            int radioVal = Map.getRadioMap(loc.x,loc.y);
+            if (radioVal == 0) {
+                switch (rc.senseTerrainTile(loc)) {
+                    case VOID: 
+                        Map.setMaps(loc.x,loc.y, 4); 
+                        return false;
+                    case NORMAL: 
+                        Map.setMaps(loc.x,loc.y, 1); 
+                        if (rc.canMove(dir)) {
+                            return true;
+                        }
+                    case OFF_MAP: 
+                        Map.setMaps(loc.x,loc.y, 5); 
+                        return false;
+                    case UNKNOWN: 
+                        break;
+                    default: 
+                        break;
+                }
+            } else {
+                Map.setInternalMap(loc.x,loc.y,radioVal);
+            } 
         }
         return false;
     }

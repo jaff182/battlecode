@@ -86,6 +86,12 @@ public class HQ extends Structure {
         // Add 2 Helipads on round 100, 1 Barracks on round 500
 
 
+        //TESTING ONLY
+        BuildOrder.add(RobotType.HELIPAD);
+        BuildOrder.add(RobotType.SUPPLYDEPOT);
+        BuildOrder.add(RobotType.AEROSPACELAB);
+        
+        
         if (distanceBetweenHQs < SMALL_MAP_SIZE) {
             // drone rush on small map
             BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
