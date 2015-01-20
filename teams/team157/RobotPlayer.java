@@ -222,7 +222,8 @@ public class RobotPlayer {
      * @throws GameActionException
      */
     public static void basicAttack(RobotInfo[] enemies) throws GameActionException {
-        rc.attackLocation(enemies[0].location);
+        if (enemies.length != 0)
+            rc.attackLocation(enemies[0].location);
     }
     
     /**
