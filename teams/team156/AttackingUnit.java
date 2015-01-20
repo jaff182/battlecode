@@ -172,6 +172,7 @@ public class AttackingUnit extends MovableUnit{
                 }
             }
         }
+        rc.setIndicatorString(1, "AlliesHP: " + yourHP + " myDPR: " + yourDamageDealtPerUnitTime + " EnemyHP: " + enemyHP + " enemyDamage " + enemyDamageDealtPerUnitTime);
 
         if (enemyHP != 0 && enemyDamageDealtPerUnitTime !=0)
             return ((yourHP/enemyDamageDealtPerUnitTime) / (enemyHP/yourDamageDealtPerUnitTime));
