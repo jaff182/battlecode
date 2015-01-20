@@ -46,13 +46,17 @@ public class AttackingUnit extends MovableUnit{
     
     /**
      * Code to init robot goes here.
+     * @throws GameActionException 
      */
-    private static void init() {
+    private static void init() throws GameActionException {
         advanceLocation = RobotPlayer.enemyHQLocation;
         retreatLocation = RobotPlayer.HQLocation;
         state = MovableUnitState.ADVANCING;
-        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
-        //Map.printInternalMap();
+        if (Clock.getRoundNum() < 1800) {
+            initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
+            //Map.printInternalMap();
+        } 
+
     }
     
     /**
@@ -66,6 +70,12 @@ public class AttackingUnit extends MovableUnit{
         enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
         numberOfEnemiesInSight = enemiesInSight.length;
         enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
+        
+        
+        if (Clock.getRoundNum() >= 1750) {
+            setTargetToClosestTowerOrHQ();
+            advanceLocation = target;
+        }
         
         double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25));
         // State transitions
@@ -95,35 +105,37 @@ public class AttackingUnit extends MovableUnit{
         // Action
         switch (state) {
         case ADVANCING:
-            if (rc.hasLearnedSkill(CommanderSkillType.FLASH)
-                    && macroScoringAdvantage > 2.5
-                    && rc.getFlashCooldown() == 0
-                    && rc.getCoreDelay() < 1
-                    && bugDirection(advanceLocation) != myLocation
-                            .directionTo(advanceLocation)) {
-                // We're not bugging properly (possibly), and we can flash, and
-                // we have an overwhelming advantage (possibly irrelvant, since
-                // we can't see enemies to be in this state).
-                MapLocation bestFlashLocation = null;
-                int bestFlashDistance = Integer.MAX_VALUE;
-                for (MapLocation location : MapLocation
-                        .getAllMapLocationsWithinRadiusSq(myLocation,
-                                GameConstants.FLASH_RANGE_SQUARED)) {
-                    if (rc.isPathable(myType, location) && MovableUnit.movePossible(location)) {
-                        final int targetDistance = location
-                                .distanceSquaredTo(advanceLocation);
-                        if (targetDistance < bestFlashDistance) {
-                            bestFlashDistance = targetDistance;
-                            bestFlashLocation = location;
+            if (rc.getType() == RobotType.COMMANDER){
+                if (rc.hasLearnedSkill(CommanderSkillType.FLASH)
+                        && macroScoringAdvantage > 2.5
+                        && rc.getFlashCooldown() == 0
+                        && rc.getCoreDelay() < 1
+                        && bugDirection(advanceLocation) != myLocation
+                                .directionTo(advanceLocation)) {
+                    // We're not bugging properly (possibly), and we can flash, and
+                    // we have an overwhelming advantage (possibly irrelvant, since
+                    // we can't see enemies to be in this state).
+                    MapLocation bestFlashLocation = null;
+                    int bestFlashDistance = Integer.MAX_VALUE;
+                    for (MapLocation location : MapLocation
+                            .getAllMapLocationsWithinRadiusSq(myLocation,
+                                    GameConstants.FLASH_RANGE_SQUARED)) {
+                        if (rc.isPathable(myType, location) && MovableUnit.movePossible(location)) {
+                            final int targetDistance = location
+                                    .distanceSquaredTo(advanceLocation);
+                            if (targetDistance < bestFlashDistance) {
+                                bestFlashDistance = targetDistance;
+                                bestFlashLocation = location;
+                            }
                         }
                     }
-                }
-                if (bestFlashLocation != null) {
-                    rc.castFlash(bestFlashLocation);
-                } else
-                    bug(advanceLocation);
+                    if (bestFlashLocation != null) {
+                        rc.castFlash(bestFlashLocation);
+                    } else
+                        bug(advanceLocation);
             } else
                 bug(advanceLocation);
+            }
             break;
         case ATTACKING_UNIT:
             rc.setIndicatorString(2, "State: " + state + " with target " + attackTarget.location);

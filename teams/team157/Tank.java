@@ -15,13 +15,14 @@ public class Tank extends MovableUnit {
     private static TankState tankState;
     private static int bugTimeout = 15;
     private static int targetAttackRadius = towerAttackRadius;
-    private static int numberInSwarm = 8;
+    private static int numberInSwarm = 5;
     private static int swarmRange = 64;
     private static int distanceBetweenHQs = HQLocation.distanceSquaredTo(enemyHQLocation);
     private static MapLocation retreatLocation = RobotPlayer.HQLocation;
     private static double macroScoringAdvantage = 0;
     private static int nearbyFriendlyTanks = 0;
     private static int retreatTimeout = 5;
+    private static MapLocation gatherLoc = HQLocation.add(HQLocation.directionTo(enemyHQLocation), distanceBetweenHQs/2);
     
     private static RobotInfo attackTarget;
     
@@ -111,7 +112,7 @@ public class Tank extends MovableUnit {
             }
             break;
         case SURROUND:
-            if (rc.senseNearbyRobots(target, 49, myTeam).length > 5) {
+            if (rc.senseNearbyRobots(target, 64, myTeam).length > 2) {
                 tankState = TankState.SWARM_ATTACK;
             }
             break;
@@ -136,6 +137,8 @@ public class Tank extends MovableUnit {
         switch (tankState) {
         case GATHER:
             checkForEnemies();
+            bug(gatherLoc);
+            /**
             int distanceToHQ = myLocation.distanceSquaredTo(HQLocation);
             if (distanceToHQ < 49 + distanceBetweenHQs/4) {
                 if (distanceToHQ > 0.8*distanceBetweenHQs) {
@@ -146,6 +149,7 @@ public class Tank extends MovableUnit {
             } else {
                 bug(HQLocation);
             }
+            **/
         case SURROUND:
             checkForEnemies();
             if (keepAwayFromTarget) {
