@@ -148,6 +148,7 @@ public class AttackingUnit extends MovableUnit{
                         rc.attackLocation(attackTarget.location);
                 rc.setIndicatorString(1, "Attacking in range");
             } else if (macroScoringAdvantage > 1.5 || !attackTarget.type.canAttack()) {
+                rc.setIndicatorString(1, "Advancing to attack");
                 bug(attackTarget.location);
             } else if ((myType.movementDelay
                     * (distanceToEnemy - enemyAttackRadius) + myType.loadingDelay)
@@ -192,7 +193,7 @@ public class AttackingUnit extends MovableUnit{
      *            all movable robots in an area (excluding HQ and towers)
      * @return a positive score if area is safe, negative if dangerous
      */
-    private static double macroScoringOfAdvantageInArea(RobotInfo[] robots) {
+    static double macroScoringOfAdvantageInArea(RobotInfo[] robots) {
         double yourHP = rc.getHealth();
         double yourDamageDealtPerUnitTime = myType.attackPower/myType.attackDelay;
 
