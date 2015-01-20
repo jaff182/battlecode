@@ -81,13 +81,7 @@ public class HQ extends Structure {
         
         // Testing new build system
         // Add 2 Helipads on round 100, 1 Barracks on round 500
-
-
-        //TESTING ONLY
-        BuildOrder.add(RobotType.HELIPAD);
-        BuildOrder.add(RobotType.SUPPLYDEPOT);
-        BuildOrder.add(RobotType.AEROSPACELAB);
-        
+ 
         
         if (distanceBetweenHQs < SMALL_MAP_SIZE) {
             // drone rush on small map
@@ -100,6 +94,8 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.TRAININGFIELD);
         }
         
+
+        BuildOrder.add(RobotType.HELIPAD);
         BuildOrder.add(RobotType.HELIPAD);
         BuildOrder.add(RobotType.SUPPLYDEPOT);
 
@@ -108,7 +104,6 @@ public class HQ extends Structure {
             rc.setIndicatorString(1, "small map");
             BuildOrder.add(RobotType.BARRACKS);
             BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.HELIPAD);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.TANKFACTORY);
         } else {
@@ -117,10 +112,6 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
 
@@ -148,7 +139,11 @@ public class HQ extends Structure {
         }
         //*///-----------------------------------------------------------------
         
-        
+        if (Clock.getRoundNum() == 1000 & rc.getTeamOre() > 1000) {
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        }
 
         //Spawn beavers
         if (hasFewBeavers()) { 

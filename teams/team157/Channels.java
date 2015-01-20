@@ -65,5 +65,5 @@ public class Channels {
      * Starting channel for missile target
      * 10 channels needed
      */
-    public static final int MISSILE_TARGET = 17098;
+    public static final int MISSILE_TARGET = 17120;
 }
