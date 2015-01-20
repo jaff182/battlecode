@@ -98,8 +98,6 @@ public class HQ extends Structure {
         }
         
         BuildOrder.add(RobotType.HELIPAD);
-        BuildOrder.add(RobotType.HELIPAD);
-        BuildOrder.add(RobotType.SUPPLYDEPOT);
         BuildOrder.add(RobotType.SUPPLYDEPOT);
 
         // change strategy based on map size
@@ -107,12 +105,16 @@ public class HQ extends Structure {
             rc.setIndicatorString(1, "small map");
             BuildOrder.add(RobotType.BARRACKS);
             BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.TANKFACTORY);
         } else {
             rc.setIndicatorString(1, "large map");
             BuildOrder.add(RobotType.BARRACKS);
             BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.TANKFACTORY);
