@@ -62,10 +62,10 @@ public class AttackingUnit extends MovableUnit{
         RobotController rc = RobotPlayer.rc; // bring rc into local scope
         
         // State transitions
-        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(40))<1.5) {
+        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25))<1.3) {
             state = MovableUnitState.RETREATING;
         } else {
-            RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(40,
+            RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30,
                     RobotPlayer.enemyTeam);
             if (nearbyEnemies.length != 0) {
                 RobotInfo nearestEnemy = null;
@@ -111,12 +111,7 @@ public class AttackingUnit extends MovableUnit{
                 if (rc.isWeaponReady() && rc.canAttackLocation(attackTarget.location))
                         rc.attackLocation(attackTarget.location);
                 rc.setIndicatorString(1, "Attacking in range");
-            }
-            else if ((distanceToEnemy - enemyAttackRadius) > 1.0/myType.movementDelay) {
-                bug(attackTarget.location);
-                rc.setIndicatorString(1, "Enemy much too far, move closer");
-            }
-            else if ((myType.movementDelay*(distanceToEnemy-enemyAttackRadius)+myType.loadingDelay)/myCooldownRate <= attackTarget.weaponDelay/enemyCooldownRate) {
+            } else if ((myType.movementDelay*(distanceToEnemy-enemyAttackRadius)+myType.loadingDelay)/myCooldownRate <= attackTarget.weaponDelay/enemyCooldownRate) {
                 // Time until robot can move, close in on enemy, and then shoot
                 // it, lower than how long it takes for enemy to shoot you assuming it's stationary
                 bug(attackTarget.location);
