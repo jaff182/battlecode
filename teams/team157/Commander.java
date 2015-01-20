@@ -62,7 +62,7 @@ public class Commander extends MovableUnit{
         RobotController rc = RobotPlayer.rc; // bring rc into local scope
         
         // State transitions
-        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25))<1.3) {
+        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30))<1.3) {
             state = MovableUnitState.RETREATING;
         } else {
             RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30,
@@ -121,7 +121,7 @@ public class Commander extends MovableUnit{
                 rc.setIndicatorString(1, "No attack indicated, waiting here.");
             break;
         case RETREATING:
-            bug(retreatLocation);
+            MovableUnit.retreat();
             break;
         default:
             break;
