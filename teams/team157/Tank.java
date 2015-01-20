@@ -45,7 +45,11 @@ public class Tank extends MovableUnit {
         
         if (Clock.getRoundNum() > roundNumAttack) {
             tankState = TankState.KAMIKAZE;
-        }
+            if (Clock.getRoundNum() == 1950) {
+                Map.resetInternalMap();
+            }
+        } 
+        
         
         enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
         numberOfEnemiesInSight = enemiesInSight.length;

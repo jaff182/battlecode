@@ -8,7 +8,7 @@ import battlecode.common.*;
 
 public class Helipad extends Structure {
     
-    private static int maxNumberOfDrones = 50;
+    private static int maxNumberOfDrones = 30;
     
     //General methods =========================================================
     
@@ -22,10 +22,6 @@ public class Helipad extends Structure {
     
     private static void init() throws GameActionException {  
         spawnLocation = enemyHQLocation;
-        if (distanceBetweenHQs < SMALL_MAP_SIZE) {
-            // drone rush on small map
-            maxNumberOfDrones = 100;
-        }
         //Check to see if built because of build order
         checkBuildOrderPosition();
     }

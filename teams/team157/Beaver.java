@@ -118,6 +118,12 @@ public class Beaver extends MiningUnit {
 
                 moveTargetLocation = null;
                 robotState = RobotState.BUILD;
+        } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10 
+                && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
+                //Lategame handwash station attack
+                robotState = RobotState.BUILD;
+                moveTargetLocation = myLocation;
+                buildingType = RobotType.HANDWASHSTATION;
         } else if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
