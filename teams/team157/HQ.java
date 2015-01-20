@@ -11,40 +11,6 @@ public class HQ extends Structure {
     private static int baseNumberOfTanksNeeded = 0;
     private static int numberOfTanksNeeded = baseNumberOfTanksNeeded;
     private static int numberOfTowers = rc.senseTowerLocations().length;
-        
-    //Old building request implementation -------------------------------------
-    private final static RobotType[] buildOrder1 = {
-            //RobotType.BARRACKS, RobotType.BARRACKS,
-            RobotType.HELIPAD,
-            RobotType.HELIPAD,
-            RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-            RobotType.SUPPLYDEPOT, RobotType.HELIPAD,
-    };
-    
-    private final static RobotType[] buildOrder2 = {
-        RobotType.BARRACKS, RobotType.TANKFACTORY, RobotType.TANKFACTORY,
-        RobotType.TANKFACTORY,
-    };
-    
-    /**
-     * Keeps track of whether HQ has requested a beaver to build a building (and
-     * hasn't gotten a response)
-     * 
-     * @author Josiah
-     *
-     */
-    private enum BuildingRequestState {
-        REQUESTING_BUILDING, NO_PENDING_REQUEST
-    }
-    
-    private static BuildingRequestState buildingRequestState = BuildingRequestState.NO_PENDING_REQUEST;
-
-    private static BuildingQueue queue;
-    
-    
-    //Declarative building implementation -------------------------------------
-    
     
     
     //General methods =========================================================
@@ -65,7 +31,6 @@ public class HQ extends Structure {
 
         //old building code
         //queue = new BuildingQueue(buildOrder1, RobotType.SUPPLYDEPOT);
-
 
         //Initiate radio map TODO: towers locations?
         Map.setMaps(HQLocation.x,HQLocation.y,3);
@@ -133,18 +98,8 @@ public class HQ extends Structure {
         sharedLoopCode();
         
         callForTankReinforcements();
+        updateEnemyInRange(52);//52 includes spashable region
         checkForEnemies();
-        
-        
-        /*/old building code ---------------------------------------------------
-        RobotType nextBuilding = queue.getNextBuilding();
-
-        // In the future we can add some probabilistic constants so that we can switch between buildings and units
-        if(Clock.getRoundNum() < 1800) {
-            build(nextBuilding); // Read javadoc of build for caveats
-        }
-        //*///-----------------------------------------------------------------
-        
         
 
         //Spawn beavers
@@ -163,22 +118,60 @@ public class HQ extends Structure {
     
     //Other methods ===========================================================
     
-    // TODO: consider to refactor this method
-    private static void checkForEnemies() throws GameActionException
-    {
-        updateEnemyInRange(sightRange);
-
-        // Vigilance: stops everything and attacks when enemies are in attack range.
-        while (enemies.length > 0) {
-            if (rc.isWeaponReady()) {
-                // basicAttack(enemies);
-                priorityAttack(enemies, attackPriorities);
+    /**
+     * Like priority attack except that it also tries to hit enemies in splashable 
+     * region.
+     */
+    public static void HQPriorityAttack(RobotInfo[] enemies, int[] atkorder) throws GameActionException {
+      //Initiate
+        int targetidx = -1, targettype = 1;
+        double minhp = 100000;
+        
+        //Check for weakest of highest priority enemy type
+        for(int i=0; i<enemies.length; i++) {
+            int type = enemies[i].type.ordinal();
+            if(isInSplashRegion(enemies[i].location,HQLocation)) {
+                if(atkorder[type] > targettype) {
+                    //More important enemy to attack
+                    targettype = atkorder[type];
+                    minhp = enemies[i].health;
+                    targetidx = i;
+                } else if(atkorder[type] == targettype && enemies[i].health < minhp) {
+                    //Same priority enemy but lower health
+                    minhp = enemies[i].health;
+                    targetidx = i;
+                }
             }
-            updateEnemyInRange(attackRange);
-            rc.yield();
+        }
+        if (targetidx != -1) {
+            //Attack
+            MapLocation loc = enemies[targetidx].location;
+            if(rc.canAttackLocation(loc)) {
+                rc.attackLocation(loc);
+            } else {
+                //Check if can hit with splash
+                loc = loc.add(loc.directionTo(HQLocation));
+                if(rc.canAttackLocation(loc)) {
+                    rc.attackLocation(loc);
+                }
+            }
+        }
+    }
+    
+    
+    // TODO: consider to refactor this method
+    private static void checkForEnemies() throws GameActionException {
+        //No need to hijack code for structure
+        if (rc.isWeaponReady()) {
+            // basicAttack(enemies);
+            HQPriorityAttack(enemies, attackPriorities);
         }
         
-        if (numberOfTowers > 4) {
+        //Old splash damage code
+        //Preserve because can use to improve current splash damage code
+        //But not so simple like just checking directions, since there are many more 
+        //locations to consider hitting.
+        /*if (numberOfTowers > 4) {
             //can do splash damage
             RobotInfo[] enemiesInSplashRange = rc.senseNearbyRobots(37, enemyTeam);
             if (enemiesInSplashRange.length > 0) {
@@ -198,10 +191,8 @@ public class HQ extends Structure {
                 if (rc.isWeaponReady() && rc.canAttackLocation(attackLoc)) {
                     rc.attackLocation(attackLoc);
                 }
-                
             }
-            
-        }
+        }//*/
   
     }
     
@@ -224,51 +215,6 @@ public class HQ extends Structure {
     }
     
     
-    
-    //Old building implementation ---------------------------------------------
-
-    /**
-     * Maintains the HQ build queue. Run once per turn, with current building on
-     * build queue.
-     * 
-     * This function must advance the build queue for you automatically. Do not
-     * attempt to do so outside. Increments numBuilding when acknowledgement is
-     * received from beaver.
-     *
-     *
-     * @param building
-     *            IMPORTANT: READ CAVEATS ABOVE
-     * @throws GameActionException
-     */
-    private static void build(RobotType building) throws GameActionException
-    {
-        int numberOfBeavers = RobotCount.read(RobotType.BEAVER);
-        switch (buildingRequestState) {
-        case REQUESTING_BUILDING:
-            if (BeaversBuildRequest.wasMyBuildMessageReceived()) {
-                queue.updateBuildingNumber();
-                buildingRequestState = BuildingRequestState.NO_PENDING_REQUEST;
-                return;
-            }
-            // Fall through, evidently our message was not received.
-        case NO_PENDING_REQUEST:
-                if (hasFunds(building.oreCost) && numberOfBeavers != 0) {
-                    BeaversBuildRequest.pleaseBuildABuilding(building, numberOfBeavers, rand.nextInt(numberOfBeavers));
-                    buildingRequestState = BuildingRequestState.REQUESTING_BUILDING;
-                }
-                break;
-        }
-    }
-    
-
-    
-    public static void debug_countTypes() throws GameActionException {
-        for (RobotType robotType: RobotType.values()) {
-            System.out.println("The number of " + robotType + " is " + RobotCount.read(robotType));
-        }
-    }
-    
-
     private static void callForTankReinforcements() {
         if (rc.senseNearbyRobots(81, enemyTeam).length > 10) {
             numberOfTanksNeeded += 2;
@@ -276,6 +222,20 @@ public class HQ extends Structure {
             numberOfTanksNeeded = baseNumberOfTanksNeeded;
         }
     }
+    
+    
+    //Debug methods ===========================================================
+    
+    /**
+     * Count number of each friendly robot type
+     */
+    public static void debug_countTypes() throws GameActionException {
+        for (RobotType robotType: RobotType.values()) {
+            System.out.println("The number of " + robotType + " is " + RobotCount.read(robotType));
+        }
+    }
+
+    
     
 
     //Parameters ==============================================================
@@ -300,7 +260,7 @@ public class HQ extends Structure {
      * higher means give more supply to units of that type).
      */
     private static double[] suppliabilityMultiplier = {
-        0/*0:HQ*/,          1/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   1/*3:TECHINST*/,
+        0/*0:HQ*/,          1/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
         1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
         1/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,    1/*11:BEAVER*/,
         0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     1/*15:MINER*/,

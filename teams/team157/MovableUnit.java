@@ -9,8 +9,11 @@ public class MovableUnit extends RobotPlayer {
 
     
     // Attacking
-    public static final int towerAttackRadius = 24;
-    public static int HQAttackRadius = 35;
+    public static final int towerAttackRadius = RobotType.TOWER.attackRadiusSquared;
+    public static final int HQ0towerAttackRadius = RobotType.HQ.attackRadiusSquared;
+    public static final int HQ2towerAttackRadius = GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED;
+    public static final int HQ5towerAttackRadius = 54;//Math.pow(Math.sqrt(GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED)+Math.sqrt(GameConstants.HQ_BUFFED_SPLASH_RADIUS_SQUARED),2);
+    public static int HQAttackRadius = HQ2towerAttackRadius;
     // TODO: be careful with using this variable - what does "target" mean? should this be in its own class
     public static MapLocation target = RobotPlayer.enemyHQLocation; //attack target
     public static int numberOfEnemiesInSight = 0;
@@ -121,9 +124,9 @@ public class MovableUnit extends RobotPlayer {
             towerID++;
         }
         if (towerID < 9) {
-            HQAttackRadius = 24;
+            HQAttackRadius = HQ0towerAttackRadius;
         } else if (towerID > 10) {
-            HQAttackRadius = 37;
+            HQAttackRadius = HQ5towerAttackRadius;
         }
         for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,HQAttackRadius)) {
             Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);   
