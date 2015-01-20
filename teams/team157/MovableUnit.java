@@ -256,13 +256,13 @@ public class MovableUnit extends RobotPlayer {
     
     /**
      * Retreat in preference of direction with least enemies
+     * Update enemiesInSight before using!
      * @throws GameActionException
      */
     public static void retreat() throws GameActionException {
         if (rc.isCoreReady()) {
-            enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
             int[] enemiesInDir = new int[8];
-            for (RobotInfo info: enemies) {
+            for (RobotInfo info: enemiesInSight) {
                 enemiesInDir[myLocation.directionTo(info.location).ordinal()]++;
             }
             int minDirScore = 50;
