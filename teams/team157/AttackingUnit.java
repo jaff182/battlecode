@@ -149,6 +149,7 @@ public class AttackingUnit extends MovableUnit{
                         rc.attackLocation(attackTarget.location);
                 rc.setIndicatorString(1, "Attacking in range");
             } else if (macroScoringAdvantage > 1.5 || !attackTarget.type.canAttack()) {
+                rc.setIndicatorString(1, "Advancing to attack");
                 bug(attackTarget.location);
             } else if ((myType.movementDelay
                     * (distanceToEnemy - enemyAttackRadius) + myType.loadingDelay)
