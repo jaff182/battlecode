@@ -29,6 +29,7 @@ public class Launcher extends MovableUnit {
         // TODO: add code to move launchers
         sharedLoopCode();
         updateMyLocation();
+        updateTargets();
 
         if (missileCount > 0)
         {
@@ -49,7 +50,6 @@ public class Launcher extends MovableUnit {
         if(rc.isCoreReady() && rc.getTeamOre() >= RobotType.MISSILE.oreCost) {
             if(rc.canSpawn(dir0,RobotType.MISSILE)) {
                 // Not sure if I can do this
-                Missile.target = target;
                 rc.spawn(dir0, RobotType.MISSILE);
                 missileCount--;
             }
@@ -78,5 +78,15 @@ public class Launcher extends MovableUnit {
         target = enemyHQLocation;
         missileCount = defaultMissileCount;
     }
-    
+
+    private static void updateTargets() throws GameActionException
+    {
+        if (missileCount == 0)
+        {
+            rc.readBroadcast(Channels.MISSILE_TARGET);
+        }
+
+        target = new MapLocation(rc.readBroadcast(Channels.MISSILE_TARGET + 1),
+                rc.readBroadcast(Channels.MISSILE_TARGET + 2));
+    }
 }

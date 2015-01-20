@@ -7,6 +7,8 @@ import battlecode.common.*;
 
 public class TankFactory extends SpawnableStructure {
     
+    private static int maxNumberOfTanks = 50;
+    
     //General methods =========================================================
     
     public static void start() throws GameActionException {
@@ -28,9 +30,12 @@ public class TankFactory extends SpawnableStructure {
         
         //Report existence if built because of build order
         claimBuildOrderEntry();
-
-        //Spawn
-        trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.TANK);
+        
+       //Spawn
+        if(RobotCount.read(RobotType.TANK) < maxNumberOfTanks
+                && RobotCount.read(RobotType.AEROSPACELAB) < 2) {
+            trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.TANK);
+        }
 
         //Dispense Supply
         dispenseSupply(suppliabilityMultiplier_Preattack);

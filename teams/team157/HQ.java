@@ -11,8 +11,7 @@ public class HQ extends Structure {
     private static int baseNumberOfTanksNeeded = 0;
     private static int numberOfTanksNeeded = baseNumberOfTanksNeeded;
     private static int numberOfTowers = rc.senseTowerLocations().length;
-    
-    
+
     //General methods =========================================================
     
     public static void start() throws GameActionException {
@@ -28,9 +27,6 @@ public class HQ extends Structure {
         rc.setIndicatorString(0,"hello i'm a hq.");
         // call for tank defense units
         rc.broadcast(tankDefenseChannel, numberOfTanksNeeded);
-
-        //old building code
-        //queue = new BuildingQueue(buildOrder1, RobotType.SUPPLYDEPOT);
 
         //Initiate radio map TODO: towers locations?
         Map.setMaps(HQLocation.x,HQLocation.y,3);
@@ -49,8 +45,8 @@ public class HQ extends Structure {
         
         // Testing new build system
         // Add 2 Helipads on round 100, 1 Barracks on round 500
-
-
+ 
+        
         if (distanceBetweenHQs < SMALL_MAP_SIZE) {
             // drone rush on small map
             BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
@@ -62,6 +58,8 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.TRAININGFIELD);
         }
         
+
+        BuildOrder.add(RobotType.HELIPAD);
         BuildOrder.add(RobotType.HELIPAD);
         BuildOrder.add(RobotType.SUPPLYDEPOT);
 
@@ -70,7 +68,6 @@ public class HQ extends Structure {
             rc.setIndicatorString(1, "small map");
             BuildOrder.add(RobotType.BARRACKS);
             BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.HELIPAD);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.TANKFACTORY);
         } else {
@@ -79,10 +76,6 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
 
@@ -101,6 +94,12 @@ public class HQ extends Structure {
         updateEnemyInRange(52);//52 includes spashable region
         checkForEnemies();
         
+        
+        if (Clock.getRoundNum() == 1000 & rc.getTeamOre() > 1000) {
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        }
 
         //Spawn beavers
         if (hasFewBeavers()) { 
@@ -222,6 +221,12 @@ public class HQ extends Structure {
             numberOfTanksNeeded = baseNumberOfTanksNeeded;
         }
     }
+
+    private static void fireMissiles(int numMissile, MapLocation target) throws GameActionException {
+        rc.broadcast(Channels.MISSILE_TARGET, numMissile);
+        rc.broadcast(Channels.MISSILE_TARGET + 1, target.x);
+        rc.broadcast(Channels.MISSILE_TARGET + 2, target.y);
+    }
     
     
     //Debug methods ===========================================================
@@ -234,8 +239,6 @@ public class HQ extends Structure {
             System.out.println("The number of " + robotType + " is " + RobotCount.read(robotType));
         }
     }
-
-    
     
 
     //Parameters ==============================================================

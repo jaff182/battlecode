@@ -13,6 +13,7 @@ public class Missile extends MovableUnit {
 
     public static void start() throws GameActionException {
         init();
+        updateTargetLocation();
         while(true) {
             loop();
             rc.yield(); //Yield the round
@@ -27,7 +28,7 @@ public class Missile extends MovableUnit {
     
     private static void loop() throws GameActionException {
         updateMyLocation();
-        if (sensedEnemyNearBy())
+        if (isCloseToTargetLocation() || sensedEnemyNearBy())
         {
             rc.explode();
         }
@@ -42,5 +43,11 @@ public class Missile extends MovableUnit {
     {
         updateEnemyInRange(2);
         return (enemies.length > 4);
+    }
+
+    private static void updateTargetLocation() throws GameActionException
+    {
+        targetLocation = new MapLocation(rc.readBroadcast(Channels.MAP_SYMMETRY + 1),
+                rc.readBroadcast(Channels.MAP_SYMMETRY + 2));
     }
 }
