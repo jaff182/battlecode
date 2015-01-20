@@ -9,7 +9,7 @@ public class Drone extends MovableUnit {
 
     private static DroneState droneState = DroneState.UNSWARM;
     private static int retreatTimeout = 5; // number of rounds before changing from retreat to unswarm state.
-    private static int numberInSwarm = 8;
+    private static int numberInSwarm = 10;
     
     public static void start() throws GameActionException {
         init();
@@ -102,7 +102,7 @@ public class Drone extends MovableUnit {
             if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
                 // Switches to swarm state when >4 friendly units within sensing radius.
                 droneState = DroneState.SWARM;
-            } else if (numberOfEnemiesInSight > 2 && Clock.getRoundNum() > 500) {
+            } else if (numberOfEnemiesInSight > 2) {
              // goes into retreat state if there are enemies in sight range
                 droneState = DroneState.RETREAT;
             }

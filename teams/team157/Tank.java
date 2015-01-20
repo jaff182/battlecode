@@ -3,6 +3,7 @@ package team157;
 import team157.Utility.Map;
 import team157.Utility.RobotCount;
 import team157.Utility.TankDefenseCount;
+import team157.Utility.Waypoints;
 import battlecode.common.*;
 
 public class Tank extends MovableUnit {
@@ -35,10 +36,13 @@ public class Tank extends MovableUnit {
         }
  
         tankState = TankState.UNSWARM;
+        Waypoints.refreshLocalCache();
+        target = Waypoints.waypoints[0];
     }
     
     private static void loop() throws GameActionException {
         myLocation = rc.getLocation();
+        waypointTimeout--;
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -61,11 +65,11 @@ public class Tank extends MovableUnit {
             if (tankState == TankState.DEFEND){
                 if(!TankDefenseCount.report(defendChannel)) {
                     if (!setDefendTarget()) {
-                        setTargetToTowerOrHQ();
+                        setTargetToWayPoints();
                     }
                 }
             } else {
-                setTargetToTowerOrHQ();
+                setTargetToWayPoints();
             }
         }
         if (Clock.getRoundNum()%10 == 4) {
@@ -168,16 +172,18 @@ public class Tank extends MovableUnit {
             break;
         case UNSWARM:
             checkForEnemies();
-            int distanceToHQ = myLocation.distanceSquaredTo(enemyHQLocation);
-            if (distanceToHQ > distanceBetweenHQs/2) {
-                if (distanceToHQ <= 0.6*distanceBetweenHQs) {
+            if (keepAwayFromTarget) {
+                // target is tower or hq
+                if(myLocation.distanceSquaredTo(target) < 35) {
                     return;
-                } else {
-                    bug(enemyHQLocation);
                 }
             } else {
-                bug(HQLocation);
+                if(myLocation.distanceSquaredTo(target) < 25) {
+                    return;
+                }
             }
+            bug(target);
+            break;
             /**
             // defensive state for lone tanks, stays away from target and waits for reinforcements.
             if (keepAwayFromTarget) {
@@ -192,7 +198,7 @@ public class Tank extends MovableUnit {
             }
             bug(target);
             **/
-            break;
+            
         case SWARM:
             checkForEnemies();
             // aggressive state, bugs toward target

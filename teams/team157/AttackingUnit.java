@@ -66,7 +66,7 @@ public class AttackingUnit extends MovableUnit{
         
         double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25));
         // State transitions
-        if (macroScoringAdvantage<1.3) {
+        if (macroScoringAdvantage<2) {
             state = MovableUnitState.RETREATING;
         } else {
             RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30,
