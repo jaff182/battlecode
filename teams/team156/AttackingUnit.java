@@ -152,8 +152,8 @@ public class AttackingUnit extends MovableUnit{
      * @return a positive score if area is safe, negative if dangerous
      */
     private static double macroScoringOfAdvantageInArea(RobotInfo[] robots) {
-        double yourHP = 0;
-        double yourDamageDealtPerUnitTime = 0;
+        double yourHP = rc.getHealth();
+        double yourDamageDealtPerUnitTime = myType.attackPower/myType.attackDelay;
 
         double enemyHP = 0;
         double enemyDamageDealtPerUnitTime = 0;
@@ -172,6 +172,7 @@ public class AttackingUnit extends MovableUnit{
                 }
             }
         }
+        rc.setIndicatorString(1, "AlliesHP: " + yourHP + " myDPR: " + yourDamageDealtPerUnitTime + " EnemyHP: " + enemyHP + " enemyDamage " + enemyDamageDealtPerUnitTime);
 
         if (enemyHP != 0 && enemyDamageDealtPerUnitTime !=0)
             return ((yourHP/enemyDamageDealtPerUnitTime) / (enemyHP/yourDamageDealtPerUnitTime));

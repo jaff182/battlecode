@@ -95,6 +95,19 @@ public class MovableUnit extends RobotPlayer {
         return false;
     }
     
+    /**
+     * Returns true if robot can move to the input location, return false otherwise.
+     * @param location target location
+     * @return true if robot can move in dir, false otherwise.
+     */
+    protected static boolean movePossible(MapLocation location) {
+        if (Map.getInternalMap(location) > 1 ) {
+            return false;
+        } else if (rc.isPathable(myType, location)) {
+                return true;
+        }
+        return false;
+    }
     
     /**
      * Initialize internal map when units are spawned, to bug around tower and hq attack radius.
