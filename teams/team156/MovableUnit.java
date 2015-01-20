@@ -109,6 +109,8 @@ public class MovableUnit extends RobotPlayer {
         }
         if (towerID < 9) {
             HQAttackRadius = 24;
+        } else if (towerID > 10) {
+            HQAttackRadius = 37;
         }
         for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,HQAttackRadius)) {
             Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);   
