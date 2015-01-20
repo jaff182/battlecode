@@ -1,30 +1,8 @@
 package team157;
-import team157.Utility.*;
 import battlecode.common.*;
 
 public class Commander extends MovableUnit{
-    /**
-     * AF:<br>
-     * Represents an attack unit that has state represented by variable state. <br>
-     * 
-     * Three states are available:<br>
-     * 1) ATTACKING_UNIT, where the unit moves closer to attack the unit specified by attackTarget<br>
-     * 2) RETREATING, where the unit attempts to move to retreatLocation without firing its weapon<br>
-     * 3) ADVANCING, where the unit attempts to move towards advanceLocation without firing its weapon<br>
-     * 
-     * RI:<br>
-     * When the unit is ATTACKING_UNIT, attackTarget may not be null.<br>
-     * Both advanceLocation, state and retreatLocation may never be null.<br>
-     * 
-     * These rep invariants must be satisfied after init() is called.
-     */
-    
-    // Variables controlling state ==============================
-    enum MovableUnitState {
-        ATTACKING_UNIT,
-        RETREATING, 
-        ADVANCING
-    };
+    ;
     
     private static MovableUnitState state;
     
@@ -53,7 +31,7 @@ public class Commander extends MovableUnit{
         state = MovableUnitState.ADVANCING;
         initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
     }
-    
+
     /**
      * This code is run once every round, until rc.yield() is called.
      * @throws GameActionException 
@@ -63,26 +41,15 @@ public class Commander extends MovableUnit{
         updateMyLocation();
         
         // State transitions
-        if (macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30))<1.5) {
+        if (isDisadvantaged()) {
             state = MovableUnitState.RETREATING;
         } else {
-            RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30,
-                    RobotPlayer.enemyTeam);
-            if (nearbyEnemies.length != 0) {
-                RobotInfo nearestEnemy = null;
-                int nearestEnemyDistance = Integer.MAX_VALUE;
-                for (int i=0; i<nearbyEnemies.length; i++) {
-                    final int distance = nearbyEnemies[i].location.distanceSquaredTo(myLocation);
-                    if (nearestEnemyDistance > nearbyEnemies[i].location.distanceSquaredTo(myLocation)) {
-                        nearestEnemy = nearbyEnemies[i];
-                        nearestEnemyDistance = distance;
-                    }
-                }
+            if (rc.senseNearbyRobots(30, RobotPlayer.enemyTeam).length > 0) {
+                attackTarget = locateNearestEnemy();
                 state = MovableUnitState.ATTACKING_UNIT;
-                attackTarget = nearestEnemy;
-            } else
+            } else {
                 state = MovableUnitState.ADVANCING;
-
+            }
         }
         
         rc.setIndicatorString(2, "State: " + state);
@@ -93,26 +60,14 @@ public class Commander extends MovableUnit{
             break;
         case ATTACKING_UNIT:
             final int distanceToEnemySquared = myLocation.distanceSquaredTo(attackTarget.location);
-            final double distanceToEnemy = Math.sqrt(distanceToEnemySquared);
-            final double enemyAttackRadius = Math.sqrt(attackTarget.type.attackRadiusSquared);
-            
-            final double myCooldownRate;
-            if (rc.getSupplyLevel() >= myType.supplyUpkeep)
-                myCooldownRate = 1.0;
-            else
-                myCooldownRate = 0.5;
-            
-            final double enemyCooldownRate;
-            if (attackTarget.supplyLevel >= attackTarget.type.supplyUpkeep)
-                enemyCooldownRate = 1.0;
-            else
-                enemyCooldownRate = 0.5;
             
             if (distanceToEnemySquared <= myType.attackRadiusSquared) {
                 if (rc.isWeaponReady() && rc.canAttackLocation(attackTarget.location))
-                        rc.attackLocation(attackTarget.location);
+                {
+                    rc.attackLocation(attackTarget.location);
+                }
                 rc.setIndicatorString(1, "Attacking in range");
-            } else if ((myType.movementDelay*(distanceToEnemy-enemyAttackRadius)+myType.loadingDelay)/myCooldownRate <= attackTarget.weaponDelay/enemyCooldownRate) {
+            } else if (canApproachAndShoot(distanceToEnemySquared)) {
                 // Time until robot can move, close in on enemy, and then shoot
                 // it, lower than how long it takes for enemy to shoot you assuming it's stationary
                 bug(attackTarget.location);
@@ -126,7 +81,6 @@ public class Commander extends MovableUnit{
             break;
         default:
             break;
-        
         }
         
     }
@@ -176,4 +130,44 @@ public class Commander extends MovableUnit{
             return Double.POSITIVE_INFINITY;
     }
 
+    private static boolean isDisadvantaged()
+        {
+            return macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30))<1.5;
+        }
+
+        private static RobotInfo locateNearestEnemy()
+        {
+            RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30, RobotPlayer.enemyTeam);
+            RobotInfo nearestEnemy = null;
+            int nearestEnemyDistance = Integer.MAX_VALUE;
+            for (int i=0; i<nearbyEnemies.length; i++) {
+                final int distance = nearbyEnemies[i].location.distanceSquaredTo(myLocation);
+                if (nearestEnemyDistance > nearbyEnemies[i].location.distanceSquaredTo(myLocation)) {
+                    nearestEnemy = nearbyEnemies[i];
+                    nearestEnemyDistance = distance;
+                }
+            }
+            return nearestEnemy;
+        }
+
+        private static boolean canApproachAndShoot(int distanceToEnemySquared)
+        {
+            final double distanceToEnemy = Math.sqrt(distanceToEnemySquared);
+            final double enemyAttackRadius = Math.sqrt(attackTarget.type.attackRadiusSquared);
+
+            final double myCooldownRate;
+            if (rc.getSupplyLevel() >= myType.supplyUpkeep)
+                myCooldownRate = 1.0;
+            else
+                myCooldownRate = 0.5;
+
+            final double enemyCooldownRate;
+            if (attackTarget.supplyLevel >= attackTarget.type.supplyUpkeep)
+                enemyCooldownRate = 1.0;
+            else
+                enemyCooldownRate = 0.5;
+
+            return (myType.movementDelay*(distanceToEnemy-enemyAttackRadius)+myType.loadingDelay)/myCooldownRate <=
+                    attackTarget.weaponDelay/enemyCooldownRate;
+        }
 }
