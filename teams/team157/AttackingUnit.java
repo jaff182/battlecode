@@ -52,6 +52,7 @@ public class AttackingUnit extends MovableUnit{
         retreatLocation = RobotPlayer.HQLocation;
         state = MovableUnitState.ADVANCING;
         initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
+        //Map.printInternalMap();
     }
     
     /**
@@ -117,9 +118,9 @@ public class AttackingUnit extends MovableUnit{
                         }
                     }
                 }
-                if (bestFlashLocation != null)
+                if (bestFlashLocation != null) {
                     rc.castFlash(bestFlashLocation);
-                else
+                } else
                     bug(advanceLocation);
             } else
                 bug(advanceLocation);
@@ -148,6 +149,7 @@ public class AttackingUnit extends MovableUnit{
                         rc.attackLocation(attackTarget.location);
                 rc.setIndicatorString(1, "Attacking in range");
             } else if (macroScoringAdvantage > 1.5 || !attackTarget.type.canAttack()) {
+                rc.setIndicatorString(1, "Advancing to attack");
                 bug(attackTarget.location);
             } else if ((myType.movementDelay
                     * (distanceToEnemy - enemyAttackRadius) + myType.loadingDelay)

@@ -1,6 +1,7 @@
 package team157.Utility;
 
 import java.util.Random;
+
 import team157.RobotPlayer;
 import team157.Channels;
 import battlecode.common.*;
@@ -110,9 +111,9 @@ public class Map {
         int xidx = locationToMapXIndex(loc.x);
         int yidx = locationToMapYIndex(loc.y);
         map[yidx][xidx] = value;
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
-        if(symmetry%4 != 0) map[yidx][xidx] = value;
+        //if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
+        //if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
+        //if(symmetry%4 != 0) map[yidx][xidx] = value;
     }
     
     /**
@@ -125,9 +126,9 @@ public class Map {
         int xidx = locationToMapXIndex(locX);
         int yidx = locationToMapYIndex(locY);
         map[yidx][xidx] = value;
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
-        if(symmetry%4 != 0) map[yidx][xidx] = value;
+        //if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
+        //if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
+        //if(symmetry%4 != 0) map[yidx][xidx] = value;
     }
     
     
@@ -210,9 +211,9 @@ public class Map {
         int xidx = locationToMapXIndex(locX);
         int yidx = locationToMapYIndex(locY);
         RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
-        if(symmetry%4 != 0) RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
+        //if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
+        //if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
+        //if(symmetry%4 != 0) RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
     }
     
     
@@ -242,12 +243,12 @@ public class Map {
         int yidx = locationToMapYIndex(locY);
         map[yidx][xidx] = value;
         RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
-        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
-        if(symmetry%4 != 0) {
-            map[yidx][xidx] = value;
-            RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-        }
+        //if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
+        //if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
+        //if(symmetry%4 != 0) {
+        //    map[yidx][xidx] = value;
+        //    RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
+        //}
     }
     
     
@@ -256,7 +257,7 @@ public class Map {
     /**
      * Print internal map to console.
      */
-    public static void debug_printInternalMap() {
+    public static void printInternalMap() {
         for (int[] line: map) {
             for (int i: line) {
                 System.out.print(i); 

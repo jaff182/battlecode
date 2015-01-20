@@ -15,13 +15,15 @@ public class Tank extends MovableUnit {
     private static TankState tankState;
     private static int bugTimeout = 15;
     private static int targetAttackRadius = towerAttackRadius;
-    private static int numberInSwarm = 10;
+    private static int numberInSwarm = 8;
     private static int swarmRange = 64;
     private static int distanceBetweenHQs = HQLocation.distanceSquaredTo(enemyHQLocation);
     private static MapLocation retreatLocation = RobotPlayer.HQLocation;
     private static double macroScoringAdvantage = 0;
     private static int nearbyFriendlyTanks = 0;
     private static int retreatTimeout = 5;
+    
+    private static RobotInfo attackTarget;
     
     public static void start() throws GameActionException {
         init();
@@ -84,6 +86,14 @@ public class Tank extends MovableUnit {
         if (macroScoringAdvantage<2) {
             tankState = TankState.RETREAT;
             retreatTimeout = 5;
+        } else {
+            if (numberOfEnemiesInSight != 0) {
+                attackTarget = getNearestEnemy();
+                tankState = TankState.ATTACK;
+            } else {
+                tankState = TankState.ADVANCE;
+            }
+
         }
         
         switch (tankState) {
@@ -101,29 +111,20 @@ public class Tank extends MovableUnit {
             }
             break;
         case SURROUND:
-            if (rc.senseNearbyRobots(target, 35, myTeam).length > 5) {
-                tankState = TankState.ATTACK;
+            if (rc.senseNearbyRobots(target, 49, myTeam).length > 5) {
+                tankState = TankState.SWARM_ATTACK;
             }
             break;
         case KAMIKAZE:
             break;
-        case RETREAT:
-            if (nearbyFriendlyTanks >= 3) {
-                // switch to attack state when enough friendly units in range
-                tankState = TankState.ATTACK;
-            } else if (retreatTimeout < 0) {
-                // switch to advance state when in stationary retreat for enough turns without encountering any enemy
-                tankState = TankState.ADVANCE;
-            }
-            break;
-        case ATTACK:
+        case SWARM_ATTACK:
             setTargetToClosestTowerOrHQ();
             if (myLocation.distanceSquaredTo(target) > 100) {
                 tankState = TankState.ADVANCE;
             }
             break;
         default:
-            throw new IllegalStateException();
+            break;
         }
     }
     
@@ -163,9 +164,11 @@ public class Tank extends MovableUnit {
             checkForEnemies();
             bug(target);
             break;
-        case ATTACK:
+        case SWARM_ATTACK:
             checkForEnemies();
             bug(target);
+        case ATTACK:
+            attack();
             break;
         case RETREAT:
             if (myType.cooldownDelay == 0 && rc.isWeaponReady())
@@ -199,8 +202,67 @@ public class Tank extends MovableUnit {
         return numberOfFriendlyTanks;
     }
     
+    /**
+     * Returns nearest enemy or null if there are no nearby enemies
+     * @return
+     */
+    public static RobotInfo getNearestEnemy() {
+        if (numberOfEnemiesInSight != 0) {
+            RobotInfo nearestEnemy = null;
+            int nearestEnemyDistance = Integer.MAX_VALUE;
+            for (int i=0; i<enemiesInSight.length; i++) {
+                final int distance = enemiesInSight[i].location.distanceSquaredTo(myLocation);
+                if (nearestEnemyDistance > enemiesInSight[i].location.distanceSquaredTo(myLocation)) {
+                    nearestEnemy = enemiesInSight[i];
+                    nearestEnemyDistance = distance;
+                }
+            }
+            return nearestEnemy;
+        }
+        return null; 
+    }
     
-
+    /**
+     * Attacks attack target
+     * @throws GameActionException 
+     */
+    public static void attack() throws GameActionException {
+        final int distanceToEnemySquared = myLocation.distanceSquaredTo(attackTarget.location);
+        final double distanceToEnemy = Math.sqrt(distanceToEnemySquared);
+        final double enemyAttackRadius = Math.sqrt(attackTarget.type.attackRadiusSquared);
+        
+        final double myCooldownRate;
+        if (rc.getSupplyLevel() >= myType.supplyUpkeep)
+            myCooldownRate = 1.0;
+        else
+            myCooldownRate = 0.5;
+        
+        final double enemyCooldownRate;
+        if (attackTarget.supplyLevel >= attackTarget.type.supplyUpkeep)
+            enemyCooldownRate = 1.0;
+        else
+            enemyCooldownRate = 0.5;
+        
+        if (rc.canAttackLocation(attackTarget.location)) {
+            if (rc.isWeaponReady())
+                    rc.attackLocation(attackTarget.location);
+            rc.setIndicatorString(1, "Attacking in range");
+        } else if (macroScoringAdvantage > 1.5 || !attackTarget.type.canAttack()) {
+            bug(attackTarget.location);
+        } else if ((myType.movementDelay
+                * (distanceToEnemy - enemyAttackRadius) + myType.loadingDelay)
+                / myCooldownRate <= attackTarget.weaponDelay
+                / enemyCooldownRate) {
+            // Time until robot can move, close in on enemy, and then shoot
+            // it, lower than how long it takes for enemy to shoot you
+            // assuming it's stationary
+            bug(attackTarget.location);
+            rc.setIndicatorString(1,
+                    "advancing to attack");
+        } else
+            rc.setIndicatorString(1, "No attack indicated, waiting here.");
+    }
+    
     // Attack methods =========================================================
     
     /**
@@ -241,7 +303,7 @@ public class Tank extends MovableUnit {
             targetAttackRadius = HQAttackRadius;
         }
         keepAwayFromTarget= true;
-        if (tankState == TankState.KAMIKAZE || (myLocation.distanceSquaredTo(target) < 48 && tankState == TankState.ATTACK)){
+        if (tankState == TankState.KAMIKAZE || (myLocation.distanceSquaredTo(target) < 48 && tankState == TankState.SWARM_ATTACK)){
             setAreaAroundTargetAsPathable();
         }
     }
@@ -317,7 +379,8 @@ public class Tank extends MovableUnit {
         SURROUND, // aggressive mode for tanks in a group
         ADVANCE, 
         RETREAT,
-        ATTACK,
+        ATTACK, // micro attack
+        SWARM_ATTACK, // attacking in a swarm
         KAMIKAZE; // all out attack
 
     }
