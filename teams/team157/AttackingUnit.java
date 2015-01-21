@@ -58,7 +58,23 @@ public class AttackingUnit extends MovableUnit{
         } 
 
     }
-    
+
+    private static void setAttackTargetToNearestEnemy()
+    {
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30, RobotPlayer.enemyTeam);
+
+        RobotInfo nearestEnemy = null;
+        int nearestEnemyDistance = Integer.MAX_VALUE;
+        for (int i=0; i<nearbyEnemies.length; i++) {
+            final int distance = nearbyEnemies[i].location.distanceSquaredTo(myLocation);
+            if (nearestEnemyDistance > nearbyEnemies[i].location.distanceSquaredTo(myLocation)) {
+                nearestEnemy = nearbyEnemies[i];
+                nearestEnemyDistance = distance;
+            }
+        }
+        attackTarget = nearestEnemy;
+    }
+
     /**
      * This code is run once every round, until rc.yield() is called.
      * @throws GameActionException 
@@ -82,20 +98,9 @@ public class AttackingUnit extends MovableUnit{
         if (macroScoringAdvantage<2) {
             state = MovableUnitState.RETREATING;
         } else {
-            RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30,
-                    RobotPlayer.enemyTeam);
-            if (nearbyEnemies.length != 0) {
-                RobotInfo nearestEnemy = null;
-                int nearestEnemyDistance = Integer.MAX_VALUE;
-                for (int i=0; i<nearbyEnemies.length; i++) {
-                    final int distance = nearbyEnemies[i].location.distanceSquaredTo(myLocation);
-                    if (nearestEnemyDistance > nearbyEnemies[i].location.distanceSquaredTo(myLocation)) {
-                        nearestEnemy = nearbyEnemies[i];
-                        nearestEnemyDistance = distance;
-                    }
-                }
+            if (rc.senseNearbyRobots(30, RobotPlayer.enemyTeam).length != 0) {
+                setAttackTargetToNearestEnemy();
                 state = MovableUnitState.ATTACKING_UNIT;
-                attackTarget = nearestEnemy;
             } else
                 state = MovableUnitState.ADVANCING;
 
