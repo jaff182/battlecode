@@ -128,30 +128,30 @@ public class HQ extends Structure {
      * Like priority attack except that it also tries to hit enemies in splashable 
      * region.
      */
-    public static void HQPriorityAttack(RobotInfo[] enemies, int[] atkorder) throws GameActionException {
+    public static void HQPriorityAttack(RobotInfo[] enemies, int[] atkOrder) throws GameActionException {
       //Initiate
-        int targetidx = -1, targettype = 1;
-        double minhp = 100000;
+        int targetIdx = -1, targetType = 1;
+        double minHP = 100000;
         
         //Check for weakest of highest priority enemy type
         for(int i=0; i<enemies.length; i++) {
             int type = enemies[i].type.ordinal();
             if(isInSplashRegion(enemies[i].location,HQLocation)) {
-                if(atkorder[type] > targettype) {
+                if(atkOrder[type] > targetType) {
                     //More important enemy to attack
-                    targettype = atkorder[type];
-                    minhp = enemies[i].health;
-                    targetidx = i;
-                } else if(atkorder[type] == targettype && enemies[i].health < minhp) {
+                    targetType = atkOrder[type];
+                    minHP = enemies[i].health;
+                    targetIdx = i;
+                } else if(atkOrder[type] == targetType && enemies[i].health < minHP) {
                     //Same priority enemy but lower health
-                    minhp = enemies[i].health;
-                    targetidx = i;
+                    minHP = enemies[i].health;
+                    targetIdx = i;
                 }
             }
         }
-        if (targetidx != -1) {
+        if (targetIdx != -1) {
             //Attack
-            MapLocation loc = enemies[targetidx].location;
+            MapLocation loc = enemies[targetIdx].location;
             if(rc.canAttackLocation(loc)) {
                 rc.attackLocation(loc);
             } else {
