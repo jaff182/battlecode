@@ -31,8 +31,6 @@ public class SpawnableStructure extends Structure {
         spawnLocation = mapLocation;
         spawnUnit = robotType;
         
-        //Check to see if built because of build order
-        checkBuildOrderPosition();
     }
 
     private static void loop() throws GameActionException {

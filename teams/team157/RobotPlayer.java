@@ -99,7 +99,7 @@ public class RobotPlayer {
                 case MISSILE: Missile.start(); break;
                 case SOLDIER: Soldier.start(); break;
                 case SUPPLYDEPOT: SupplyDepot.start(); break;
-                case TANK: Tank.start(); break;
+                case TANK: AttackingUnit2.start(); break;
                 case TANKFACTORY: TankFactory.start(); break;
                 case TECHNOLOGYINSTITUTE: TechnologyInstitute.start(); break;
                 case TOWER: Tower.start(); break;

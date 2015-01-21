@@ -49,37 +49,7 @@ public class HQ extends Structure {
         
         //Initial building strategy -------------------------------------------
         
-        if (distanceBetweenHQs < SMALL_MAP_SIZE) {
-            // drone rush on small map
-            BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
-            BuildOrder.add(RobotType.TRAININGFIELD);
-            BuildOrder.add(RobotType.MINERFACTORY);
-        } else {
-            BuildOrder.add(RobotType.MINERFACTORY);
-            BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
-            BuildOrder.add(RobotType.TRAININGFIELD);
-        }
-        
-
-        BuildOrder.add(RobotType.HELIPAD);
-        BuildOrder.add(RobotType.HELIPAD);
-        BuildOrder.add(RobotType.SUPPLYDEPOT);
-
-        // change strategy based on map size
-        if (distanceBetweenHQs < SMALL_MAP_SIZE) {
-            rc.setIndicatorString(1, "small map");
-            BuildOrder.add(RobotType.BARRACKS);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.TANKFACTORY);
-        } else {
-            rc.setIndicatorString(1, "large map");
-            BuildOrder.add(RobotType.BARRACKS);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-        }
+        BuildOrder.add(RobotType.MINERFACTORY);
         
         //---------------------------------------------------------------------
 
@@ -100,10 +70,30 @@ public class HQ extends Structure {
         
         
         //Building strategy ---------------------------------------------------
-        if(Clock.getRoundNum() == 1000) {
-            BuildOrder.add(RobotType.TANKFACTORY);
+        if(Clock.getRoundNum() == 140) {
+            BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
+            BuildOrder.add(RobotType.TRAININGFIELD);
+        }
+        if(Clock.getRoundNum() == 225) {
+            BuildOrder.add(RobotType.BARRACKS);
             BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
+        }
+        if(Clock.getRoundNum() == 550) {
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+
+        }
+        if(Clock.getRoundNum() == 800) {
+            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+
+            //BuildOrder.printBuildOrder();
         }
         
         //---------------------------------------------------------------------

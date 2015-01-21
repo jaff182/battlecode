@@ -20,8 +20,7 @@ public class TankFactory extends SpawnableStructure {
     }
     
     private static void init() throws GameActionException {
-        //Check to see if built because of build order
-        checkBuildOrderPosition();
+        
     }
     
     private static void loop() throws GameActionException {
@@ -34,6 +33,7 @@ public class TankFactory extends SpawnableStructure {
        //Spawn
         if(RobotCount.read(RobotType.TANK) < maxNumberOfTanks
                 && RobotCount.read(RobotType.AEROSPACELAB) < 2) {
+            //System.out.println("Trying to spawn tanks");
             trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.TANK);
         }
 

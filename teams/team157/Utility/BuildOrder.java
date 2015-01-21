@@ -12,9 +12,10 @@ import team157.*;
  * 1) HQ adds an entry to the build order list using ArrayList-like methods.
  * 2) Beaver queries build order for a job with doIHaveToBuildABuilding, finds the 
  *    first unsatisfied entry.
- * 3) Beaver claims job with IAmTheBuilding(), starts building, then continues 
- *    claiming with IAmBuildingTheBuilding().
- * 4) Building on spawn checks to see if it is on the build order list with 
+ * 3) Beaver claims job with IAmTheBuilding(), starts building, then continually
+ *    checks validity of build order entry and claims with IAmBuildingTheBuilding() 
+ *    on behalf of the building.
+ * 4) Building checks on spawn to see if it is on the build order list with 
  *    AmIOnBuildOrder(), then continues claiming with IAmTheBuilding().
  */
 public class BuildOrder {
@@ -160,6 +161,15 @@ public class BuildOrder {
     }
     
     /**
+     * Gets the build order entry at a specified position.
+     * @return The value at the specified position.
+     */
+    public static int get(int index) throws GameActionException {
+        int channel = BASE_CHANNEL+1+index;
+        return RobotPlayer.rc.readBroadcast(channel);
+    }
+    
+    /**
      * Remove entry at a specified position in the build order.
      * @param index Position to remove entry.
      */
@@ -185,27 +195,6 @@ public class BuildOrder {
             //Complain
             System.out.println("Warning: Removing build order entry outside bounds.");
         }
-    }
-    
-    /**
-     * Find the first occurrence of a building of a certain type.
-     * @param buildingType The building type to remove.
-     * @return The index of the first occurrence of buildingType. (-1 if not found)
-     */
-    public static int search(RobotType buildingType) throws GameActionException {
-        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
-        int typeOrdinal = buildingType.ordinal();
-        //Search for building type
-        int index = -1;
-        for(int idx=0; idx<length; idx++) {
-            int channel = BASE_CHANNEL+1+idx;
-            int value = RobotPlayer.rc.readBroadcast(channel);
-            if(decodeTypeOrdinal(value) == typeOrdinal) {
-                return idx;
-            }
-        }
-        //Not found
-        return -1;
     }
     
     /**
@@ -237,14 +226,32 @@ public class BuildOrder {
             if(index <= length-1) {
                 //Decrement length
                 RobotPlayer.rc.broadcast(BASE_CHANNEL,length-1);
-            } else {
-                //Complain
-                System.out.println("Warning: Removing build order entry outside bounds.");
             }
         } else {
             //Complain
-            System.out.println("Warning: Removing build order entry outside bounds.");
+            System.out.println("Warning: No entry found with "+buildingType);
         }
+    }
+    
+    /**
+     * Find the first occurrence of a building of a certain type.
+     * @param buildingType The building type to remove.
+     * @return The index of the first occurrence of buildingType. (-1 if not found)
+     */
+    public static int search(RobotType buildingType) throws GameActionException {
+        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int typeOrdinal = buildingType.ordinal();
+        //Search for building type
+        int index = -1;
+        for(int idx=0; idx<length; idx++) {
+            int channel = BASE_CHANNEL+1+idx;
+            int value = RobotPlayer.rc.readBroadcast(channel);
+            if(decodeTypeOrdinal(value) == typeOrdinal) {
+                return idx;
+            }
+        }
+        //Not found
+        return -1;
     }
     
     /**
@@ -279,14 +286,7 @@ public class BuildOrder {
         return RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
     }
     
-    /**
-     * Gets the build order entry at a specified position.
-     * @return The value at the specified position.
-     */
-    public static int get(int index) throws GameActionException {
-        int channel = BASE_CHANNEL+1+index;
-        return RobotPlayer.rc.readBroadcast(channel);
-    }
+    
     
     
     //Job claiming methods ====================================================
@@ -341,15 +341,16 @@ public class BuildOrder {
     
     /**
      * Buildings need to find out which build order they are supposed to satisfy.
+     * @param id0 Robot's or building's ID
      * @return Position in build order building is meant to satisfy. -1 means none.
      */
-    public static int AmIOnBuildOrder() throws GameActionException {
+    public static int AmIOnBuildOrder(int id0) throws GameActionException {
         //Search for index with matching ID
         int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
         for(int idx=0; idx<length; idx++) {
             int value = get(idx);
             int id = decodeID(value);
-            if(id == RobotPlayer.rc.getID()) return idx;
+            if(id == id0) return idx;
         }
         //Otherwise return none
         return -1;

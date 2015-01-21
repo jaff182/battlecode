@@ -15,11 +15,8 @@ public class Barracks extends SpawnableStructure {
         }
     }
     
-
-
     private static void init() throws GameActionException {
-        //Check to see if built because of build order
-        checkBuildOrderPosition();
+        
     }
 
     private static void loop() throws GameActionException {

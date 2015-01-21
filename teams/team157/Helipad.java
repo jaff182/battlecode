@@ -22,8 +22,7 @@ public class Helipad extends Structure {
     
     private static void init() throws GameActionException {  
         spawnLocation = enemyHQLocation;
-        //Check to see if built because of build order
-        checkBuildOrderPosition();
+        
     }
     
     private static void loop() throws GameActionException {

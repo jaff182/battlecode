@@ -103,21 +103,18 @@ public class Beaver extends MiningUnit {
     
     private static void switchStateFromWanderState() throws GameActionException {
       //check if need to build stuff
-        int index = BuildOrder.doIHaveToBuildABuilding();
-        if(index != -1) {
-                buildOrderIndex = index;
-                int value = BuildOrder.get(buildOrderIndex);
-                buildingType = robotTypes[BuildOrder.decodeTypeOrdinal(value)];
-        }
-        
-        if (index != -1 && rc.getTeamOre() >= buildingType.oreCost) {
-                //Respond
+        buildOrderIndex = BuildOrder.doIHaveToBuildABuilding();
+        if (buildOrderIndex != -1) {
+            int value = BuildOrder.get(buildOrderIndex);
+            buildingType = robotTypes[BuildOrder.decodeTypeOrdinal(value)];
+            if(rc.getTeamOre() >= buildingType.oreCost) {
+                //Respond and set building states
                 BuildOrder.IAmTheBuilding(buildOrderIndex);
-
                 moveTargetLocation = null;
                 robotState = RobotState.BUILD;
+            }
         } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10 
-                && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
+            && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
                 //Lategame handwash station attack
                 robotState = RobotState.BUILD;
                 moveTargetLocation = myLocation;
@@ -134,26 +131,22 @@ public class Beaver extends MiningUnit {
 
     private static void switchStateFromMineState() throws GameActionException {
         //check if need to build stuff
-        int index = BuildOrder.doIHaveToBuildABuilding();
-        if(index != -1) {
-                buildOrderIndex = index;
-                int value = BuildOrder.get(buildOrderIndex);
-                buildingType = robotTypes[BuildOrder.decodeTypeOrdinal(value)];
-                
-        }
-        
-        if (index != -1 && rc.getTeamOre() >= buildingType.oreCost) {
-                //Respond
+        buildOrderIndex = BuildOrder.doIHaveToBuildABuilding();
+        if (buildOrderIndex != -1) {
+            int value = BuildOrder.get(buildOrderIndex);
+            buildingType = robotTypes[BuildOrder.decodeTypeOrdinal(value)];
+            if(rc.getTeamOre() >= buildingType.oreCost) {
+                //Respond and set building states
                 BuildOrder.IAmTheBuilding(buildOrderIndex);
-
                 moveTargetLocation = null;
                 robotState = RobotState.BUILD;
+            }
         } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10 
             && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
-            //Lategame handwash station attack
-            robotState = RobotState.BUILD;
-            moveTargetLocation = myLocation;
-            buildingType = RobotType.HANDWASHSTATION;
+                //Lategame handwash station attack
+                robotState = RobotState.BUILD;
+                moveTargetLocation = myLocation;
+                buildingType = RobotType.HANDWASHSTATION;
         } else if (rc.isCoreReady()) {
             //Transition to wandering around if ore level is too low
             double ore = rc.senseOre(myLocation);
@@ -214,49 +207,91 @@ public class Beaver extends MiningUnit {
         //Vigilance
         checkForEnemies();
         
-        //Update the ID on the build order to the structure's
+        //Validate Build Order
+        //Important for robustness against changes to build order
+        if(buildOrderIndex != -1) {
+            int value = BuildOrder.get(buildOrderIndex);
+            int id = BuildOrder.decodeID(value);
+            if(id != rc.getID() && (buildingID == 0 || id != buildingID)) {
+                //Mismatch of IDs, check if entry has simply been shifted
+                buildOrderIndex = BuildOrder.AmIOnBuildOrder(rc.getID());
+                if(buildOrderIndex == -1 && buildingID != 0) {
+                    //Check if claiming using the building ID instead
+                    buildOrderIndex = BuildOrder.AmIOnBuildOrder(buildingID);
+                }
+            }
+        }
+        
+        //Act depending on the situation
         if(rc.isBuildingSomething()) {
-            if(buildingID == 0) {
-                //Get beaver's own robotinfo's building location field
-                MapLocation loc = RobotPlayer.rc.senseRobot(RobotPlayer.rc.getID()).buildingLocation;
-                if(loc != null) {
-                    buildingID = RobotPlayer.rc.senseRobotAtLocation(loc).ID;
+            //In the middle of building something
+            if(buildOrderIndex != -1) {
+                //This means this was a building task issued by build order
+                if(buildingID == 0) {
+                    //Beaver just started building so buildingID is unset
+                    //Get beaver's own robotinfo's building location field
+                    MapLocation loc = RobotPlayer.rc.senseRobot(RobotPlayer.rc.getID()).buildingLocation;
+                    //Claim build order entry
+                    if(loc != null) {
+                        //Record building's ID and use it to claim the build order 
+                        //entry on behalf of the building
+                        buildingID = RobotPlayer.rc.senseRobotAtLocation(loc).ID;
+                        BuildOrder.IAmBuildingTheBuilding(buildOrderIndex,buildingID);
+                    } else {
+                        //Claim build order entry anyway
+                        BuildOrder.IAmTheBuilding(buildOrderIndex);
+                    }
+                } else {
+                    //BuildingID previously set
+                    //This means beaver is trying to claim a build order entry on behalf
+                    //Continue claiming using recorded ID
                     BuildOrder.IAmBuildingTheBuilding(buildOrderIndex,buildingID);
                 }
             } else {
-                //Continue claiming using recorded ID
-                BuildOrder.IAmBuildingTheBuilding(buildOrderIndex,buildingID);
+                //This is a non build order building task
+                //Safe to reset state now
+                if(robotState == RobotState.BUILD) {
+                    buildingID = 0;
+                    buildOrderIndex = -1;
+                    buildingType = null;
+                    robotState = RobotState.WANDER;
+                }
             }
-            
-        } else if(buildingID != 0) {
-            //Just finished building, reset building parameters
-            buildingID = 0;
-            buildOrderIndex = -1;
-            buildingType = null;
-            robotState = RobotState.WANDER;
             
         } else {
-            //Recently accepted building task
-            if(buildOrderIndex != -1) {
-                //Continue claiming job
-                BuildOrder.IAmTheBuilding(buildOrderIndex);
-            }
-            
-            if(moveTargetLocation == null) {
-                //No specified build location
-                tryBuild(myLocation.directionTo(enemyHQLocation),buildingType);
+            //Not in the middle of building something
+            if(buildingID != 0) {
+                //Just finished building for a build order entry
+                //Can finally stop claiming build order entry on building's behalf 
+                //and reset building parameters
+                buildingID = 0;
+                buildOrderIndex = -1;
+                buildingType = null;
+                robotState = RobotState.WANDER;
             } else {
-                // Go closer to build location.
-                // When the beaver is there, we cans start building immediately
-                int distance = myLocation.distanceSquaredTo(moveTargetLocation);
-                if(distance == 0) bug(HQLocation); //move next to build spot
-                else if(distance > 2) bug(moveTargetLocation); //travel to build spot
-                else {
-                    Direction dirToBuild = myLocation.directionTo(moveTargetLocation);
-                    if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType) 
-                        && rc.canBuild(dirToBuild,buildingType)) {
-                        //Can build building
-                        rc.build(dirToBuild,buildingType);
+                //Recently accepted building task but not started building
+                if(buildOrderIndex != -1) {
+                    //This is a build order task
+                    //Continue claiming job using own ID
+                    BuildOrder.IAmTheBuilding(buildOrderIndex);
+                }
+                //Generic build procedure follows
+                if(moveTargetLocation == null) {
+                    //No specified build location
+                    tryBuild(myLocation.directionTo(enemyHQLocation),buildingType);
+                } else {
+                    // Go closer to build location.
+                    // When the beaver is there, we cans start building immediately
+                    int distance = myLocation.distanceSquaredTo(moveTargetLocation);
+                    if(distance == 0) bug(HQLocation); //move next to build spot
+                    else if(distance > 2) bug(moveTargetLocation); //travel to build spot
+                    else {
+                        Direction dirToBuild = myLocation.directionTo(moveTargetLocation);
+                        if(rc.isCoreReady() && rc.hasBuildRequirements(buildingType) 
+                            && rc.canBuild(dirToBuild,buildingType)) {
+                            //Can build building
+                            rc.build(dirToBuild,buildingType);
+                        }
                     }
                 }
             }

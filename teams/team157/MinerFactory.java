@@ -19,9 +19,6 @@ public class MinerFactory extends Structure {
     private static void init() throws GameActionException {
         rc.setIndicatorString(0,"hello i'm a minerfactory.");
         
-        //Check to see if built because of build order
-        checkBuildOrderPosition();
-        
     }
     
     private static void loop() throws GameActionException {
