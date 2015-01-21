@@ -45,7 +45,7 @@ public class Commander extends MovableUnit{
             state = MovableUnitState.RETREATING;
         } else {
             if (rc.senseNearbyRobots(30, RobotPlayer.enemyTeam).length > 0) {
-                attackTarget = locateNearestEnemy();
+                setAttackTargetToNearestEnemy();
                 state = MovableUnitState.ATTACKING_UNIT;
             } else {
                 state = MovableUnitState.ADVANCING;
@@ -131,43 +131,43 @@ public class Commander extends MovableUnit{
     }
 
     private static boolean isDisadvantaged()
-        {
-            return macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30))<1.5;
-        }
+    {
+        return macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30))<1.5;
+    }
 
-        private static RobotInfo locateNearestEnemy()
-        {
-            RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30, RobotPlayer.enemyTeam);
-            RobotInfo nearestEnemy = null;
-            int nearestEnemyDistance = Integer.MAX_VALUE;
-            for (int i=0; i<nearbyEnemies.length; i++) {
-                final int distance = nearbyEnemies[i].location.distanceSquaredTo(myLocation);
-                if (nearestEnemyDistance > nearbyEnemies[i].location.distanceSquaredTo(myLocation)) {
-                    nearestEnemy = nearbyEnemies[i];
-                    nearestEnemyDistance = distance;
-                }
+    private static void setAttackTargetToNearestEnemy()
+    {
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30, RobotPlayer.enemyTeam);
+        RobotInfo nearestEnemy = null;
+        int nearestEnemyDistance = Integer.MAX_VALUE;
+        for (int i=0; i<nearbyEnemies.length; i++) {
+            final int distance = nearbyEnemies[i].location.distanceSquaredTo(myLocation);
+            if (nearestEnemyDistance > nearbyEnemies[i].location.distanceSquaredTo(myLocation)) {
+                nearestEnemy = nearbyEnemies[i];
+                nearestEnemyDistance = distance;
             }
-            return nearestEnemy;
         }
+        attackTarget = nearestEnemy;
+    }
 
-        private static boolean canApproachAndShoot(int distanceToEnemySquared)
-        {
-            final double distanceToEnemy = Math.sqrt(distanceToEnemySquared);
-            final double enemyAttackRadius = Math.sqrt(attackTarget.type.attackRadiusSquared);
+    private static boolean canApproachAndShoot(int distanceToEnemySquared)
+    {
+        final double distanceToEnemy = Math.sqrt(distanceToEnemySquared);
+        final double enemyAttackRadius = Math.sqrt(attackTarget.type.attackRadiusSquared);
 
-            final double myCooldownRate;
-            if (rc.getSupplyLevel() >= myType.supplyUpkeep)
-                myCooldownRate = 1.0;
-            else
-                myCooldownRate = 0.5;
+        final double myCooldownRate;
+        if (rc.getSupplyLevel() >= myType.supplyUpkeep)
+            myCooldownRate = 1.0;
+        else
+            myCooldownRate = 0.5;
 
-            final double enemyCooldownRate;
-            if (attackTarget.supplyLevel >= attackTarget.type.supplyUpkeep)
-                enemyCooldownRate = 1.0;
-            else
-                enemyCooldownRate = 0.5;
+        final double enemyCooldownRate;
+        if (attackTarget.supplyLevel >= attackTarget.type.supplyUpkeep)
+            enemyCooldownRate = 1.0;
+        else
+            enemyCooldownRate = 0.5;
 
-            return (myType.movementDelay*(distanceToEnemy-enemyAttackRadius)+myType.loadingDelay)/myCooldownRate <=
-                    attackTarget.weaponDelay/enemyCooldownRate;
-        }
+        return (myType.movementDelay*(distanceToEnemy-enemyAttackRadius)+myType.loadingDelay)/myCooldownRate <=
+                attackTarget.weaponDelay/enemyCooldownRate;
+    }
 }
