@@ -212,7 +212,23 @@ public class AttackingUnit extends MovableUnit{
         return bestFlashLocation;
     }
 
-    private static void attackTarget(double macroScoringAdvantage) throws GameActionException{
+    /**
+     * Time until robot can move, close in on enemy, and then shoot it, lower than how long it takes for enemy to
+     * shoot you, assuming it's stationary
+     * @param distanceToEnemy
+     * @param enemyAttackRadius
+     * @param myCooldownRate
+     * @param enemyCooldownRate
+     * @return
+     */
+    private static boolean canShootFasterThanEnemy(double distanceToEnemy, double enemyAttackRadius, double myCooldownRate,
+                                                   double enemyCooldownRate)
+    {
+        return (myType.movementDelay * (distanceToEnemy - enemyAttackRadius) + myType.loadingDelay) / myCooldownRate
+                <= attackTarget.weaponDelay / enemyCooldownRate;
+    }
+
+    private static void attackTarget(double macroScoringAdvantage) throws GameActionException {
         final int distanceToEnemySquared = myLocation.distanceSquaredTo(attackTarget.location);
         final double distanceToEnemy = Math.sqrt(distanceToEnemySquared);
         final double enemyAttackRadius = Math.sqrt(attackTarget.type.attackRadiusSquared);
@@ -242,17 +258,11 @@ public class AttackingUnit extends MovableUnit{
         } else if (macroScoringAdvantage > 1.5 || !attackTarget.type.canAttack()) {
             rc.setIndicatorString(1, "Advancing to attack");
             bug(attackTarget.location);
-        } else if ((myType.movementDelay
-                * (distanceToEnemy - enemyAttackRadius) + myType.loadingDelay)
-                / myCooldownRate <= attackTarget.weaponDelay
-                / enemyCooldownRate) {
-            // Time until robot can move, close in on enemy, and then shoot
-            // it, lower than how long it takes for enemy to shoot you
-            // assuming it's stationary
+        } else if (canShootFasterThanEnemy(distanceToEnemy, enemyAttackRadius, myCooldownRate, enemyCooldownRate)) {
             bug(attackTarget.location);
             rc.setIndicatorString(1, "advancing to attack");
         } else {
             rc.setIndicatorString(1, "No attack indicated, waiting here.");
         }
-    }    
+    }
 }
