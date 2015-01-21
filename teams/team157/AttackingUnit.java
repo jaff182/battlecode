@@ -87,112 +87,65 @@ public class AttackingUnit extends MovableUnit{
         numberOfEnemiesInSight = enemiesInSight.length;
         enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
         
-        
         if (Clock.getRoundNum() >= 1750) {
             setTargetToClosestTowerOrHQ();
             advanceLocation = target;
         }
         
         double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25));
+
         // State transitions
-        if (macroScoringAdvantage<2) {
+        if (macroScoringAdvantage < 2) {
             state = MovableUnitState.RETREATING;
         } else {
             if (rc.senseNearbyRobots(30, RobotPlayer.enemyTeam).length != 0) {
                 setAttackTargetToNearestEnemy();
                 state = MovableUnitState.ATTACKING_UNIT;
-            } else
+            } else {
                 state = MovableUnitState.ADVANCING;
-
+            }
         }
         
         rc.setIndicatorString(2, "State: " + state);
         // Action
-        switch (state) {
-        case ADVANCING:
-            if (rc.getType() == RobotType.COMMANDER){
-                if (rc.hasLearnedSkill(CommanderSkillType.FLASH)
-                        && macroScoringAdvantage > 2.5
-                        && rc.getFlashCooldown() == 0
-                        && rc.getCoreDelay() < 1
-                        && bugDirection(advanceLocation) != myLocation
-                                .directionTo(advanceLocation)) {
-                    // We're not bugging properly (possibly), and we can flash, and
-                    // we have an overwhelming advantage (possibly irrelvant, since
-                    // we can't see enemies to be in this state).
-                    MapLocation bestFlashLocation = null;
-                    int bestFlashDistance = Integer.MAX_VALUE;
-                    for (MapLocation location : MapLocation
-                            .getAllMapLocationsWithinRadiusSq(myLocation,
-                                    GameConstants.FLASH_RANGE_SQUARED)) {
-                        if (rc.isPathable(myType, location) && MovableUnit.movePossible(location)) {
-                            final int targetDistance = location
-                                    .distanceSquaredTo(advanceLocation);
-                            if (targetDistance < bestFlashDistance) {
-                                bestFlashDistance = targetDistance;
-                                bestFlashLocation = location;
-                            }
-                        }
-                    }
-                    if (bestFlashLocation != null) {
-                        rc.castFlash(bestFlashLocation);
-                    } else
-                        bug(advanceLocation);
-            } else
-                bug(advanceLocation);
-            }
-            break;
-        case ATTACKING_UNIT:
-            rc.setIndicatorString(2, "State: " + state + " with target " + attackTarget.location);
+        switch (state)
+        {
+            case ADVANCING:
+                if (rc.getType() == RobotType.COMMANDER){
+                    if (rc.hasLearnedSkill(CommanderSkillType.FLASH)
+                            && macroScoringAdvantage > 2.5
+                            && rc.getFlashCooldown() == 0
+                            && rc.getCoreDelay() < 1
+                            && bugDirection(advanceLocation) != myLocation.directionTo(advanceLocation)) {
 
-            final int distanceToEnemySquared = myLocation.distanceSquaredTo(attackTarget.location);
-            final double distanceToEnemy = Math.sqrt(distanceToEnemySquared);
-            final double enemyAttackRadius = Math.sqrt(attackTarget.type.attackRadiusSquared);
-            
-            final double myCooldownRate;
-            if (rc.getSupplyLevel() >= myType.supplyUpkeep)
-                myCooldownRate = 1.0;
-            else
-                myCooldownRate = 0.5;
-            
-            final double enemyCooldownRate;
-            if (attackTarget.supplyLevel >= attackTarget.type.supplyUpkeep)
-                enemyCooldownRate = 1.0;
-            else
-                enemyCooldownRate = 0.5;
-            
-            if (rc.canAttackLocation(attackTarget.location)) {
-                if (rc.isWeaponReady())
-                        rc.attackLocation(attackTarget.location);
-                rc.setIndicatorString(1, "Attacking in range");
-            } else if (macroScoringAdvantage > 1.5 || !attackTarget.type.canAttack()) {
-                rc.setIndicatorString(1, "Advancing to attack");
-                bug(attackTarget.location);
-            } else if ((myType.movementDelay
-                    * (distanceToEnemy - enemyAttackRadius) + myType.loadingDelay)
-                    / myCooldownRate <= attackTarget.weaponDelay
-                    / enemyCooldownRate) {
-                // Time until robot can move, close in on enemy, and then shoot
-                // it, lower than how long it takes for enemy to shoot you
-                // assuming it's stationary
-                bug(attackTarget.location);
-                rc.setIndicatorString(1,
-                        "advancing to attack");
-            } else
-                rc.setIndicatorString(1, "No attack indicated, waiting here.");
-            break;
-        case RETREATING:
-            if (myType.cooldownDelay == 0 && rc.isWeaponReady())
-                MovableUnit.basicAttack(rc.senseNearbyRobots(
-                        myType.attackRadiusSquared, RobotPlayer.enemyTeam));
-            if (MovableUnit.retreat())
-                bug(retreatLocation);
-            break;
-        default:
-            break;
-        
+                            MapLocation bestFlashLocation = getBestFlashLocation(advanceLocation);
+
+                            if (bestFlashLocation != null) {
+                               rc.castFlash(bestFlashLocation);
+                           } else {
+                               bug(advanceLocation);
+                           }
+                    } else {
+                        bug(advanceLocation);
+                    }
+                }
+                break;
+            case ATTACKING_UNIT:
+                rc.setIndicatorString(2, "State: " + state + " with target " + attackTarget.location);
+                attackTarget(macroScoringAdvantage);
+                break;
+            case RETREATING:
+                if (myType.cooldownDelay == 0 && rc.isWeaponReady()) {
+                    MovableUnit.basicAttack(rc.senseNearbyRobots(myType.attackRadiusSquared, RobotPlayer.enemyTeam));
+                }
+
+                if (MovableUnit.retreat()) {
+                    bug(retreatLocation);
+                }
+                break;
+            default:
+                break;
         }
-        
     }
     
     /**
@@ -239,4 +192,67 @@ public class AttackingUnit extends MovableUnit{
             return Double.POSITIVE_INFINITY;
     }
 
+    private static MapLocation getBestFlashLocation(MapLocation advanceLocation) throws GameActionException {
+        // We're not bugging properly (possibly), and we can flash, and
+        // we have an overwhelming advantage (possibly irrelvant, since
+        // we can't see enemies to be in this state).
+        MapLocation bestFlashLocation = null;
+        int bestFlashDistance = Integer.MAX_VALUE;
+        for (MapLocation location :
+                MapLocation.getAllMapLocationsWithinRadiusSq(myLocation, GameConstants.FLASH_RANGE_SQUARED)) {
+            if (rc.isPathable(myType, location) && MovableUnit.movePossible(location)) {
+                final int targetDistance = location.distanceSquaredTo(advanceLocation);
+
+                if (targetDistance < bestFlashDistance) {
+                    bestFlashDistance = targetDistance;
+                    bestFlashLocation = location;
+                }
+            }
+        }
+        return bestFlashLocation;
+    }
+
+    private static void attackTarget(double macroScoringAdvantage) throws GameActionException{
+        final int distanceToEnemySquared = myLocation.distanceSquaredTo(attackTarget.location);
+        final double distanceToEnemy = Math.sqrt(distanceToEnemySquared);
+        final double enemyAttackRadius = Math.sqrt(attackTarget.type.attackRadiusSquared);
+
+        final double myCooldownRate;
+        if (rc.getSupplyLevel() >= myType.supplyUpkeep) {
+            myCooldownRate = 1.0;
+        }
+        else {
+            myCooldownRate = 0.5;
+        }
+
+        final double enemyCooldownRate;
+
+        if (attackTarget.supplyLevel >= attackTarget.type.supplyUpkeep) {
+            enemyCooldownRate = 1.0;
+        }
+        else {
+            enemyCooldownRate = 0.5;
+        }
+
+        if (rc.canAttackLocation(attackTarget.location)) {
+            if (rc.isWeaponReady()) {
+                rc.attackLocation(attackTarget.location);
+            }
+            rc.setIndicatorString(1, "Attacking in range");
+        } else if (macroScoringAdvantage > 1.5 || !attackTarget.type.canAttack()) {
+            rc.setIndicatorString(1, "Advancing to attack");
+            bug(attackTarget.location);
+        } else if ((myType.movementDelay
+                * (distanceToEnemy - enemyAttackRadius) + myType.loadingDelay)
+                / myCooldownRate <= attackTarget.weaponDelay
+                / enemyCooldownRate) {
+            // Time until robot can move, close in on enemy, and then shoot
+            // it, lower than how long it takes for enemy to shoot you
+            // assuming it's stationary
+            bug(attackTarget.location);
+            rc.setIndicatorString(1, "advancing to attack");
+        } else {
+            rc.setIndicatorString(1, "No attack indicated, waiting here.");
+        }
+    }    
 }
