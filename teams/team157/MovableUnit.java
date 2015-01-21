@@ -888,4 +888,8 @@ public class MovableUnit extends RobotPlayer {
         RETREATING,
         ADVANCING
     }
+
+    public static enum PathingState {
+        BUGGING, HUGGING;
+    }
 }
