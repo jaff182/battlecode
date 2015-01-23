@@ -8,13 +8,16 @@ public class AttackingUnit extends MovableUnit{
      * Represents an attack unit that has state represented by variable state. <br>
      * 
      * Three states are available:<br>
-     * 1) ATTACKING_UNIT, where the unit moves closer to attack the unit specified by attackTarget<br>
-     * 2) RETREATING, where the unit attempts to move to retreatLocation without firing its weapon<br>
-     * 3) ADVANCING, where the unit attempts to move towards advanceLocation without firing its weapon<br>
+     * 1) ATTACKING_UNIT, where the unit moves closer to attack the unit
+     * specified by attackTarget<br>
+     * 2) RETREATING, where the unit attempts to move to retreatLocation, firing
+     * its weapon only if it has no effect on the retreat<br>
+     * 3) ADVANCING, where the unit attempts to move towards advanceLocation
+     * without firing its weapon<br>
      * 
      * RI:<br>
      * When the unit is ATTACKING_UNIT, attackTarget may not be null.<br>
-     * Both advanceLocation, state and retreatLocation may never be null.<br>
+     * advanceLocation, state and retreatLocation may never be null.<br>
      * 
      * These rep invariants must be satisfied after init() is called.
      */
