@@ -244,7 +244,7 @@ public class Launcher extends MovableUnit {
             }
             break;
         case RETREAT:
-            if (missileCount > 1) {
+            if (missileCount > 2) {
                 state = previousState;
                 if (state == LauncherState.ATTACK){
                     attackTimeout = baseAttackTimeout;
@@ -283,7 +283,7 @@ public class Launcher extends MovableUnit {
                             maxIndex = i;         
                     }
                 }
-                tryLaunch(directions[maxIndex]);
+                launchInThreeDir(directions[maxIndex]);
                 attackTimeout = baseAttackTimeout;
             } else {
                 // wait if no enemies in sight
@@ -305,7 +305,7 @@ public class Launcher extends MovableUnit {
                 if (missileCount > 2 && getNearbyFriendlyLaunchersAroundSurroundLocation() > 0) {
                     if (Clock.getRoundNum()%3 == 1) {
                         //synchronize attacks
-                        tryLaunch(myLocation.directionTo(surroundLocation));
+                        launchInThreeDir(myLocation.directionTo(surroundLocation));
                     }
                     
                 }
@@ -326,20 +326,34 @@ public class Launcher extends MovableUnit {
     }
     
     /**
+     * Launches three missiles around input direction
+     * @param dir
+     * @throws GameActionException
+     */
+    public static void launchInThreeDir(Direction dir) throws GameActionException {
+        if (rc.canLaunch(dir)) {
+            rc.launchMissile(dir);
+        }
+        if (rc.canLaunch(dir.rotateLeft())) {
+            rc.launchMissile(dir.rotateLeft());
+        }
+        if (rc.canLaunch(dir.rotateLeft())) {
+            rc.launchMissile(dir.rotateLeft());
+        }
+    }
+    /**
      * Launch missile in direction dir0 if allowed, transfers supply
      * @param dir0 Direction to spawn at
      * @throws GameActionException
      */
     public static void tryLaunch(Direction dir0) throws GameActionException {
-        if(rc.isCoreReady()) {
-            int dirint0 = dir0.ordinal();
+        int dirint0 = dir0.ordinal();
             
-            for(int offset : launchOffsets) {
-                int dirint = (dirint0+offset+8)%8;
-                if(rc.canLaunch(directions[dirint])) {
-                    rc.launchMissile(directions[dirint]);
-                    break;
-                }
+        for(int offset : launchOffsets) {
+            int dirint = (dirint0+offset+8)%8;
+            if(rc.canLaunch(directions[dirint])) {
+                rc.launchMissile(directions[dirint]);
+                break;
             }
         }
     }
