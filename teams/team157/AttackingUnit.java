@@ -139,7 +139,7 @@ public class AttackingUnit extends MovableUnit{
                     MovableUnit.basicAttack(rc.senseNearbyRobots(myType.attackRadiusSquared, RobotPlayer.enemyTeam));
                 }
 
-                if (MovableUnit.retreat()) {
+                if (!MovableUnit.retreat()) {
                     bug(retreatLocation);
                 }
                 break;
