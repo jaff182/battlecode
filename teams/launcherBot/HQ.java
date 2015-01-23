@@ -1,6 +1,6 @@
-package team157;
+package launcherBot;
 
-import team157.Utility.*;
+import launcherBot.Utility.*;
 import battlecode.common.*;
 
 public class HQ extends Structure {
@@ -39,8 +39,8 @@ public class HQ extends Structure {
         MapLocation soldierLoc = myLocation.add(myLocation.directionTo(enemyHQLocation), 6);
         SoldierGroup.setNextWaypoint(soldierLoc.x, soldierLoc.y, null);
         // Init LastAttackedLocations
-        team157.Utility.LastAttackedLocationsReport.HQinit();
-        team157.Utility.LastAttackedLocationsReport.everyRobotInit();
+        launcherBot.Utility.LastAttackedLocationsReport.HQinit();
+        launcherBot.Utility.LastAttackedLocationsReport.everyRobotInit();
         
         // Testing new build system
         // Add 2 Helipads on round 100, 1 Barracks on round 500
@@ -67,7 +67,7 @@ public class HQ extends Structure {
         updateEnemyInRange(52);//52 includes spashable region
         checkForEnemies();
         
-        /**
+        
         // For testing launcher bot
         if(Clock.getRoundNum() == 100) {
             BuildOrder.add(RobotType.HELIPAD);
@@ -84,41 +84,24 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
-        if (Clock.getRoundNum() == 1200) {
+        if (Clock.getRoundNum() == 1000) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.AEROSPACELAB);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
-        **/
+        if (Clock.getRoundNum() == 1200) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        }
         
         
-        //Building strategy ---------------------------------------------------
-        if(Clock.getRoundNum() == 140) {
-            BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
-            BuildOrder.add(RobotType.TRAININGFIELD);
-        }
-        if(Clock.getRoundNum() == 225) {
-            BuildOrder.add(RobotType.BARRACKS);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-        }
-        if(Clock.getRoundNum() == 550) {
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-
-        }
-        if(Clock.getRoundNum() == 800) {
-            BuildOrder.add(RobotType.HELIPAD);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-
-            //BuildOrder.printBuildOrder();
-        }
-        //---------------------------------------------------------------------
         
         
         //Spawn beavers

@@ -1,4 +1,4 @@
-package team157;
+package launcherBot;
 
 import battlecode.common.*;
 
@@ -21,7 +21,7 @@ public class Missile {
  
     public static void start() throws GameActionException {
         roundsLeft = 5;
-        spawnLocation = myLocation;
+        spawnLocation = rc.getLocation();
         //updateTargetLocation();
         while(true) {
             loop();
