@@ -30,7 +30,7 @@ public class TrainingField extends Structure {
         claimBuildOrderEntry();
         
         if(!rc.hasCommander()) {
-            trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.COMMANDER);
+//            trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.COMMANDER);
         }
         
     }

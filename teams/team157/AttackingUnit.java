@@ -8,13 +8,16 @@ public class AttackingUnit extends MovableUnit{
      * Represents an attack unit that has state represented by variable state. <br>
      * 
      * Three states are available:<br>
-     * 1) ATTACKING_UNIT, where the unit moves closer to attack the unit specified by attackTarget<br>
-     * 2) RETREATING, where the unit attempts to move to retreatLocation without firing its weapon<br>
-     * 3) ADVANCING, where the unit attempts to move towards advanceLocation without firing its weapon<br>
+     * 1) ATTACKING_UNIT, where the unit moves closer to attack the unit
+     * specified by attackTarget<br>
+     * 2) RETREATING, where the unit attempts to move to retreatLocation, firing
+     * its weapon only if it has no effect on the retreat<br>
+     * 3) ADVANCING, where the unit attempts to move towards advanceLocation
+     * without firing its weapon<br>
      * 
      * RI:<br>
      * When the unit is ATTACKING_UNIT, attackTarget may not be null.<br>
-     * Both advanceLocation, state and retreatLocation may never be null.<br>
+     * advanceLocation, state and retreatLocation may never be null.<br>
      * 
      * These rep invariants must be satisfied after init() is called.
      */
@@ -139,7 +142,7 @@ public class AttackingUnit extends MovableUnit{
                     MovableUnit.basicAttack(rc.senseNearbyRobots(myType.attackRadiusSquared, RobotPlayer.enemyTeam));
                 }
 
-                if (MovableUnit.retreat()) {
+                if (!MovableUnit.retreat()) {
                     bug(retreatLocation);
                 }
                 break;
@@ -160,6 +163,10 @@ public class AttackingUnit extends MovableUnit{
      * i.e., in an idealized and very rough scenario, how many times your robots
      * can fight the same battle before giving out.
      * 
+     * For launchers, special purpose code is used to check if they can launch.<br>
+     * Warning: This function might not be reliable in the presence of missiles.
+     * Write special purpose code to execute retreats.
+     * 
      * @param robots
      *            all movable robots in an area (excluding HQ and towers)
      * @return a positive score if area is safe, negative if dangerous
@@ -173,7 +180,7 @@ public class AttackingUnit extends MovableUnit{
         
         for (int i = 0; i < robots.length; ++i) {
             final RobotInfo robot = robots[i];
-            if (!robot.type.isBuilding) {
+            if (!robot.type.isBuilding && robot.type != RobotType.LAUNCHER && robot.type != RobotType.MISSILE) {
                 if (robot.team == RobotPlayer.myTeam) {
                     yourHP += robot.health;
                     yourDamageDealtPerUnitTime += robot.type.attackPower
@@ -183,6 +190,28 @@ public class AttackingUnit extends MovableUnit{
                     enemyDamageDealtPerUnitTime += robot.type.attackPower
                             / robot.type.attackDelay;
                 }
+            } else if (robot.type == RobotType.LAUNCHER) {
+                // Special code for LAUNCHER, since it's attack power is technically 0
+                // Roughly perform attack computation over next 3 missile launches (based on missile quantities) and average that
+                // TODO: rationalizing choice of 3 (possibly engagement length?)
+                double robotDamageDealtPerUnitTime = Math.min(robot.missileCount, 3)*RobotType.MISSILE.attackPower;
+                if (robot.missileCount<3) {
+                    // (Missile damage)/(Time taken to produce next missile)
+                    robotDamageDealtPerUnitTime += RobotType.MISSILE.attackPower/robot.weaponDelay;
+                }
+                if (robot.team == RobotPlayer.myTeam) {
+                    yourHP += robot.health;
+                    yourDamageDealtPerUnitTime += robotDamageDealtPerUnitTime;
+                } else {
+                    enemyHP += robot.health;
+                    enemyDamageDealtPerUnitTime += robotDamageDealtPerUnitTime;
+                }
+            } else if (robot.type == RobotType.MISSILE){
+                // Again, special purpose code for missiles, which only add damage
+                if (robot.team == RobotPlayer.myTeam)
+                    yourDamageDealtPerUnitTime += RobotType.MISSILE.attackPower;
+                else
+                    enemyDamageDealtPerUnitTime += RobotType.MISSILE.attackPower;
             }
         }
 
