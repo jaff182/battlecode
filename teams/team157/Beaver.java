@@ -117,7 +117,7 @@ public class Beaver extends MiningUnit {
             && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
                 //Lategame handwash station attack
                 robotState = RobotState.BUILD;
-                moveTargetLocation = myLocation;
+                moveTargetLocation = null;
                 buildingType = RobotType.HANDWASHSTATION;
         } else if (rc.isCoreReady()) {
             //Mine
@@ -145,7 +145,7 @@ public class Beaver extends MiningUnit {
             && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
                 //Lategame handwash station attack
                 robotState = RobotState.BUILD;
-                moveTargetLocation = myLocation;
+                moveTargetLocation = null;
                 buildingType = RobotType.HANDWASHSTATION;
         } else if (rc.isCoreReady()) {
             //Transition to wandering around if ore level is too low
@@ -209,18 +209,7 @@ public class Beaver extends MiningUnit {
         
         //Validate Build Order
         //Important for robustness against changes to build order
-        if(buildOrderIndex != -1) {
-            int value = BuildOrder.get(buildOrderIndex);
-            int id = BuildOrder.decodeID(value);
-            if(id != rc.getID() && (buildingID == 0 || id != buildingID)) {
-                //Mismatch of IDs, check if entry has simply been shifted
-                buildOrderIndex = BuildOrder.AmIOnBuildOrder(rc.getID());
-                if(buildOrderIndex == -1 && buildingID != 0) {
-                    //Check if claiming using the building ID instead
-                    buildOrderIndex = BuildOrder.AmIOnBuildOrder(buildingID);
-                }
-            }
-        }
+        validateBuildOrder();
         
         //Act depending on the situation
         if(rc.isBuildingSomething()) {
@@ -251,10 +240,7 @@ public class Beaver extends MiningUnit {
                 //This is a non build order building task
                 //Safe to reset state now
                 if(robotState == RobotState.BUILD) {
-                    buildingID = 0;
-                    buildOrderIndex = -1;
-                    buildingType = null;
-                    robotState = RobotState.WANDER;
+                    resetBuildState();
                 }
             }
             
@@ -264,10 +250,7 @@ public class Beaver extends MiningUnit {
                 //Just finished building for a build order entry
                 //Can finally stop claiming build order entry on building's behalf 
                 //and reset building parameters
-                buildingID = 0;
-                buildOrderIndex = -1;
-                buildingType = null;
-                robotState = RobotState.WANDER;
+                resetBuildState();
             } else {
                 //Recently accepted building task but not started building
                 if(buildOrderIndex != -1) {
@@ -275,13 +258,15 @@ public class Beaver extends MiningUnit {
                     //Continue claiming job using own ID
                     BuildOrder.IAmTheBuilding(buildOrderIndex);
                 }
+                
                 //Generic build procedure follows
                 if(moveTargetLocation == null) {
-                    //No specified build location
+                    //No specified build location, so build anywhere consistent with 
+                    //checkerboard
                     tryBuild(myLocation.directionTo(enemyHQLocation),buildingType);
                 } else {
                     // Go closer to build location.
-                    // When the beaver is there, we cans start building immediately
+                    // When the beaver is there, we can start building immediately
                     int distance = myLocation.distanceSquaredTo(moveTargetLocation);
                     if(distance == 0) bug(HQLocation); //move next to build spot
                     else if(distance > 2) bug(moveTargetLocation); //travel to build spot
@@ -377,11 +362,42 @@ public class Beaver extends MiningUnit {
     //Build methods ===========================================================
     
     /**
+     * Checks that the recorded build order index matches the ID of the beaver or the 
+     * building it is currently building. Updates the build order index if it has 
+     * changed.
+     */
+    private static void validateBuildOrder() throws GameActionException {
+        if(buildOrderIndex != -1) {
+            int value = BuildOrder.get(buildOrderIndex);
+            int id = BuildOrder.decodeID(value);
+            if(id != rc.getID() && (buildingID == 0 || id != buildingID)) {
+                //Mismatch of IDs, check if entry has simply been shifted
+                buildOrderIndex = BuildOrder.AmIOnBuildOrder(rc.getID());
+                if(buildOrderIndex == -1 && buildingID != 0) {
+                    //Check if claiming using the building ID instead
+                    buildOrderIndex = BuildOrder.AmIOnBuildOrder(buildingID);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Sets the parameters to the unset values and changes the beaver's state to 
+     * wander.
+     */
+    private static void resetBuildState() {
+        buildingID = 0;
+        buildOrderIndex = -1;
+        buildingType = null;
+        robotState = RobotState.WANDER;
+    }
+    
+    /**
      * Finds a direction to build.
      * @param dir0 Preferred Direction
      * @throws GameActionException
      */
-    public static Direction findBuildDirection(Direction dir0) throws GameActionException {
+    private static Direction findBuildDirection(Direction dir0) throws GameActionException {
         myLocation = rc.getLocation();
         int relativeParity = (myLocation.x+myLocation.y-CHECKERBOARD_PARITY+2)%2;
         int dirInt0 = dir0.ordinal();
@@ -402,7 +418,7 @@ public class Beaver extends MiningUnit {
      * @param robotType RobotType of building to build
      * @throws GameActionException
      */
-    public static void tryBuild(Direction dir0, RobotType robotType) throws GameActionException {
+    private static void tryBuild(Direction dir0, RobotType robotType) throws GameActionException {
         if(rc.isCoreReady() && rc.hasBuildRequirements(robotType)) {
             Direction dir = findBuildDirection(dir0);
             if(dir.ordinal() < 8 && rc.canBuild(dir,robotType)) {
@@ -414,30 +430,6 @@ public class Beaver extends MiningUnit {
         }
     }
     
-    
-    // Methods to build buildings - Josiah
-    // Procedure to be used
-    // 1) HQ broadcasts on specific radio channel the desired number of
-    // buildings
-    // 2) Buildings report their existence on each round to produce total count
-    // 3) Beavers check for need to build any buildings, and claim the job to
-    // build it
-    // 4) Beaver builds building. (for now, on the spot)
-
-    /**
-     * checkAndRequestBuilding has to perform the following functions in a
-     * single turn:
-     * 
-     * 1) check for need to build building <br>
-     * 2) if building is needed, read off messaging array to check building
-     * type, parameters (say, coordinates of build site), and score suitability<br>
-     * 3) 
-     * 
-     * MUST COMPLETE IN ONE TURN OR CODE WILL BREAK (POSSIBLY GLOBALLY)
-     */
-    public static void checkAndRequestBuilding() {
-
-    }
     
     //Parameters ==============================================================
 

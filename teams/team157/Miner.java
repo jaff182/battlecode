@@ -5,14 +5,6 @@ import team157.Utility.*;
 
 public class Miner extends MiningUnit {
     
-    //Global variables ========================================================
-    
-    /**
-     * Is this miner mining efficiently? That is, is it mining at all?
-     */
-    public static boolean miningEfficiently = true;
-    
-    
     //General methods =========================================================
     
     public static void start() throws GameActionException {
@@ -43,11 +35,18 @@ public class Miner extends MiningUnit {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
-        //Update effectiveness count. Data might be *slightly* stale, but it's fine (hopefully).
-        MinerEffectivenessCount.report();
+        //Dynamically adjust minMiningRate every few rounds
+        adjustMiningRate();
         
         //Sense nearby units
         updateEnemyInSight();
+        
+        //Sense map while exploring
+        //Must be before movement methods
+        if(previousDirection != Direction.NONE) {
+            senseWhenMove(myLocation, previousDirection);
+            previousDirection = Direction.NONE;
+        }
         
         //State machine -------------------------------------------------------
         //Switch state
@@ -74,11 +73,9 @@ public class Miner extends MiningUnit {
     
     private static void switchStateFromWanderState() throws GameActionException {
         if (rc.isCoreReady()) {
-            //Mine
             double ore = rc.senseOre(myLocation);
-            double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
+            double miningProbability = 1.0*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
             if(ore >= minOreWorthMining || rand.nextDouble() <= miningProbability) {
-                miningEfficiently = true;
                 robotState = RobotState.MINE;
             }
         }
@@ -87,9 +84,8 @@ public class Miner extends MiningUnit {
     private static void switchStateFromMineState() throws GameActionException {
         if (rc.isCoreReady()) {
             double ore = rc.senseOre(myLocation);
-            double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
+            double miningProbability = 1.0*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
             if(ore < minOreWorthMining && rand.nextDouble() > miningProbability) {
-                miningEfficiently = false;
                 robotState = RobotState.WANDER;
             }
         }
@@ -115,6 +111,9 @@ public class Miner extends MiningUnit {
     }
 
     private static void minerMine() throws GameActionException {
+        //Report effectiveness
+        MinerEffectiveness.report();
+        
         //Vigilance
         checkForEnemies();
         
@@ -141,8 +140,6 @@ public class Miner extends MiningUnit {
         //Vigilance
         checkForEnemies();
         
-        
-        
     }
     
     
@@ -158,6 +155,31 @@ public class Miner extends MiningUnit {
             updateEnemyInRange(attackRange);
             RobotCount.report();
             rc.yield();
+        }
+    }
+    
+    
+    /**
+     * Dynamically adjusts the value of minMiningRate depending on the reported mean 
+     * proportion of effective miners. The value is always between 
+     * MINIMUM_MINE_AMOUNT and MINER_MINE_MAX.
+     */
+    private static void adjustMiningRate() throws GameActionException {
+        if(Clock.getRoundNum()%MinerEffectiveness.MEASUREMENT_PERIOD == 1) {
+            double score = 0.01*rc.readBroadcast(Channels.MINER_EFFECTIVENESS);
+            if(score != 0) {
+                if(minMiningRate > GameConstants.MINIMUM_MINE_AMOUNT && score < 0.3) {
+                        //Lower mining threshhold
+                        minMiningRate = Math.max(minMiningRate*0.9,GameConstants.MINIMUM_MINE_AMOUNT);
+                } else if(minMiningRate < GameConstants.MINER_MINE_MAX 
+                    && score > 0.8) {
+                        //Raise mining threshhold
+                        minMiningRate = Math.min(minMiningRate*1.1,GameConstants.MINER_MINE_MAX);
+                }
+                //Update ore threshhold
+                minOreWorthMining = minMiningRate*GameConstants.MINER_MINE_RATE;
+                //rc.setIndicatorString(0,"minOre = "+minOreWorthMining);
+            }
         }
     }
     

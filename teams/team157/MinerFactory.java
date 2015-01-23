@@ -28,10 +28,10 @@ public class MinerFactory extends Structure {
         //Report existence if built because of build order
         claimBuildOrderEntry();
         
-        //Spawn
+        //Spawn and update effective miner proportion
+        MinerEffectiveness.update();
         int minerCount = RobotCount.read(RobotType.MINER);
-        int effectiveMinerCount = MinerEffectivenessCount.read();
-        if(Clock.getRoundNum() > 150 && minerCount < 40 && (minerCount == 0 || 1.0*effectiveMinerCount/minerCount > 0.25)) {
+        if(minerCount < 100 && (minerCount < 5 || MinerEffectiveness.mean > 0.5)) {
             trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.MINER);
         }
         

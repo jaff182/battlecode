@@ -775,8 +775,6 @@ public class MovableUnit extends RobotPlayer {
     private final static int[] senseSEx = { 4, 4, 3, 5, 3, 5, 2, 5, 1, 5, 0, 5,-1};
     private final static int[] senseSEy = { 4, 3, 4, 3, 5, 2, 5, 1, 5, 0, 5,-1, 5};
     
-
-    
     /**
      * Update internal and radio map after moving once in specified direction.
      * @param robotLoc location of robot

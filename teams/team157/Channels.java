@@ -50,10 +50,10 @@ public class Channels {
     public static final int BEAVER_BUILD_REQUEST = 17091;
     
     /**
-     * Starting channel for effective miner count system
-     * 2 channels needed (17095 to 17096)
+     * Starting channel for effective miner system (counting and announcing proportion)
+     * 3 channels needed (17094 to 17096)
      */
-    public static final int EFFECTIVE_MINERS_COUNT = 17095;
+    public static final int MINER_EFFECTIVENESS = 17094;
     
     /**
      * Starting channel for tank defense unit count system
