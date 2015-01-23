@@ -26,17 +26,165 @@ public class Map {
      * much as 5 units away, we add 10 to prevent overflowing to the other side of the 
      * map.
      */
-    public static final int ALLOCATED_WIDTH = GameConstants.MAP_MAX_WIDTH+10,
-                            ALLOCATED_HEIGHT = GameConstants.MAP_MAX_HEIGHT+10;
+    public static final int ALLOCATED_WIDTH = GameConstants.MAP_MAX_WIDTH+10;
+    
+    /**
+     * Allocated size of the internal and radio maps. Since sensing region can be as 
+     * much as 5 units away, we add 10 to prevent overflowing to the other side of the 
+     * map.
+     */
+    public static final int ALLOCATED_HEIGHT = GameConstants.MAP_MAX_HEIGHT+10;
     
     /**
      * Internal map is toroidal and approximately centered at midpoint of HQs.
-     * Map representation modulo 6:
-     *  0: unknown,  1: normal,  2: enemy HQ,  3: HQ,  4: void,  5: out of map
-     *
-     *  (ordinal values for terrain tiles: 2: unknown, 1: void, 3: offmap, 0: normal)
      */
     public static int[][] map = new int[ALLOCATED_HEIGHT][ALLOCATED_WIDTH];
+    
+    
+    //Encoding and Decoding methods ===========================================
+    
+    /**
+     * The pathability state of a given tile, to be recorded in the internal and 
+     * radio maps.
+     * Map representation modulo 8:
+     *  0: unknown,  1: normal,  2: void,  3: enemy HQ,  4: HQ,  5: off map
+     *  (ordinal values for terrain tiles: 2: unknown, 0: normal, 1: void, 3: offmap)
+     */
+    public static enum PathState {
+        UNKNOWN, NORMAL, VOID, ENEMY_HQ, HQ, OFF_MAP,
+    }
+    public static final PathState[] pathStates = PathState.values();
+    
+    /**
+     * Encodes the pathability state information into the allocated bits (lowest 3 
+     * bits) of an integer.
+     * @param value The value to replace.
+     * @param pathState The pathability state to write.
+     * @return The new value to use.
+     */
+    public static int encodePathState(int value, PathState pathState) {
+        return (value/8)*8 + pathState.ordinal();
+    }
+    
+    /**
+     * Encodes the pathability state information into the allocated bits (lowest 3 
+     * bits) of an integer.
+     * @param value The value to replace.
+     * @param pathStateOrdinal The ordinal of the pathability state to write.
+     * @return The new value to use.
+     */
+    public static int encodePathState(int value, int pathStateOrdinal) {
+        return (value/8)*8 + pathStateOrdinal;
+    }
+    
+    /**
+     * Turns on the allocated bit (4th lowest bit) indicating being in base attack 
+     * range (24) of the enemy HQ with 1 or less enemy towers.
+     * @param value The value to replace.
+     * @return The new value to use.
+     */
+    public static int encodeInEnemyHQBaseRange(int value) {
+        return value%8 + (value/16)*16 + 8;
+    }
+    
+    /**
+     * Turns on the allocated bit (5th lowest bit) indicating being in buffed attack 
+     * range (35) of the enemy HQ with 2 to 4 enemy towers.
+     * @param value The value to replace.
+     * @return The new value to use.
+     */
+    public static int encodeInEnemyHQBuffedRange(int value) {
+        return value%16 + (value/32)*32 + 16;
+    }
+    
+    /**
+     * Turns on the allocated bit (6th lowest bit) indicating being in splashable 
+     * region of the enemy HQ with 5 or more enemy towers.
+     * @param value The value to replace.
+     * @return The new value to use.
+     */
+    public static int encodeInEnemyHQSplashRegion(int value) {
+        return value%32 + (value/64)*64 + 32;
+    }
+    
+    /**
+     * Turns on the allocated bit ((idx+7)th lowest bit) indicating being in the 
+     * (idx)th enemy tower range.
+     * @param value The value to replace.
+     * @param towerIndex The 0-based index of the tower.
+     * @return The new value to use.
+     */
+    public static int encodeInEnemyTowerRange(int value, int towerIndex) {
+        int lowBits = 64;
+        for(int i=0; i<towerIndex; i++) {
+            lowBits *= 2;
+        }
+        return value%lowBits + (value/(2*lowBits))*2*lowBits + lowBits;
+    }
+    
+    
+    /**
+     * Reads the pathability state information encoded in a integer.
+     * @param value The value to read from.
+     * @return The ordinal of the pathability state.
+     */
+    public static int decodePathStateOrdinal(int value) {
+        return value%8;
+    }
+    
+    /**
+     * Reads the pathability state information encoded in a integer.
+     * @param value The value to read from.
+     * @return The ordinal of the pathability state.
+     */
+    public static PathState decodePathState(int value) {
+        return pathStates[value%8];
+    }
+    
+    /**
+     * Checks if allocated bit (4th lowest bit) indicating being in base attack range 
+     * (24) of the enemy HQ with 1 or less enemy towers is turned on.
+     * @param value The value to read from.
+     * @return True if in range.
+     */
+    public static boolean decodeInEnemyHQBaseRange(int value) {
+        return ((value%16)/8 == 1);
+    }
+    
+    /**
+     * Checks if the allocated bit (5th lowest bit) indicating being in buffed attack 
+     * range (35) of the enemy HQ with 2 to 4 enemy towers is turned on.
+     * @param value The value to read from.
+     * @return True if in range.
+     */
+    public static boolean decodeInEnemyHQBuffedRange(int value) {
+        return ((value%32)/16 == 1);
+    }
+    
+    /**
+     * Checks if the allocated bit (6th lowest bit) indicating being in splashable 
+     * region of the enemy HQ with 5 or more enemy towers is turned on.
+     * @param value The value to read from.
+     * @return True if in region.
+     */
+    public static boolean decodeInEnemyHQSplashRegion(int value) {
+        return ((value%64)/32 == 1);
+    }
+    
+    /**
+     * Checks if the allocated bit ((idx+7)th lowest bit) indicating being in the 
+     * (idx)th enemy tower range is turned on.
+     * @param value The value to read from.
+     * @param towerIndex The 0-based index of the tower.
+     * @return True if in range.
+     */
+    public static boolean decodeInEnemyTowerRange(int value, int towerIndex) {
+        int lowBits = 64;
+        for(int i=0; i<towerIndex; i++) {
+            lowBits *= 2;
+        }
+        return ((value%(2*lowBits))/lowBits == 1);
+    }
     
     
     
@@ -97,7 +245,7 @@ public class Map {
     }
     
     
-    //Accessing methods =======================================================
+    //Basic accessing methods =================================================
     
     /**
      * Sets value in internal map (deprecated, use setInternalMap(int locX, int 
@@ -109,9 +257,20 @@ public class Map {
         int xidx = locationToMapXIndex(loc.x);
         int yidx = locationToMapYIndex(loc.y);
         map[yidx][xidx] = value;
-        //if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
-        //if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
-        //if(symmetry%4 != 0) map[yidx][xidx] = value;
+        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
+        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
+        if(symmetry%4 != 0) {
+            PathState pathState = pathStates[decodePathStateOrdinal(value)];
+            switch(pathState) {
+                case NORMAL:
+                case VOID:
+                case OFF_MAP:
+                    //Copy pathability state to symmetric position
+                    int value2 = map[yidx][xidx];
+                    value2 = encodePathState(value2,pathState);
+                    map[yidx][xidx] = value2;
+            }
+        }
     }
     
     /**
@@ -124,9 +283,20 @@ public class Map {
         int xidx = locationToMapXIndex(locX);
         int yidx = locationToMapYIndex(locY);
         map[yidx][xidx] = value;
-        //if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
-        //if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
-        //if(symmetry%4 != 0) map[yidx][xidx] = value;
+        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
+        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
+        if(symmetry%4 != 0) {
+            PathState pathState = pathStates[decodePathStateOrdinal(value)];
+            switch(pathState) {
+                case NORMAL:
+                case VOID:
+                case OFF_MAP:
+                    //Copy pathability state to symmetric position
+                    int value2 = map[yidx][xidx];
+                    value2 = encodePathState(value2,pathState);
+                    map[yidx][xidx] = value2;
+            }
+        }
     }
     
     
@@ -209,9 +379,14 @@ public class Map {
         int xidx = locationToMapXIndex(locX);
         int yidx = locationToMapYIndex(locY);
         RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-        //if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
-        //if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
-        //if(symmetry%4 != 0) RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
+        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
+        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
+        if(symmetry%4 != 0) {
+            //Copy pathability state to symmetric position
+            int value2 = RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx));
+            value2 = encodePathState(value2,decodePathStateOrdinal(value));
+            RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value2);
+        }
     }
     
     
@@ -241,34 +416,66 @@ public class Map {
         int yidx = locationToMapYIndex(locY);
         map[yidx][xidx] = value;
         RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-        //if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
-        //if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
-        //if(symmetry%4 != 0) {
-        //    map[yidx][xidx] = value;
-        //    RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
-        //}
+        if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
+        if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
+        if(symmetry%4 != 0) {
+            //Copy pathability state to symmetric position
+            int pathStateOrdinal = decodePathStateOrdinal(value);
+            int value2 = map[yidx][xidx];
+            value2 = encodePathState(value2,pathStateOrdinal);
+            map[yidx][xidx] = value2;
+            value2 = RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx));
+            value2 = encodePathState(value2,pathStateOrdinal);
+            RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value2);
+        }
     }
     
     
     //Display =================================================================
     
     /**
+     * Converts the encoded information in a map value into a representative symbol.
+     * @param value The value to convert.
+     * @return The corresponding symbol.
+     */
+    private static String getSymbol(int value) {
+        switch(decodePathState(value)) {
+            case UNKNOWN: return "?"; //unknown
+            case VOID: return "."; //void
+            case ENEMY_HQ: return "X"; //enemy HQ
+            case HQ: return "O"; //my HQ
+            case OFF_MAP: return "#"; //out of map
+            case NORMAL: //normal
+                if(decodeInEnemyHQBaseRange(value)) {
+                    return "*";
+                } else if(decodeInEnemyHQBaseRange(value)) {
+                    return "+";
+                } else if(decodeInEnemyHQBuffedRange(value)) {
+                    return "!";
+                } else if(decodeInEnemyTowerRange(value,0)) {
+                    return "0";
+                } else if(decodeInEnemyTowerRange(value,1)) {
+                    return "1";
+                } else if(decodeInEnemyTowerRange(value,2)) {
+                    return "2";
+                } else if(decodeInEnemyTowerRange(value,3)) {
+                    return "3";
+                } else if(decodeInEnemyTowerRange(value,4)) {
+                    return "4";
+                } else if(decodeInEnemyTowerRange(value,5)) {
+                    return "5";
+                } else return " ";
+        }
+        return "?";
+    }
+    
+    /**
      * Print internal map to console.
      */
-    public static void printInternalMap() {
+    public static void printInternal() {
         for (int[] line: map) {
-            for (int i: line) {
-                System.out.print(i); 
-                /**
-                switch(i) {
-                    case 0: System.out.print("?"); break; //unknown
-                    case 1: System.out.print(" "); break; //normal
-                    case 2: System.out.print("X"); break; //enemy HQ
-                    case 3: System.out.print("O"); break; //HQ
-                    case 4: System.out.print("."); break; //void
-                    case 5: System.out.print("#"); break; //out of map
-                }
-                **/
+            for (int value: line) {
+                System.out.print(getSymbol(value));
             }
             System.out.println("");
         }
@@ -277,17 +484,11 @@ public class Map {
     /**
      * Print radio map to console.
      */
-    public static void debug_printRadioMap() throws GameActionException {
+    public static void printRadio() throws GameActionException {
         for (int yidx=0; yidx<ALLOCATED_HEIGHT; yidx++) {
             for (int xidx=0; xidx<ALLOCATED_WIDTH; xidx++) {
-                switch(RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx))) {
-                    case 0: System.out.print("?"); break; //unknown
-                    case 1: System.out.print(" "); break; //normal
-                    case 2: System.out.print("X"); break; //enemy HQ
-                    case 3: System.out.print("O"); break; //HQ
-                    case 4: System.out.print("."); break; //void
-                    case 5: System.out.print("#"); break; //out of map
-                }
+                int value = RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx));
+                System.out.print(getSymbol(value));
             }
             System.out.println("");
         }
