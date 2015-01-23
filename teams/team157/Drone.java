@@ -101,20 +101,25 @@ public class Drone extends MovableUnit {
         
         switch (droneState) {
         case UNSWARM:
-            if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
+            /**
+            if (rc.senseNearbyRobots(sightRange, Common.myTeam).length >= numberInSwarm) {
                 // Switches to swarm state when >4 friendly units within sensing radius.
                 droneState = DroneState.SWARM;
-            } else if (numberOfEnemiesInSight > 2) {
+            } else 
+            **/
+            if (numberOfEnemiesInSight > 2) {
              // goes into retreat state if there are enemies in sight range
                 droneState = DroneState.RETREAT;
             }
             break;
+        /**
         case SWARM:
-            if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length < numberInSwarm) {
+            if (rc.senseNearbyRobots(sightRange, Common.myTeam).length < numberInSwarm) {
                 // switch to unswarm state when <5 friendly units within sensing radius.
                 droneState = DroneState.UNSWARM;
             }
             break;
+        **/
         case KAMIKAZE:
             break;
         case FOLLOW:
@@ -124,10 +129,13 @@ public class Drone extends MovableUnit {
             }
             break;
         case RETREAT:
-            if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
+            /**
+            if (rc.senseNearbyRobots(sightRange, Common.myTeam).length >= numberInSwarm) {
                 // switch to swarm state when enough friendly units in range
                 droneState = DroneState.SWARM;
-            } else if (retreatTimeout < 0) {
+            } else 
+            **/
+            if (retreatTimeout < 0) {
                 // switch to unswarm state when in stationary retreat for enough turns without encountering any enemy
                 droneState = DroneState.UNSWARM;
             }
@@ -164,10 +172,12 @@ public class Drone extends MovableUnit {
             }
             bug(target);
             break;
+        /**
         case SWARM:
             // aggressive state, bugs toward target
             bug(target);
             break;
+        **/
         case KAMIKAZE:
             bug(target);
             break;
@@ -357,7 +367,7 @@ public class Drone extends MovableUnit {
 
 
     public static enum DroneState {
-        SWARM, // aggressive mode for drones in a group
+        //SWARM, // aggressive mode for drones in a group
         UNSWARM, // defensive mode for lone drones, stays away from target waits for reinforcements
         FOLLOW, // following enemy
         KAMIKAZE, // all out attack

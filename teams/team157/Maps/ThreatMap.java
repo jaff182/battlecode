@@ -17,8 +17,8 @@ public class ThreatMap {
      */
     public static final int GRID_SQUARE_LENGTH = 10;
     
-    public static int X_ORIGIN = RobotPlayer.HQLocation.x;
-    public static int Y_ORIGIN = RobotPlayer.HQLocation.y;
+    public static int X_ORIGIN = Common.HQLocation.x;
+    public static int Y_ORIGIN = Common.HQLocation.y;
 
     public static int BASE_CHANNEL;
     public final static int NUMBER_OF_CHANNELS_USED = (2 * GameConstants.MAP_MAX_HEIGHT / GRID_SQUARE_LENGTH)
@@ -58,7 +58,7 @@ public class ThreatMap {
      * @throws GameActionException 
      */
     public static void set(int x, int y, int a) throws GameActionException {
-        RobotPlayer.rc.broadcast(BASE_CHANNEL + getGridIndex(x, y), a);
+        Common.rc.broadcast(BASE_CHANNEL + getGridIndex(x, y), a);
     }
     
     /**
@@ -69,7 +69,7 @@ public class ThreatMap {
      * @throws GameActionException 
      */
     public static void reset(int x, int y) throws GameActionException {
-        RobotPlayer.rc.broadcast(BASE_CHANNEL+getGridIndex(x,y), 0);
+        Common.rc.broadcast(BASE_CHANNEL+getGridIndex(x,y), 0);
     }
     
     /**
@@ -77,7 +77,7 @@ public class ThreatMap {
      * @throws GameActionException 
      */
     public static void reset() throws GameActionException {
-        RobotController rc = RobotPlayer.rc; //bring into local scope once to avoid GETSTATIC call below
+        RobotController rc = Common.rc; //bring into local scope once to avoid GETSTATIC call below
         for (int channel=BASE_CHANNEL; channel<BASE_CHANNEL+NUMBER_OF_CHANNELS_USED; ++channel) {
             rc.broadcast(channel, 0);
         }

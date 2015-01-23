@@ -78,7 +78,7 @@ public class HQ extends Structure {
         // Init LastAttackedLocations
         team156.Utility.LastAttackedLocationsReport.HQinit();
         team156.Utility.LastAttackedLocationsReport.everyRobotInit();
-        //team157.Utility.BeaversBuildRequest.HQinit();
+        //launcherBot.Utility.BeaversBuildRequest.HQinit();
         
         //Add MinerFactory at the start
         BuildOrder.add(RobotType.MINERFACTORY);

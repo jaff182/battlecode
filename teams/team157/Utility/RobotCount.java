@@ -4,7 +4,7 @@ import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotType;
 import team157.Channels;
-import team157.RobotPlayer;
+import team157.Common;
 
 public class RobotCount {
     /**
@@ -29,12 +29,12 @@ public class RobotCount {
     public static void report() throws GameActionException {
         final int channel;
         if (Clock.getRoundNum()%2 == 0) // even rounds write to high address
-            channel = BASE_CHANNEL+RobotPlayer.myType.ordinal()+RobotPlayer.robotTypes.length;
+            channel = BASE_CHANNEL+Common.myType.ordinal()+Common.robotTypes.length;
         else
-            channel = BASE_CHANNEL+RobotPlayer.myType.ordinal(); // odd rounds write to low
-        final int count = RobotPlayer.rc.readBroadcast(channel);
+            channel = BASE_CHANNEL+Common.myType.ordinal(); // odd rounds write to low
+        final int count = Common.rc.readBroadcast(channel);
 //        System.out.println("Current count is " + count + ". Writing this to " + channel);
-        RobotPlayer.rc.broadcast(channel, count+1);
+        Common.rc.broadcast(channel, count+1);
     }
     
     /**
@@ -51,9 +51,9 @@ public class RobotCount {
         if (Clock.getRoundNum()%2 == 0) // even rounds read from low address
             channel = BASE_CHANNEL+robotType.ordinal();
         else // odd rounds read from high
-            channel = BASE_CHANNEL+robotType.ordinal()+RobotPlayer.robotTypes.length;
-//        System.out.println("Read count for " + robotType + " on channel " + channel + ", result is " + RobotPlayer.rc.readBroadcast(channel));
-        return RobotPlayer.rc.readBroadcast(channel);
+            channel = BASE_CHANNEL+robotType.ordinal()+Common.robotTypes.length;
+//        System.out.println("Read count for " + robotType + " on channel " + channel + ", result is " + Common.rc.readBroadcast(channel));
+        return Common.rc.readBroadcast(channel);
     }
     
     /**
@@ -66,13 +66,13 @@ public class RobotCount {
      * @throws GameActionException 
      */
     public static void reset() throws GameActionException {
-        int length = RobotPlayer.robotTypes.length;
+        int length = Common.robotTypes.length;
         final int relBaseChannel;
         if (Clock.getRoundNum()%2 == 0) // even rounds reset high address at start of round
             relBaseChannel = BASE_CHANNEL + length;
         else // odd rounds reset low
             relBaseChannel = BASE_CHANNEL;
         for (int i=0; i!=length; ++i)
-            RobotPlayer.rc.broadcast(relBaseChannel+i, 0);
+            Common.rc.broadcast(relBaseChannel+i, 0);
     }
 }

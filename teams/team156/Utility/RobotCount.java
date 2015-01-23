@@ -52,7 +52,7 @@ public class RobotCount {
             channel = BASE_CHANNEL+robotType.ordinal();
         else // odd rounds read from high
             channel = BASE_CHANNEL+robotType.ordinal()+RobotPlayer.robotTypes.length;
-//        System.out.println("Read count for " + robotType + " on channel " + channel + ", result is " + RobotPlayer.rc.readBroadcast(channel));
+//        System.out.println("Read count for " + robotType + " on channel " + channel + ", result is " + Common.rc.readBroadcast(channel));
         return RobotPlayer.rc.readBroadcast(channel);
     }
     

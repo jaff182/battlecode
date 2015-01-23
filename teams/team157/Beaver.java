@@ -219,12 +219,12 @@ public class Beaver extends MiningUnit {
                 if(buildingID == 0) {
                     //Beaver just started building so buildingID is unset
                     //Get beaver's own robotinfo's building location field
-                    MapLocation loc = RobotPlayer.rc.senseRobot(RobotPlayer.rc.getID()).buildingLocation;
+                    MapLocation loc = Common.rc.senseRobot(Common.rc.getID()).buildingLocation;
                     //Claim build order entry
                     if(loc != null) {
                         //Record building's ID and use it to claim the build order 
                         //entry on behalf of the building
-                        buildingID = RobotPlayer.rc.senseRobotAtLocation(loc).ID;
+                        buildingID = Common.rc.senseRobotAtLocation(loc).ID;
                         BuildOrder.IAmBuildingTheBuilding(buildOrderIndex,buildingID);
                     } else {
                         //Claim build order entry anyway

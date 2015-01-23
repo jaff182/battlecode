@@ -3,7 +3,7 @@ package team157.Utility;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import team157.Utility.*;
-import team157.RobotPlayer;
+import team157.Common;
 
 public class Waypoints {
     /**
@@ -59,8 +59,8 @@ public class Waypoints {
             // 1 in 5 drones go to HQ
             // TODO: I assume that the var i is accessed statically by all robots, because else it does not make sense
             // as i = 0 all the time.
-            if (RobotPlayer.rand.nextInt(5) == 0) {
-                waypoints[i] = RobotPlayer.HQLocation;
+            if (Common.rand.nextInt(5) == 0) {
+                waypoints[i] = Common.HQLocation;
                 ++i;
             }
 
@@ -80,7 +80,7 @@ public class Waypoints {
                 waypoints[i] = bestEnemyOreLocation;
                 ++i;
             }
-            waypoints[i] = RobotPlayer.enemyHQLocation;
+            waypoints[i] = Common.enemyHQLocation;
             numberOfWaypoints = i+1;
         }
     }

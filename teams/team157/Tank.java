@@ -18,7 +18,7 @@ public class Tank extends MovableUnit {
     private static int numberInSwarm = 5;
     private static int swarmRange = 64;
     private static int distanceBetweenHQs = HQLocation.distanceSquaredTo(enemyHQLocation);
-    private static MapLocation retreatLocation = RobotPlayer.HQLocation;
+    private static MapLocation retreatLocation = Common.HQLocation;
     private static double macroScoringAdvantage = 0;
     private static int nearbyFriendlyTanks = 0;
     private static int retreatTimeout = 5;
@@ -177,7 +177,7 @@ public class Tank extends MovableUnit {
         case RETREAT:
             if (myType.cooldownDelay == 0 && rc.isWeaponReady())
                 MovableUnit.basicAttack(rc.senseNearbyRobots(
-                        myType.attackRadiusSquared, RobotPlayer.enemyTeam));
+                        myType.attackRadiusSquared, Common.enemyTeam));
             if (MovableUnit.retreat())
                 bug(retreatLocation);
             break;
@@ -198,7 +198,7 @@ public class Tank extends MovableUnit {
      */
     private static int getNearbyFriendlyTanks() {
         int numberOfFriendlyTanks = 0;
-        for (RobotInfo info: rc.senseNearbyRobots(swarmRange, RobotPlayer.myTeam)) {
+        for (RobotInfo info: rc.senseNearbyRobots(swarmRange, Common.myTeam)) {
             if (info.type == RobotType.TANK){
                 numberOfFriendlyTanks++;
             }

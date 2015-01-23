@@ -68,7 +68,7 @@ public class HQ extends Structure {
         checkForEnemies();
         
         /**
-         * For testing launcher bot
+        // For testing launcher bot
         if(Clock.getRoundNum() == 100) {
             BuildOrder.add(RobotType.HELIPAD);
         }
@@ -78,6 +78,9 @@ public class HQ extends Structure {
         }
         if (Clock.getRoundNum() == 800) {
             BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }

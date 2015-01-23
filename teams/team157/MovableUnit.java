@@ -2,7 +2,7 @@ package team157;
 import team157.Utility.*;
 import battlecode.common.*;
 
-public class MovableUnit extends RobotPlayer {
+public class MovableUnit extends Common {
     
     
     // Parameters ===========================================================
@@ -17,12 +17,12 @@ public class MovableUnit extends RobotPlayer {
     public static MapLocation[] previousTowerLocations = enemyTowers;
     
     // TODO: be careful with using this variable - what does "target" mean? should this be in its own class
-    public static MapLocation target = RobotPlayer.enemyHQLocation; //attack target 
+    public static MapLocation target = Common.enemyHQLocation; //attack target 
     public static int numberOfEnemiesInSight = 0;
     public static RobotInfo[] enemiesInSight;
     public static int indexInWaypoints = 0;
     public static int waypointTimeout = 100; // timeout before waypoint changes
-    public static final int roundNumAttack = 1750; // round number when end game attack starts
+    public static final int roundNumAttack = rc.getRoundLimit() - 200; // round number when end game attack starts
     public static int numberInSwarm = 5; // minimum size of group for units to start swarming
     public static boolean keepAwayFromTarget = false; // true if target is tower or hq, false otherwise
     public static RobotInfo attackTarget; // current attack target
@@ -164,7 +164,7 @@ public class MovableUnit extends RobotPlayer {
                 if (Math.abs(inSightOfHQ.x - enemyHQLocation.x) < 7 && Math.abs(inSightOfHQ.y - enemyHQLocation.y) < 7) {
                     Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
                 } else {
-                    if (RobotPlayer.isInSplashRegion(inSightOfHQ, enemyHQLocation)) {
+                    if (Common.isInSplashRegion(inSightOfHQ, enemyHQLocation)) {
                         Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
                     }
                 }
@@ -324,7 +324,7 @@ public class MovableUnit extends RobotPlayer {
         if (rc.isCoreReady() && enemiesInSight != null && enemiesInSight.length != 0) {
             int[] enemiesInDir = new int[8];
             for (RobotInfo info: enemiesInSight) {
-                enemiesInDir[myLocation.directionTo(info.location).ordinal()]++;
+                enemiesInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
             }
             int minDirScore = 50;
             int dirScore = 0;
@@ -474,10 +474,7 @@ public class MovableUnit extends RobotPlayer {
                     return Direction.NONE;
                 } else {
                     // reset and start over.
-                    pathingState = PathingState.BUGGING;
-                    prohibitedDir = new int[]{noDir, noDir};
-                    goneAround = false;
-                    
+                    bugReset();
                     return Direction.NONE;
                 }
             }
@@ -514,6 +511,15 @@ public class MovableUnit extends RobotPlayer {
             return true;
         }
         return false;
+    }
+    
+    /**
+     * Reset states and variables before starting bug.
+     */
+    public static void bugReset() {
+        pathingState = PathingState.BUGGING;
+        prohibitedDir = new int[]{noDir, noDir};
+        goneAround = false;
     }
 
     
@@ -730,6 +736,7 @@ public class MovableUnit extends RobotPlayer {
 
     /**
      * Set internal map around enemy tower as pathable if tower dies.
+     * Must manually update previousTowerLocations at the end of every round to use this.
      */
     public static void setInternalMapAroundTowers() {
         enemyTowers = rc.senseEnemyTowerLocations();

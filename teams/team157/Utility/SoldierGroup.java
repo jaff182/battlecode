@@ -1,6 +1,6 @@
 package team157.Utility;
 
-import team157.RobotPlayer;
+import team157.Common;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -39,8 +39,8 @@ public class SoldierGroup {
     // Variables indicating status of group =====================================================
     // These variables may be up to 2 rounds out of date (may be updated every 2
     // rounds), but will always be populated appropriately after sync is called.
-    public static MapLocation waypointLocation = RobotPlayer.myLocation;
-    public static MapLocation groupCenter = RobotPlayer.myLocation;
+    public static MapLocation waypointLocation = Common.myLocation;
+    public static MapLocation groupCenter = Common.myLocation;
     public static int groupSize;
     
     // Constants defining behaviour of group =======================================================
@@ -61,7 +61,7 @@ public class SoldierGroup {
      * @throws GameActionException
      */
     public static void sync(MapLocation myLocation) throws GameActionException {
-        RobotController rc = RobotPlayer.rc;
+        RobotController rc = Common.rc;
         if (rc.readBroadcast(TOUCHED_CHANNEL) != Clock.getRoundNum()) {
             // You're a leader (the first soldier to execute this round).
             rc.broadcast(TOUCHED_CHANNEL, Clock.getRoundNum()); // Show that a leader has preprocessed this structure (to all other units)
@@ -116,8 +116,8 @@ public class SoldierGroup {
      * @throws GameActionException
      */
     public static void setNextWaypoint(int x, int y, MoveType moveType) throws GameActionException {
-        RobotPlayer.rc.broadcast(X_COORDINATE_WAYPOINT_CHANNEL, x);
-        RobotPlayer.rc.broadcast(Y_COORDINATE_WAYPOINT_CHANNEL, y);
+        Common.rc.broadcast(X_COORDINATE_WAYPOINT_CHANNEL, x);
+        Common.rc.broadcast(Y_COORDINATE_WAYPOINT_CHANNEL, y);
     }    
     
     /**
@@ -130,10 +130,10 @@ public class SoldierGroup {
      */
     public static boolean hasSoldierGroupReachedWaypoint() {
         return groupCenter.distanceSquaredTo(SoldierGroup.waypointLocation) < SoldierGroup.WAYPOINT_REACHED_DISTANCE_SQUARE_TOLERANCE
-                && RobotPlayer.rc.senseNearbyRobots(
+                && Common.rc.senseNearbyRobots(
                         SoldierGroup.waypointLocation,
                         WAYPOINT_REACHED_ENEMIES_DISTANCE_CHECK,
-                        RobotPlayer.enemyTeam).length == 0;
+                        Common.enemyTeam).length == 0;
     }
 
     public static enum MoveType {
