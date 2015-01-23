@@ -43,7 +43,7 @@ public class AttackingUnit extends MovableUnit{
         init();
         while(true) {
             loop();
-            RobotPlayer.rc.yield(); //Yield the round
+            Common.rc.yield(); //Yield the round
         }
     }
     
@@ -52,8 +52,8 @@ public class AttackingUnit extends MovableUnit{
      * @throws GameActionException 
      */
     private static void init() throws GameActionException {
-        advanceLocation = RobotPlayer.enemyHQLocation;
-        retreatLocation = RobotPlayer.HQLocation;
+        advanceLocation = Common.enemyHQLocation;
+        retreatLocation = Common.HQLocation;
         state = MovableUnitState.ADVANCING;
         if (Clock.getRoundNum() < 1800) {
             initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
@@ -64,7 +64,7 @@ public class AttackingUnit extends MovableUnit{
 
     private static void setAttackTargetToNearestEnemy()
     {
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30, RobotPlayer.enemyTeam);
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30, Common.enemyTeam);
 
         RobotInfo nearestEnemy = null;
         int nearestEnemyDistance = Integer.MAX_VALUE;
@@ -83,7 +83,7 @@ public class AttackingUnit extends MovableUnit{
      * @throws GameActionException 
      */
     private static void loop() throws GameActionException {
-        RobotController rc = RobotPlayer.rc; // bring rc into local scope
+        RobotController rc = Common.rc; // bring rc into local scope
         
         myLocation = rc.getLocation();
         enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
@@ -101,7 +101,7 @@ public class AttackingUnit extends MovableUnit{
         if (macroScoringAdvantage < 2) {
             state = MovableUnitState.RETREATING;
         } else {
-            if (rc.senseNearbyRobots(30, RobotPlayer.enemyTeam).length != 0) {
+            if (rc.senseNearbyRobots(30, Common.enemyTeam).length != 0) {
                 setAttackTargetToNearestEnemy();
                 state = MovableUnitState.ATTACKING_UNIT;
             } else {
@@ -139,7 +139,7 @@ public class AttackingUnit extends MovableUnit{
                 break;
             case RETREATING:
                 if (myType.cooldownDelay == 0 && rc.isWeaponReady()) {
-                    MovableUnit.basicAttack(rc.senseNearbyRobots(myType.attackRadiusSquared, RobotPlayer.enemyTeam));
+                    MovableUnit.basicAttack(rc.senseNearbyRobots(myType.attackRadiusSquared, Common.enemyTeam));
                 }
 
                 if (!MovableUnit.retreat()) {
@@ -181,7 +181,7 @@ public class AttackingUnit extends MovableUnit{
         for (int i = 0; i < robots.length; ++i) {
             final RobotInfo robot = robots[i];
             if (!robot.type.isBuilding && robot.type != RobotType.LAUNCHER && robot.type != RobotType.MISSILE) {
-                if (robot.team == RobotPlayer.myTeam) {
+                if (robot.team == Common.myTeam) {
                     yourHP += robot.health;
                     yourDamageDealtPerUnitTime += robot.type.attackPower
                             / robot.type.attackDelay;
@@ -199,7 +199,7 @@ public class AttackingUnit extends MovableUnit{
                     // (Missile damage)/(Time taken to produce next missile)
                     robotDamageDealtPerUnitTime += RobotType.MISSILE.attackPower/robot.weaponDelay;
                 }
-                if (robot.team == RobotPlayer.myTeam) {
+                if (robot.team == Common.myTeam) {
                     yourHP += robot.health;
                     yourDamageDealtPerUnitTime += robotDamageDealtPerUnitTime;
                 } else {
@@ -208,7 +208,7 @@ public class AttackingUnit extends MovableUnit{
                 }
             } else if (robot.type == RobotType.MISSILE){
                 // Again, special purpose code for missiles, which only add damage
-                if (robot.team == RobotPlayer.myTeam)
+                if (robot.team == Common.myTeam)
                     yourDamageDealtPerUnitTime += RobotType.MISSILE.attackPower;
                 else
                     enemyDamageDealtPerUnitTime += RobotType.MISSILE.attackPower;

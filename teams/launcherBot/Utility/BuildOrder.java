@@ -89,12 +89,12 @@ public class BuildOrder {
      * @param buildingType Building robot type to add.
      */
     public static void add(RobotType buildingType) throws GameActionException {
-        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int length = Common.rc.readBroadcast(BASE_CHANNEL);
         if(length < MAX_LENGTH) {
             int channel = BASE_CHANNEL+1+length;
             int value = encode(buildingType.ordinal(),0);
-            RobotPlayer.rc.broadcast(channel,value); //upload value
-            RobotPlayer.rc.broadcast(BASE_CHANNEL,length+1); //increment length
+            Common.rc.broadcast(channel,value); //upload value
+            Common.rc.broadcast(BASE_CHANNEL,length+1); //increment length
         } else {
             //Complain
             System.out.println("Warning: Maximum build order length reached.");
@@ -107,21 +107,21 @@ public class BuildOrder {
      * @param buildingType Building robot type to insert
      */
     public static void add(int index, RobotType buildingType) throws GameActionException {
-        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int length = Common.rc.readBroadcast(BASE_CHANNEL);
         if(length < MAX_LENGTH) {
             if(index < length) {
                 //Shift down the entries past the index
                 for(int idx=length-1; idx>=index; idx--) {
                     int channelFrom = BASE_CHANNEL+1+idx;
-                    int value = RobotPlayer.rc.readBroadcast(channelFrom);
-                    RobotPlayer.rc.broadcast(channelFrom+1,value);
+                    int value = Common.rc.readBroadcast(channelFrom);
+                    Common.rc.broadcast(channelFrom+1,value);
                 }
             }
             if(index <= length) {
                 int channel = BASE_CHANNEL+1+length;
                 int value = encode(buildingType.ordinal(),0);
-                RobotPlayer.rc.broadcast(channel,value); //upload value
-                RobotPlayer.rc.broadcast(BASE_CHANNEL,length+1); //increment length
+                Common.rc.broadcast(channel,value); //upload value
+                Common.rc.broadcast(BASE_CHANNEL,length+1); //increment length
             }  else {
                 //Complain
                 System.out.println("Warning: Cannot insert build order entry beyond bounds.");
@@ -138,15 +138,15 @@ public class BuildOrder {
      * @param buildingTypes Array of building robot types to add.
      */
     public static void addAll(RobotType[] buildingTypes) throws GameActionException {
-        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int length = Common.rc.readBroadcast(BASE_CHANNEL);
         int idx = 0;
         while(idx < buildingTypes.length && length + idx < MAX_LENGTH) {
             int channel = BASE_CHANNEL+1+length+idx;
             int value = encode(buildingTypes[idx].ordinal(),0);
-            RobotPlayer.rc.broadcast(channel,value); //upload value
+            Common.rc.broadcast(channel,value); //upload value
             idx++;
         }
-        RobotPlayer.rc.broadcast(BASE_CHANNEL,length+idx); //increase length
+        Common.rc.broadcast(BASE_CHANNEL,length+idx); //increase length
         if(length+idx > MAX_LENGTH) {
             //Complain
             System.out.println("Warning: Maximum build order length reached.");
@@ -157,7 +157,7 @@ public class BuildOrder {
      * Clear the build order
      */
     public static void clear() throws GameActionException {
-        RobotPlayer.rc.broadcast(BASE_CHANNEL,0);
+        Common.rc.broadcast(BASE_CHANNEL,0);
     }
     
     /**
@@ -166,7 +166,7 @@ public class BuildOrder {
      */
     public static int get(int index) throws GameActionException {
         int channel = BASE_CHANNEL+1+index;
-        return RobotPlayer.rc.readBroadcast(channel);
+        return Common.rc.readBroadcast(channel);
     }
     
     /**
@@ -174,19 +174,19 @@ public class BuildOrder {
      * @param index Position to remove entry.
      */
     public static void remove(int index) throws GameActionException {
-        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int length = Common.rc.readBroadcast(BASE_CHANNEL);
         if(index >= 0) {
             if(index < length-1) {
                 //Shift up the entries past the index
                 for(int idx=index+1; idx<length; idx++) {
                     int channelFrom = BASE_CHANNEL+1+idx;
-                    int value = RobotPlayer.rc.readBroadcast(channelFrom);
-                    RobotPlayer.rc.broadcast(channelFrom-1,value);
+                    int value = Common.rc.readBroadcast(channelFrom);
+                    Common.rc.broadcast(channelFrom-1,value);
                 }
             }
             if(index <= length-1) {
                 //Decrement length
-                RobotPlayer.rc.broadcast(BASE_CHANNEL,length-1);
+                Common.rc.broadcast(BASE_CHANNEL,length-1);
             } else {
                 //Complain
                 System.out.println("Warning: Removing build order entry outside bounds.");
@@ -202,13 +202,13 @@ public class BuildOrder {
      * @param 
      */
     public static void remove(RobotType buildingType) throws GameActionException {
-        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int length = Common.rc.readBroadcast(BASE_CHANNEL);
         int typeOrdinal = buildingType.ordinal();
         //Search for building type
         int index = -1;
         for(int idx=0; idx<length; idx++) {
             int channel = BASE_CHANNEL+1+idx;
-            int value = RobotPlayer.rc.readBroadcast(channel);
+            int value = Common.rc.readBroadcast(channel);
             if(decodeTypeOrdinal(value) == typeOrdinal) {
                 index = idx;
                 break;
@@ -219,13 +219,13 @@ public class BuildOrder {
                 //Shift up the entries past the index
                 for(int idx=index+1; idx<length; idx++) {
                     int channelFrom = BASE_CHANNEL+1+idx;
-                    int value = RobotPlayer.rc.readBroadcast(channelFrom);
-                    RobotPlayer.rc.broadcast(channelFrom-1,value);
+                    int value = Common.rc.readBroadcast(channelFrom);
+                    Common.rc.broadcast(channelFrom-1,value);
                 }
             }
             if(index <= length-1) {
                 //Decrement length
-                RobotPlayer.rc.broadcast(BASE_CHANNEL,length-1);
+                Common.rc.broadcast(BASE_CHANNEL,length-1);
             }
         } else {
             //Complain
@@ -239,13 +239,13 @@ public class BuildOrder {
      * @return The index of the first occurrence of buildingType. (-1 if not found)
      */
     public static int search(RobotType buildingType) throws GameActionException {
-        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int length = Common.rc.readBroadcast(BASE_CHANNEL);
         int typeOrdinal = buildingType.ordinal();
         //Search for building type
         int index = -1;
         for(int idx=0; idx<length; idx++) {
             int channel = BASE_CHANNEL+1+idx;
-            int value = RobotPlayer.rc.readBroadcast(channel);
+            int value = Common.rc.readBroadcast(channel);
             if(decodeTypeOrdinal(value) == typeOrdinal) {
                 return idx;
             }
@@ -263,7 +263,7 @@ public class BuildOrder {
     public static void set(int index, RobotType buildingType, int id) throws GameActionException {
         int channel = BASE_CHANNEL+1+index;
         int value = encode(buildingType.ordinal(),id);
-        RobotPlayer.rc.broadcast(channel,value);
+        Common.rc.broadcast(channel,value);
     }
     
     /**
@@ -275,7 +275,7 @@ public class BuildOrder {
     public static void set(int index, int buildingTypeOrdinal, int id) throws GameActionException {
         int channel = BASE_CHANNEL+1+index;
         int value = encode(buildingTypeOrdinal,id);
-        RobotPlayer.rc.broadcast(channel,value);
+        Common.rc.broadcast(channel,value);
     }
     
     /**
@@ -283,7 +283,7 @@ public class BuildOrder {
      * @return Length of build order.
      */
     public static int size() throws GameActionException {
-        return RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        return Common.rc.readBroadcast(BASE_CHANNEL);
     }
     
     
@@ -300,7 +300,7 @@ public class BuildOrder {
      * @throws GameActionException
      */
     public static int doIHaveToBuildABuilding() throws GameActionException {
-        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int length = Common.rc.readBroadcast(BASE_CHANNEL);
         for(int idx=0; idx<length; idx++) {
             int value = get(idx);
             //Check claimed job and unexpired timestamp
@@ -324,7 +324,7 @@ public class BuildOrder {
     public static void IAmTheBuilding(int index) throws GameActionException {
         int value = get(index);
         int buildingTypeOrdinal = decodeTypeOrdinal(value);
-        set(index,buildingTypeOrdinal,RobotPlayer.rc.getID());
+        set(index,buildingTypeOrdinal,Common.rc.getID());
     }
     
     /**
@@ -346,7 +346,7 @@ public class BuildOrder {
      */
     public static int AmIOnBuildOrder(int id0) throws GameActionException {
         //Search for index with matching ID
-        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int length = Common.rc.readBroadcast(BASE_CHANNEL);
         for(int idx=0; idx<length; idx++) {
             int value = get(idx);
             int id = decodeID(value);
@@ -363,7 +363,7 @@ public class BuildOrder {
      * Prints the build order.
      */
     public static void print() throws GameActionException {
-        int length = RobotPlayer.rc.readBroadcast(BASE_CHANNEL);
+        int length = Common.rc.readBroadcast(BASE_CHANNEL);
         for(int idx=0; idx<length; idx++) {
             int value = get(idx);
             RobotType buildingType = RobotType.values()[decodeTypeOrdinal(value)];

@@ -6,7 +6,7 @@ import battlecode.common.*;
 public class Soldier extends MovableUnit {
     
     public static SoldierState state = SoldierState.ATTACK_MOVE;
-    private static MapLocation moveTargetLocation = RobotPlayer.HQLocation;
+    private static MapLocation moveTargetLocation = Common.HQLocation;
     
     private static SoldierState oldStateBeforeJoinGroupTriggered;
     
@@ -97,8 +97,8 @@ public class Soldier extends MovableUnit {
      */
     public static boolean locationToWaypointHasHighDensity() {
         final int distanceSquaredToWaypoint = myLocation.distanceSquaredTo(SoldierGroup.waypointLocation);
-        return RobotPlayer.rc.senseNearbyRobots(SoldierGroup.waypointLocation,
-                distanceSquaredToWaypoint, RobotPlayer.myTeam).length > 0.8*distanceSquaredToWaypoint;
+        return Common.rc.senseNearbyRobots(SoldierGroup.waypointLocation,
+                distanceSquaredToWaypoint, Common.myTeam).length > 0.8*distanceSquaredToWaypoint;
     }
     
     /**
@@ -107,8 +107,8 @@ public class Soldier extends MovableUnit {
      * @return
      */
     public static boolean isGroupDispersed() {
-        return RobotPlayer.rc.senseNearbyRobots(SoldierGroup.groupCenter,
-                SoldierGroup.groupSize, RobotPlayer.myTeam).length < 0.8*SoldierGroup.groupSize;
+        return Common.rc.senseNearbyRobots(SoldierGroup.groupCenter,
+                SoldierGroup.groupSize, Common.myTeam).length < 0.8*SoldierGroup.groupSize;
     }
     
     /**

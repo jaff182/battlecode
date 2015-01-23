@@ -102,7 +102,7 @@ public class Drone extends MovableUnit {
         switch (droneState) {
         case UNSWARM:
             /**
-            if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
+            if (rc.senseNearbyRobots(sightRange, Common.myTeam).length >= numberInSwarm) {
                 // Switches to swarm state when >4 friendly units within sensing radius.
                 droneState = DroneState.SWARM;
             } else 
@@ -114,7 +114,7 @@ public class Drone extends MovableUnit {
             break;
         /**
         case SWARM:
-            if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length < numberInSwarm) {
+            if (rc.senseNearbyRobots(sightRange, Common.myTeam).length < numberInSwarm) {
                 // switch to unswarm state when <5 friendly units within sensing radius.
                 droneState = DroneState.UNSWARM;
             }
@@ -130,7 +130,7 @@ public class Drone extends MovableUnit {
             break;
         case RETREAT:
             /**
-            if (rc.senseNearbyRobots(sightRange, RobotPlayer.myTeam).length >= numberInSwarm) {
+            if (rc.senseNearbyRobots(sightRange, Common.myTeam).length >= numberInSwarm) {
                 // switch to swarm state when enough friendly units in range
                 droneState = DroneState.SWARM;
             } else 

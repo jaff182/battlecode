@@ -2,7 +2,7 @@ package launcherBot.Utility;
 
 import launcherBot.Channels;
 import launcherBot.Miner;
-import launcherBot.RobotPlayer;
+import launcherBot.Common;
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotType;
@@ -62,8 +62,8 @@ public class MinerEffectiveness {
             // odd rounds write to low
             channel = LOW_CHANNEL;
         }
-        final int count = RobotPlayer.rc.readBroadcast(channel);
-        RobotPlayer.rc.broadcast(channel, count + 1);
+        final int count = Common.rc.readBroadcast(channel);
+        Common.rc.broadcast(channel, count + 1);
     }
     
     /**
@@ -82,7 +82,7 @@ public class MinerEffectiveness {
             // odd rounds read from high
             channel = HIGH_CHANNEL;
         }
-        return RobotPlayer.rc.readBroadcast(channel);
+        return Common.rc.readBroadcast(channel);
     }
     
     /**
@@ -100,7 +100,7 @@ public class MinerEffectiveness {
             // odd rounds reset low
             relBaseChannel = LOW_CHANNEL;
         }
-        RobotPlayer.rc.broadcast(relBaseChannel, 0);
+        Common.rc.broadcast(relBaseChannel, 0);
     }
     
     
@@ -119,8 +119,8 @@ public class MinerEffectiveness {
         if(Clock.getRoundNum()%MEASUREMENT_PERIOD == 0) {
             //Update mean effectiveness and broadcast value, reset sum
             mean = sum/MEASUREMENT_PERIOD;
-            RobotPlayer.rc.setIndicatorString(1,"Effectiveness is "+mean);
-            RobotPlayer.rc.broadcast(SCORE_CHANNEL,(int)(100*mean));
+            Common.rc.setIndicatorString(1,"Effectiveness is "+mean);
+            Common.rc.broadcast(SCORE_CHANNEL,(int)(100*mean));
             sum = 0;
         }
     }

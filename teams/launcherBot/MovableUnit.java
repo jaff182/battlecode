@@ -2,7 +2,7 @@ package launcherBot;
 import launcherBot.Utility.*;
 import battlecode.common.*;
 
-public class MovableUnit extends RobotPlayer {
+public class MovableUnit extends Common {
     
     
     // Parameters ===========================================================
@@ -17,7 +17,7 @@ public class MovableUnit extends RobotPlayer {
     public static MapLocation[] previousTowerLocations = enemyTowers;
     
     // TODO: be careful with using this variable - what does "target" mean? should this be in its own class
-    public static MapLocation target = RobotPlayer.enemyHQLocation; //attack target 
+    public static MapLocation target = Common.enemyHQLocation; //attack target 
     public static int numberOfEnemiesInSight = 0;
     public static RobotInfo[] enemiesInSight;
     public static int indexInWaypoints = 0;
@@ -164,7 +164,7 @@ public class MovableUnit extends RobotPlayer {
                 if (Math.abs(inSightOfHQ.x - enemyHQLocation.x) < 7 && Math.abs(inSightOfHQ.y - enemyHQLocation.y) < 7) {
                     Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
                 } else {
-                    if (RobotPlayer.isInSplashRegion(inSightOfHQ, enemyHQLocation)) {
+                    if (Common.isInSplashRegion(inSightOfHQ, enemyHQLocation)) {
                         Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
                     }
                 }

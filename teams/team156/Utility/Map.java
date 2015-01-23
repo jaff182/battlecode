@@ -73,7 +73,7 @@ public class Map {
      * @return 2nd internal map index of reflected position
      */
     public static int locationToReflectedMapXIndex(int locX) {
-        //Same as return (3*ALLOCATED_WIDTH/2+RobotPlayer.HQLocation.x+RobotPlayer.enemyHQLocation.x-locX-mapx0)%ALLOCATED_WIDTH;
+        //Same as return (3*ALLOCATED_WIDTH/2+Common.HQLocation.x+Common.enemyHQLocation.x-locX-mapx0)%ALLOCATED_WIDTH;
         return (195+RobotPlayer.HQLocation.x+RobotPlayer.enemyHQLocation.x-locX-mapx0)%130;
     }
     
@@ -84,7 +84,7 @@ public class Map {
      * @return 1st internal map index of reflected position
      */
     public static int locationToReflectedMapYIndex(int locY) {
-        //Same as return (3*ALLOCATED_HEIGHT/2+RobotPlayer.HQLocation.y+RobotPlayer.enemyHQLocation.y-locY-mapy0)%ALLOCATED_HEIGHT;
+        //Same as return (3*ALLOCATED_HEIGHT/2+Common.HQLocation.y+Common.enemyHQLocation.y-locY-mapy0)%ALLOCATED_HEIGHT;
         return (195+RobotPlayer.HQLocation.y+RobotPlayer.enemyHQLocation.y-locY-mapy0)%130;
     }
     

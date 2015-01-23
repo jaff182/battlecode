@@ -40,7 +40,7 @@ public class AttackingUnit2 extends MovableUnit{
         init();
         while(true) {
             loop();
-            RobotPlayer.rc.yield(); //Yield the round
+            Common.rc.yield(); //Yield the round
         }
     }
     
@@ -48,8 +48,8 @@ public class AttackingUnit2 extends MovableUnit{
      * Code to init robot goes here.
      */
     private static void init() {
-        advanceLocation = RobotPlayer.enemyHQLocation;
-        retreatLocation = RobotPlayer.HQLocation;
+        advanceLocation = Common.enemyHQLocation;
+        retreatLocation = Common.HQLocation;
         state = MovableUnitState.ADVANCING;
         initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
     }
@@ -59,7 +59,7 @@ public class AttackingUnit2 extends MovableUnit{
      * @throws GameActionException 
      */
     private static void loop() throws GameActionException {
-        RobotController rc = RobotPlayer.rc; // bring rc into local scope
+        RobotController rc = Common.rc; // bring rc into local scope
         
         double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25));
         // State transitions
@@ -67,7 +67,7 @@ public class AttackingUnit2 extends MovableUnit{
             state = MovableUnitState.RETREATING;
         } else {
             RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30,
-                    RobotPlayer.enemyTeam);
+                    Common.enemyTeam);
             if (nearbyEnemies.length != 0) {
                 RobotInfo nearestEnemy = null;
                 int nearestEnemyDistance = Integer.MAX_VALUE;
@@ -165,7 +165,7 @@ public class AttackingUnit2 extends MovableUnit{
         for (int i = 0; i < robots.length; ++i) {
             final RobotInfo robot = robots[i];
             if (!robot.type.isBuilding) {
-                if (robot.team == RobotPlayer.myTeam) {
+                if (robot.team == Common.myTeam) {
                     yourHP += robot.health;
                     yourDamageDealtPerUnitTime += robot.type.attackPower
                             / robot.type.attackDelay;

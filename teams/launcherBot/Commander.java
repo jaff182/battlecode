@@ -18,7 +18,7 @@ public class Commander extends MovableUnit{
         init();
         while(true) {
             loop();
-            RobotPlayer.rc.yield(); //Yield the round
+            Common.rc.yield(); //Yield the round
         }
     }
     
@@ -26,8 +26,8 @@ public class Commander extends MovableUnit{
      * Code to init robot goes here.
      */
     private static void init() {
-        advanceLocation = RobotPlayer.enemyHQLocation;
-        retreatLocation = RobotPlayer.HQLocation;
+        advanceLocation = Common.enemyHQLocation;
+        retreatLocation = Common.HQLocation;
         state = MovableUnitState.ADVANCING;
         initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
     }
@@ -37,14 +37,14 @@ public class Commander extends MovableUnit{
      * @throws GameActionException 
      */
     private static void loop() throws GameActionException {
-        RobotController rc = RobotPlayer.rc; // bring rc into local scope
+        RobotController rc = Common.rc; // bring rc into local scope
         updateMyLocation();
         
         // State transitions
         if (isDisadvantaged()) {
             state = MovableUnitState.RETREATING;
         } else {
-            if (rc.senseNearbyRobots(30, RobotPlayer.enemyTeam).length > 0) {
+            if (rc.senseNearbyRobots(30, Common.enemyTeam).length > 0) {
                 setAttackTargetToNearestEnemy();
                 state = MovableUnitState.ATTACKING_UNIT;
             } else {
@@ -111,7 +111,7 @@ public class Commander extends MovableUnit{
         for (int i = 0; i < robots.length; ++i) {
             final RobotInfo robot = robots[i];
             if (!robot.type.isBuilding) {
-                if (robot.team == RobotPlayer.myTeam) {
+                if (robot.team == Common.myTeam) {
                     yourHP += robot.health;
                     yourDamageDealtPerUnitTime += robot.type.attackPower
                             / robot.type.attackDelay;
@@ -137,7 +137,7 @@ public class Commander extends MovableUnit{
 
     private static void setAttackTargetToNearestEnemy()
     {
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30, RobotPlayer.enemyTeam);
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30, Common.enemyTeam);
         RobotInfo nearestEnemy = null;
         int nearestEnemyDistance = Integer.MAX_VALUE;
         for (int i=0; i<nearbyEnemies.length; i++) {

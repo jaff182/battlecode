@@ -2,7 +2,7 @@ package team157.Utility;
 
 import java.util.Random;
 
-import team157.RobotPlayer;
+import team157.Common;
 import team157.Channels;
 import battlecode.common.*;
 
@@ -71,8 +71,8 @@ public class Map {
      * @return 2nd internal map index of reflected position
      */
     public static int locationToReflectedMapXIndex(int locX) {
-        //Same as return (3*ALLOCATED_WIDTH/2+RobotPlayer.HQLocation.x+RobotPlayer.enemyHQLocation.x-locX-mapx0)%ALLOCATED_WIDTH;
-        return (195+RobotPlayer.HQLocation.x+RobotPlayer.enemyHQLocation.x-locX-mapx0)%130;
+        //Same as return (3*ALLOCATED_WIDTH/2+Common.HQLocation.x+Common.enemyHQLocation.x-locX-mapx0)%ALLOCATED_WIDTH;
+        return (195+Common.HQLocation.x+Common.enemyHQLocation.x-locX-mapx0)%130;
     }
     
     /**
@@ -82,8 +82,8 @@ public class Map {
      * @return 1st internal map index of reflected position
      */
     public static int locationToReflectedMapYIndex(int locY) {
-        //Same as return (3*ALLOCATED_HEIGHT/2+RobotPlayer.HQLocation.y+RobotPlayer.enemyHQLocation.y-locY-mapy0)%ALLOCATED_HEIGHT;
-        return (195+RobotPlayer.HQLocation.y+RobotPlayer.enemyHQLocation.y-locY-mapy0)%130;
+        //Same as return (3*ALLOCATED_HEIGHT/2+Common.HQLocation.y+Common.enemyHQLocation.y-locY-mapy0)%ALLOCATED_HEIGHT;
+        return (195+Common.HQLocation.y+Common.enemyHQLocation.y-locY-mapy0)%130;
     }
     
     /**
@@ -208,10 +208,10 @@ public class Map {
     public static void setRadioMap(int locX, int locY, int value) throws GameActionException {
         int xidx = locationToMapXIndex(locX);
         int yidx = locationToMapYIndex(locY);
-        RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
+        Common.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
         //if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
         //if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
-        //if(symmetry%4 != 0) RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
+        //if(symmetry%4 != 0) Common.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
     }
     
     
@@ -225,7 +225,7 @@ public class Map {
     public static int getRadioMap(int locX, int locY) throws GameActionException {
         int xidx = locationToMapXIndex(locX);
         int yidx = locationToMapYIndex(locY);
-        return RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx));
+        return Common.rc.readBroadcast(mapIndexToChannel(xidx,yidx));
     }
     
     
@@ -240,12 +240,12 @@ public class Map {
         int xidx = locationToMapXIndex(locX);
         int yidx = locationToMapYIndex(locY);
         map[yidx][xidx] = value;
-        RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
+        Common.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
         //if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
         //if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
         //if(symmetry%4 != 0) {
         //    map[yidx][xidx] = value;
-        //    RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
+        //    Common.rc.broadcast(mapIndexToChannel(xidx,yidx), value);
         //}
     }
     
@@ -280,7 +280,7 @@ public class Map {
     public static void debug_printRadioMap() throws GameActionException {
         for (int yidx=0; yidx<ALLOCATED_HEIGHT; yidx++) {
             for (int xidx=0; xidx<ALLOCATED_WIDTH; xidx++) {
-                switch(RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx))) {
+                switch(Common.rc.readBroadcast(mapIndexToChannel(xidx,yidx))) {
                     case 0: System.out.print("?"); break; //unknown
                     case 1: System.out.print(" "); break; //normal
                     case 2: System.out.print("X"); break; //enemy HQ

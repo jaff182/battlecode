@@ -5,7 +5,7 @@ import java.util.Random;
 import launcherBot.Utility.*;
 import battlecode.common.*;
 
-public class Structure extends RobotPlayer {
+public class Structure extends Common {
     
     //Global Variables ========================================================
     

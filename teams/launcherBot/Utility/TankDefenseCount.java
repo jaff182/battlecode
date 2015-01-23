@@ -1,7 +1,7 @@
 package launcherBot.Utility;
 
 import launcherBot.Channels;
-import launcherBot.RobotPlayer;
+import launcherBot.Common;
 import battlecode.common.*;
 
 
@@ -22,10 +22,10 @@ public class TankDefenseCount {
      * @throws GameActionException
      */
     public static boolean report(int channel) throws GameActionException {
-        if (RobotPlayer.rc.getHealth() > 30) {
-            int channelValue = RobotPlayer.rc.readBroadcast(channel);
+        if (Common.rc.getHealth() > 30) {
+            int channelValue = Common.rc.readBroadcast(channel);
             if (channelValue > 0) {
-                RobotPlayer.rc.broadcast(channel, channelValue - 1);  
+                Common.rc.broadcast(channel, channelValue - 1);  
                 return true;
             } else {
                 return false;
@@ -44,6 +44,6 @@ public class TankDefenseCount {
      * @throws GameActionException 
      */
     public static void reset(int channel, int unitsNeeded) throws GameActionException {
-        RobotPlayer.rc.broadcast(channel, unitsNeeded);
+        Common.rc.broadcast(channel, unitsNeeded);
     }
 }
