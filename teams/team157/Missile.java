@@ -64,7 +64,14 @@ public class Missile {
                         if (rc.isCoreReady()) {
                             rc.move(dir);
                         }
-                     break;
+                    } else if (rc.canMove(dir.rotateLeft())) {
+                        if(rc.isCoreReady()) {
+                            rc.move(dir.rotateLeft());
+                        }
+                    } else if (rc.canMove(dir.rotateRight())) {
+                        if (rc.isCoreReady()) {
+                            rc.move(dir.rotateRight());
+                        }
                     }
                 }
                 

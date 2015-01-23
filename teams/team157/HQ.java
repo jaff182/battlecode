@@ -67,8 +67,8 @@ public class HQ extends Structure {
         updateEnemyInRange(52);//52 includes spashable region
         checkForEnemies();
         
-        /**
-         * For testing launcher bot
+        
+        // For testing launcher bot
         if(Clock.getRoundNum() == 100) {
             BuildOrder.add(RobotType.HELIPAD);
         }
@@ -78,6 +78,9 @@ public class HQ extends Structure {
         }
         if (Clock.getRoundNum() == 800) {
             BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
@@ -86,9 +89,9 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
-        **/
         
         
+        /**
         //Building strategy ---------------------------------------------------
         if(Clock.getRoundNum() == 140) {
             BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
@@ -116,7 +119,7 @@ public class HQ extends Structure {
             //BuildOrder.printBuildOrder();
         }
         //---------------------------------------------------------------------
-        
+        **/
         
         //Spawn beavers
         if (hasFewBeavers()) { 

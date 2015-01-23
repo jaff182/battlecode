@@ -284,6 +284,9 @@ public class Launcher extends MovableUnit {
                     }
                 }
                 launchInThreeDir(directions[maxIndex]);
+                if (rc.isCoreReady()) {
+                    retreat();
+                }
                 attackTimeout = baseAttackTimeout;
             } else {
                 // wait if no enemies in sight

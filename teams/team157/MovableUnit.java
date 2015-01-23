@@ -474,10 +474,7 @@ public class MovableUnit extends RobotPlayer {
                     return Direction.NONE;
                 } else {
                     // reset and start over.
-                    pathingState = PathingState.BUGGING;
-                    prohibitedDir = new int[]{noDir, noDir};
-                    goneAround = false;
-                    
+                    bugReset();
                     return Direction.NONE;
                 }
             }
@@ -514,6 +511,15 @@ public class MovableUnit extends RobotPlayer {
             return true;
         }
         return false;
+    }
+    
+    /**
+     * Reset states and variables before starting bug.
+     */
+    public static void bugReset() {
+        pathingState = PathingState.BUGGING;
+        prohibitedDir = new int[]{noDir, noDir};
+        goneAround = false;
     }
 
     
@@ -730,6 +736,7 @@ public class MovableUnit extends RobotPlayer {
 
     /**
      * Set internal map around enemy tower as pathable if tower dies.
+     * Must manually update previousTowerLocations at the end of every round to use this.
      */
     public static void setInternalMapAroundTowers() {
         enemyTowers = rc.senseEnemyTowerLocations();
