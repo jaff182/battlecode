@@ -41,7 +41,6 @@ public class HQ extends Structure {
         // Init LastAttackedLocations
         team157.Utility.LastAttackedLocationsReport.HQinit();
         team157.Utility.LastAttackedLocationsReport.everyRobotInit();
-        //team157.Utility.BeaversBuildRequest.HQinit();
         
         // Testing new build system
         // Add 2 Helipads on round 100, 1 Barracks on round 500
@@ -58,7 +57,7 @@ public class HQ extends Structure {
     private static void loop() throws GameActionException {
         // Clean up robot count data for this round -- do not remove, will break invariants
         RobotCount.reset();
-        MinerEffectivenessCount.reset();
+        MinerEffectiveness.reset();
         numberOfTowers = rc.senseTowerLocations().length;
         
         // Code that runs in every robot (including buildings, excepting missiles)
@@ -116,10 +115,9 @@ public class HQ extends Structure {
 
             //BuildOrder.printBuildOrder();
         }
-        
-        
         //---------------------------------------------------------------------
-
+        
+        
         //Spawn beavers
         if (hasFewBeavers()) { 
             trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
