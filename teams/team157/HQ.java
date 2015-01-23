@@ -68,6 +68,27 @@ public class HQ extends Structure {
         updateEnemyInRange(52);//52 includes spashable region
         checkForEnemies();
         
+        /**
+         * For testing launcher bot
+        if(Clock.getRoundNum() == 100) {
+            BuildOrder.add(RobotType.HELIPAD);
+        }
+        if(Clock.getRoundNum() == 225) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        }
+        if (Clock.getRoundNum() == 800) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        }
+        if (Clock.getRoundNum() == 1200) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        }
+        **/
+        
         
         //Building strategy ---------------------------------------------------
         if(Clock.getRoundNum() == 140) {
@@ -95,6 +116,7 @@ public class HQ extends Structure {
 
             //BuildOrder.printBuildOrder();
         }
+        
         
         //---------------------------------------------------------------------
 

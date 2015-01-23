@@ -46,6 +46,15 @@ public class RobotPlayer {
         
         //my properties
         myType = rc.getType();
+        if(myType == RobotType.MISSILE){
+            try {
+                // need to do this or missiles will hit bytecode limit
+                Missile.start();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
         sightRange = myType.sensorRadiusSquared;
         attackRange = myType.attackRadiusSquared;
         

@@ -14,8 +14,10 @@ public class MovableUnit extends RobotPlayer {
     public static final int HQ2towerAttackRadius = GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED;
     public static final int HQ5towerAttackRadius = 54;//Math.pow(Math.sqrt(GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED)+Math.sqrt(GameConstants.HQ_BUFFED_SPLASH_RADIUS_SQUARED),2);
     public static int HQAttackRadius = HQ2towerAttackRadius;
+    public static MapLocation[] previousTowerLocations = enemyTowers;
+    
     // TODO: be careful with using this variable - what does "target" mean? should this be in its own class
-    public static MapLocation target = RobotPlayer.enemyHQLocation; //attack target
+    public static MapLocation target = RobotPlayer.enemyHQLocation; //attack target 
     public static int numberOfEnemiesInSight = 0;
     public static RobotInfo[] enemiesInSight;
     public static int indexInWaypoints = 0;
@@ -720,6 +722,43 @@ public class MovableUnit extends RobotPlayer {
             return true;
         }
         return false;
+    }
+    
+    
+    
+    
+
+    /**
+     * Set internal map around enemy tower as pathable if tower dies.
+     */
+    public static void setInternalMapAroundTowers() {
+        enemyTowers = rc.senseEnemyTowerLocations();
+        int towersDead = previousTowerLocations.length - enemyTowers.length;
+        if (towersDead > 0) {
+            for (MapLocation tower: previousTowerLocations) {
+                if (towersDead <= 0) {
+                    break;
+                }
+                boolean towerAlive = false;
+                for (MapLocation otherTower : enemyTowers) {
+                    if (tower == otherTower) {
+                        towerAlive = true;
+                        break;
+                    }
+                }
+                if (!towerAlive) {
+                    int towerID = Map.getInternalMap(tower);
+                    // set area around tower as pathable
+                    for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(tower, towerAttackRadius)) {          
+                        if (Map.getInternalMap(inSightOfTarget) == towerID) {
+                            Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
+                        }
+                    }
+                    towersDead--;
+                }
+            }
+            previousTowerLocations = enemyTowers;
+        }
     }
     
     //Move and sense ==========================================================
