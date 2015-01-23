@@ -41,7 +41,6 @@ public class HQ extends Structure {
         // Init LastAttackedLocations
         team157.Utility.LastAttackedLocationsReport.HQinit();
         team157.Utility.LastAttackedLocationsReport.everyRobotInit();
-        //team157.Utility.BeaversBuildRequest.HQinit();
         
         // Testing new build system
         // Add 2 Helipads on round 100, 1 Barracks on round 500

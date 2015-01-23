@@ -289,63 +289,6 @@ public class Beaver extends MiningUnit {
 
     //Other methods ===========================================================
     
-    private static void idle() throws GameActionException {
-        long request = Request.checkForRequest(myLocation.x, myLocation.y, RobotPlayer.myType.ordinal());
-        if (request != 0)
-               scoreRequest(request);
-    }
-    
-    private static void checkMailbox() throws GameActionException {
-        switch (Request.workerState) {
-            case IDLE: idle(); break;
-            case ON_JOB: break;
-            case REQUESTING_JOB:
-                if (Request.isJobClaimSuccessful()) {
-                    handleRequest(Request.claimRequest);
-                }
-                break;
-            default: break;
-        }
-    }
-    
-    
-    /**
-     * Check robot suitability for the request and score
-     * @param request
-     * @throws GameActionException
-     */
-    private static void scoreRequest(long request) throws GameActionException {
-        switch (Request.claimJobType) {
-        // TODO: Actual scoring
-        default:
-//            System.out.println("Beaver atttempts to claim job");
-            Request.attemptToClaimJob(0);
-        }
-    }
-
-    /**
-     * Handles a request we're committed to, and updates internal variables as it 
-     * does so.
-     * @throws GameActionException 
-     */
-    private static void handleRequest(long request) throws GameActionException {
-//        System.out.println("Beaver atttempts to handle job  " + Request.claimJobType);
-//        System.out.println(Request.claimJobType & Request.JobType.BUILD_BUILDING_MASK);
-        switch (Request.claimJobType) {
-        case (Request.JobType.MOVE):
-            // Immediately override
-            // TODO: unpack x, y target coordinates
-            robotState = RobotState.ATTACK_MOVE;
-            break;
-        default:
-            if ((Request.claimJobType & Request.JobType.BUILD_BUILDING_MASK) != 0) {
-//                System.out.println("Beaver sets buildingtype to  " + Request.getRobotType(request));
-                buildingType = RobotPlayer.robotTypes[Request.getRobotType(request)];
-            }
-            break;
-        }
-    }
-    
     // Vigilance: stops everything and attacks when enemies are in attack range.
     private static void checkForEnemies() throws GameActionException {
         while (enemies.length > 0) {
