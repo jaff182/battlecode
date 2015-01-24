@@ -771,36 +771,40 @@ public class MovableUnit extends Common {
     public static void senseWhenMove(MapLocation robotLoc, Direction dir) throws GameActionException {
         int i = 0;
         if(dir.ordinal()%2 == 0) {
-            while(i < 9 && Clock.getBytecodesLeft() > 400) {
+            while(i < 9 && Clock.getBytecodesLeft() > 450) {
                 switch (dir) {
                     // Wx = Ny, Ey = Nx, Sx = Nx, Ex = Sy, Wy = Nx
                     case NORTH:
-                        Map.checkPathable(robotLoc.add(senseNx[i], senseNy[i])); break;
+                        Map.checkPathableOrSense(robotLoc.add(senseNx[i], senseNy[i]));
+                        break;
                     case EAST:
-                        Map.checkPathable(robotLoc.add(senseSy[i], senseNx[i])); break;
+                        Map.checkPathableOrSense(robotLoc.add(senseSy[i], senseNx[i]));
+                        break;
                     case SOUTH:
-                        Map.checkPathable(robotLoc.add(senseNx[i], senseSy[i])); break;
+                        Map.checkPathableOrSense(robotLoc.add(senseNx[i], senseSy[i]));
+                        break;
                     case WEST:
-                        Map.checkPathable(robotLoc.add(senseNy[i], senseNx[i])); break;
+                        Map.checkPathableOrSense(robotLoc.add(senseNy[i], senseNx[i]));
+                        break;
                     default: break;
                 }
                 i++;
             }
         } else {
-            while(i < 13 && Clock.getBytecodesLeft() > 400) {
+            while(i < 13 && Clock.getBytecodesLeft() > 450) {
                 switch (dir) {
                     // NEx = SEy, SEx = SWy, SWx = NWy, NEy = NWx
                     case NORTH_WEST:
-                        Map.checkPathable(robotLoc.add(senseNWx[i], senseNWy[i]));
+                        Map.checkPathableOrSense(robotLoc.add(senseNWx[i], senseNWy[i]));
                         break;
                     case NORTH_EAST:
-                        Map.checkPathable(robotLoc.add(senseSEy[i], senseNWx[i]));
+                        Map.checkPathableOrSense(robotLoc.add(senseSEy[i], senseNWx[i]));
                         break;
                     case SOUTH_EAST:
-                        Map.checkPathable(robotLoc.add(senseSEx[i], senseSEy[i]));
+                        Map.checkPathableOrSense(robotLoc.add(senseSEx[i], senseSEy[i]));
                         break;
                     case SOUTH_WEST:
-                        Map.checkPathable(robotLoc.add(senseNWy[i], senseSEx[i]));
+                        Map.checkPathableOrSense(robotLoc.add(senseNWy[i], senseSEx[i]));
                         break;
                     default: break;
                 }

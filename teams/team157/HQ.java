@@ -156,7 +156,7 @@ public class HQ extends Structure {
         dispenseSupply(suppliabilityMultiplier);
         
         //Debug
-        //if(Clock.getRoundNum() == 800) Map.printRadio();
+        //if(Clock.getRoundNum() == 700) Map.printRadio();
         //if(Clock.getRoundNum() == 1500) BuildOrder.print();
 
     }

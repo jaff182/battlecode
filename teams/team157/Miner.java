@@ -63,7 +63,7 @@ public class Miner extends MiningUnit {
         //Sense map while exploring
         //Low bytecode priority
         //Leave this at end of round to reduce bytecode usage
-        if(previousDirection != Direction.NONE) {
+        if(previousPreviousDirection != Direction.NONE) {
             senseWhenMove(myLocation, previousPreviousDirection);
         }
         previousPreviousDirection = previousDirection;
