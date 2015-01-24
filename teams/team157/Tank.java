@@ -78,7 +78,8 @@ public class Tank extends MovableUnit {
      * @throws GameActionException 
      */
     private static void tankSwitchState() throws GameActionException {
-        macroScoringAdvantage = AttackingUnit.macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25));
+        // the second parameter should be either 10 or 25
+        macroScoringAdvantage = AttackingUnit.macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25), 25);
         // State transitions
         if (macroScoringAdvantage<2) {
             tankState = TankState.RETREAT;

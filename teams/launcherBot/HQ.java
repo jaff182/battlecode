@@ -76,7 +76,7 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.AEROSPACELAB);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
-        if (Clock.getRoundNum() == 800) {
+        if (Clock.getRoundNum() == 400) {
             BuildOrder.add(RobotType.AEROSPACELAB);
             BuildOrder.add(RobotType.AEROSPACELAB);
             BuildOrder.add(RobotType.SUPPLYDEPOT);

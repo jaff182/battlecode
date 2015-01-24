@@ -84,7 +84,7 @@ public class Common extends RobotPlayer {
                 case BARRACKS: Barracks.start(); break;
                 case BASHER: Basher.start(); break;
                 case BEAVER: Beaver.start(); break;
-                case COMMANDER: AttackingUnit.start(); break;
+                case COMMANDER: Commander.start(); break;
                 case COMPUTER: Computer.start(); break;
                 case DRONE: Drone.start(); break;
                 case HANDWASHSTATION: HandwashStation.start(); break;
@@ -94,7 +94,7 @@ public class Common extends RobotPlayer {
                 case MINER: Miner.start(); break;
                 case MINERFACTORY: MinerFactory.start(); break;
                 case MISSILE: Missile.start(); break;
-                case SOLDIER: Soldier.start(); break;
+                case SOLDIER: AttackingUnit.start(10, 1.3); break;
                 case SUPPLYDEPOT: SupplyDepot.start(); break;
                 case TANK: AttackingUnit2.start(); break;
                 case TANKFACTORY: TankFactory.start(); break;

@@ -30,15 +30,14 @@ public class Drone extends MovableUnit {
         
         
 
-        Waypoints.refreshLocalCache();
-        target = Waypoints.waypoints[0];
+        target = enemyHQLocation;
     }
     
     
     private static void loop() throws GameActionException {
         updateMyLocation();
 
-        waypointTimeout--;
+        //waypointTimeout--;
         // rc.setIndicatorString(1, "Waypoint timeout " + waypointTimeout + " " + indexInWaypoints + " " + Waypoints.numberOfWaypoints
         //        + " x: " + target.x + "y: " + target.y);
         
@@ -53,7 +52,8 @@ public class Drone extends MovableUnit {
         numberOfEnemiesInSight = enemiesInSight.length;
         enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
 
-        setTargetToWayPoints();
+        // TODO: fix waypoint bug
+        //setTargetToWayPoints();
         
         // switch state based on number of enemies in sight
         droneSwitchState();

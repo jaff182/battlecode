@@ -13,7 +13,8 @@ public class Launcher extends MovableUnit {
     
     private static MapLocation gatherLocation;
     private static MapLocation surroundLocation;
-    private static int numberInSwarm = 2;
+    private static MapLocation defendLocation = HQLocation;
+    private static int numberInSwarm = 5;
     private static LauncherState state;
     private static LauncherState previousState;
     private static int gatherRange = 24;
@@ -23,6 +24,8 @@ public class Launcher extends MovableUnit {
     private static int retreatTimeout = baseRetreatTimeout;
     private static int[] launchOffsets = new int[]{0,1,-1};
     private static int numberOfEnemyTowers;
+    private static MapLocation enemyTarget; //used only in defend state
+    private static int defendRadius = distanceBetweenHQs/4;
 
     
     
@@ -32,7 +35,8 @@ public class Launcher extends MovableUnit {
         ADVANCE, // advance to enemy location
         SURROUND, // only for surrounding towers/hqs and nothing else
         GATHER, // wait until there are enough reinforcements
-        RETREAT // wait or retreat if no missiles
+        RETREAT, // wait or retreat if no missiles
+        DEFEND //defend hq or towers
     } ;
     
     
@@ -51,13 +55,25 @@ public class Launcher extends MovableUnit {
         missileCount = 0;
         numberOfEnemyTowers = enemyTowers.length;
         
+        
+        if (Clock.getRoundNum() < 800 && rand.nextInt(2) == 0) {
+            // set some launchers to protect hq
+            state = LauncherState.DEFEND;
+            previousState = state;
+        } else 
+        
         if (myTowers.length > 0) {
+            // gather at nearest tower to enemy hq
             gatherLocation = getClosestFriendlyTower(enemyHQLocation);
+            state = LauncherState.GATHER;
+            previousState = state;
         } else {
+            //gather halfway between hqs
             gatherLocation = HQLocation.add(HQLocation.directionTo(enemyHQLocation), distanceBetweenHQs/2);
+            state = LauncherState.GATHER; 
+            previousState = state;
         }
-        state = LauncherState.GATHER; // start by gathering near own hq
-        previousState = state;
+        
         
 
     }
@@ -65,7 +81,6 @@ public class Launcher extends MovableUnit {
     
     private static void loop() throws GameActionException {
         // Code that runs in every robot (including buildings, excepting missiles)
-        // TODO: add code to move launchers
         sharedLoopCode();
         
         myLocation = rc.getLocation();
@@ -145,6 +160,26 @@ public class Launcher extends MovableUnit {
                 setNextSurroundTarget();
             }
             break;
+        case DEFEND:
+            if (numberOfEnemiesInSight > 0) {
+                if (missileCount == 0 ) {
+                    state = LauncherState.RETREAT;
+                    previousState = LauncherState.DEFEND;
+                    retreatTimeout = baseRetreatTimeout;
+                } else {
+                    state = LauncherState.ATTACK;
+                    previousState = LauncherState.DEFEND;
+                    attackTimeout = baseAttackTimeout;
+                }
+            } else {
+                RobotInfo[] enemiesAroundDefendLocation = rc.senseNearbyRobots(defendLocation, defendRadius, enemyTeam);
+                if (enemiesAroundDefendLocation.length!=0) {
+                    enemyTarget = getNearestEnemy(enemiesAroundDefendLocation).location;
+                } else {
+                    enemyTarget = null;
+                }
+            }
+            break;
         case SURROUND:
             if (numberOfEnemiesInSight > 0) {
                 if (missileCount == 0 ) {
@@ -217,28 +252,8 @@ public class Launcher extends MovableUnit {
         case ATTACK:
             // basic attacking micro by spawning missile in direction with most dangerous enemies and least friendly units
             if (numberOfEnemiesInSight != 0) {
-                RobotInfo[] unitsInSight = rc.senseNearbyRobots(24);
-                int[] dangerInDir = new int[8];
-                for (RobotInfo info: unitsInSight) {
-                    if (info.team == myTeam) {
-                        dangerInDir[myLocation.directionTo(info.location).ordinal()]-= dangerRating[info.type.ordinal()];
-                    } else {
-                        dangerInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
-                    }
-                    
-                }
-                int maxDirScore = (-1)*Integer.MAX_VALUE;
-                int dirScore = 0;
-                int maxIndex = 0;
-                for (int i = 0; i < 8; i++) {
-                    dirScore = dangerInDir[i] + dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8] + dangerInDir[(i+6)%8] + dangerInDir[(i+2)%8];
-                    if (dirScore >= maxDirScore && rc.canLaunch(directions[i])) {
-                            maxDirScore = dirScore;
-                            maxIndex = i;         
-                    }
-                }
-                launchInThreeDir(directions[maxIndex]);
-                while (rc.isCoreReady()) {
+                launcherAttack();
+                if (rc.isCoreReady()) {
                     retreat();
                 }
                 attackTimeout = baseAttackTimeout;
@@ -254,6 +269,16 @@ public class Launcher extends MovableUnit {
             int distanceToGatherLoc = myLocation.distanceSquaredTo(gatherLocation);
             if (distanceToGatherLoc > 2) {
                 bug(gatherLocation);
+            }
+            break;
+        case DEFEND:
+            if (enemyTarget!=null) {
+                bug(enemyTarget);
+            } else {
+                int distanceToDefendLoc = myLocation.distanceSquaredTo(defendLocation);
+                if (distanceToDefendLoc > 36) {
+                    bug(defendLocation);
+                }
             }
             break;
         case SURROUND:
@@ -273,12 +298,13 @@ public class Launcher extends MovableUnit {
             break;
         case RETREAT:
             if (numberOfEnemiesInSight!= 0) {
-                while (rc.isCoreReady()) {
+                launcherAttack();
+                if (rc.isCoreReady()) {
                     retreat();
                 }
             } else {
                 if (retreatTimeout > baseRetreatTimeout - 2) {
-                    while (rc.isCoreReady()) {
+                    if (rc.isCoreReady()) {
                         retreat();
                     }
                 }
@@ -294,6 +320,43 @@ public class Launcher extends MovableUnit {
     
     // Attacking ==================================================================
 
+    
+    /**
+     * Launch missiles in direction with most enemies and least friends.
+     * Use only if number of enemies in sight is nonzero.
+     * @throws GameActionException
+     */
+    public static void launcherAttack() throws GameActionException {
+        RobotInfo[] unitsInSight = rc.senseNearbyRobots(24);
+        int[] dangerInDir = new int[8];
+        for (RobotInfo info: unitsInSight) {
+            if (info.team == myTeam) {
+                dangerInDir[myLocation.directionTo(info.location).ordinal()]-= dangerRating[info.type.ordinal()];
+            } else {
+                dangerInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
+            }
+            
+        }
+        int maxDirScore = (-1)*Integer.MAX_VALUE;
+        int dirScore = 0;
+        int maxIndex = 0;
+        for (int i = 0; i < 8; i++) {
+            dirScore = dangerInDir[i] + dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8] + dangerInDir[(i+6)%8] + dangerInDir[(i+2)%8];
+            if (dirScore > maxDirScore) {
+                if (rc.canLaunch(directions[i])) {
+                    maxDirScore = dirScore;
+                    maxIndex = i;  
+                }
+            }
+        }
+        if (maxDirScore > 0) {
+            launchInThreeDir(directions[maxIndex]);
+        }
+        
+        
+    }
+    
+    
     /**
      * Launches three missiles around input direction
      * @param dir
@@ -325,6 +388,25 @@ public class Launcher extends MovableUnit {
                 break;
             }
         }
+    }
+    
+    
+    
+    /**
+     * Returns nearest enemy or null if there are no nearby enemies
+     * @return
+     */
+    public static RobotInfo getNearestEnemy(RobotInfo[] enemyInfo) {
+        RobotInfo nearestEnemy = null;
+        int nearestEnemyDistance = Integer.MAX_VALUE;
+        for (int i=0; i<enemyInfo.length; i++) {
+            int distance = enemyInfo[i].location.distanceSquaredTo(myLocation);
+            if (nearestEnemyDistance > distance) {
+                nearestEnemy = enemyInfo[i];
+                nearestEnemyDistance = distance;
+            }
+        }
+        return nearestEnemy;
     }
     
     //Pathing  ===================================================================
