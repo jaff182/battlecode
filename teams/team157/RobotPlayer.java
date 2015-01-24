@@ -3,8 +3,6 @@ package team157;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
-
-
 public class RobotPlayer {
     
     //Global variables ========================================================
@@ -18,24 +16,16 @@ public class RobotPlayer {
         
         //Global inits --------------------------------------------------------
         rc = RC; //set robotcontroller
-        //my properties
         myType = rc.getType();
-        if(myType == RobotType.MISSILE){
-            try {
-                // need to do this or missiles will hit bytecode limit
-                Missile.start();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        } 
         
         try {
-            Common.commonInit();
+            //Branch depending on whether you are a missile
+            //need to do this or missiles will hit bytecode limit
+            if(myType == RobotType.MISSILE) Missile.start();
+            else Common.commonInit();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
     
- 
 }

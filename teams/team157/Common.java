@@ -10,11 +10,9 @@ public class Common extends RobotPlayer {
     //Global variables ========================================================
   
     //Unset Variables
-    public static RobotController rc;
     public static MapLocation HQLocation, enemyHQLocation, myLocation; //locations
     public static MapLocation[] myTowers, enemyTowers; //tower location arrays
     public static Team myTeam, enemyTeam;
-    public static RobotType myType;
     public static int sightRange, attackRange; //ranges
     public static Random rand;
     public static int distanceBetweenHQs;
@@ -41,10 +39,8 @@ public class Common extends RobotPlayer {
     public static void commonInit() throws GameActionException {
         
         //Global inits --------------------------------------------------------
-        rc = RobotPlayer.rc; //set robotcontroller
         rand = new Random(rc.getID()); //seed random number generator
         //my properties
-        myType = rc.getType();
         sightRange = myType.sensorRadiusSquared;
         attackRange = myType.attackRadiusSquared;
         
@@ -61,7 +57,7 @@ public class Common extends RobotPlayer {
         enemyTeam = myTeam.opponent();
         
         try {
-          //Internal map
+            //Internal map
             //This year's implementation randomizes offsets to the x,y coordinates
             //Coordinate offsets at map[60][60]
             Map.mapx0 = (HQLocation.x+enemyHQLocation.x)/2;
@@ -93,7 +89,6 @@ public class Common extends RobotPlayer {
                 case LAUNCHER: Launcher.start(); break;
                 case MINER: Miner.start(); break;
                 case MINERFACTORY: MinerFactory.start(); break;
-                case MISSILE: Missile.start(); break;
                 case SOLDIER: Soldier.start(); break;
                 case SUPPLYDEPOT: SupplyDepot.start(); break;
                 case TANK: AttackingUnit2.start(); break;

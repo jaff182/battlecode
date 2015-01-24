@@ -24,7 +24,7 @@ public class HQ extends Structure {
     }
     
     private static void init() throws GameActionException {
-        rc.setIndicatorString(0,"hello i'm a hq.");
+        //rc.setIndicatorString(0,"hello i'm a hq.");
         // call for tank defense units
         rc.broadcast(tankDefenseChannel, numberOfTanksNeeded);
 
@@ -32,7 +32,7 @@ public class HQ extends Structure {
         Map.setMaps(HQLocation.x,HQLocation.y,3);
         if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
             //rotational symmetry
-            Map.symmetry = 3;//Map.rotationSymmetry;
+            //Map.symmetry = 3;//Map.rotationSymmetry;
             //rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
         }
 
