@@ -55,11 +55,14 @@ public class Launcher extends MovableUnit {
         missileCount = 0;
         numberOfEnemyTowers = enemyTowers.length;
         
-        if (Clock.getRoundNum() < 800 && rand.nextInt(3) == 0) {
+        
+        if (Clock.getRoundNum() < 800 && rand.nextInt(2) == 0) {
             // set some launchers to protect hq
             state = LauncherState.DEFEND;
             previousState = state;
-        } else if (myTowers.length > 0) {
+        } else 
+        
+        if (myTowers.length > 0) {
             // gather at nearest tower to enemy hq
             gatherLocation = getClosestFriendlyTower(enemyHQLocation);
             state = LauncherState.GATHER;

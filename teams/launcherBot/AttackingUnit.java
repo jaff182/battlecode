@@ -1,6 +1,7 @@
 package launcherBot;
-import launcherBot.Utility.*;
+import team157.Utility.*;
 import battlecode.common.*;
+
 
 public class AttackingUnit extends MovableUnit{
     /**
@@ -35,11 +36,46 @@ public class AttackingUnit extends MovableUnit{
     private static MapLocation advanceLocation;
     private static MapLocation retreatLocation;
     
+    
+    // Constants to tweak ========================================
+    /**
+     * Distance (squared) threshold at which friendly units are counted in
+     * whether deciding whether to retreat or advance (and attack).
+     * 
+     * Motivation: friendly units far away are of little help in taking or
+     * giving damage, while enemies can engage at all distances (from the
+     * perspective of individual units)
+     * 
+     * This is the same argument as seen in
+     * {@link #macroScoringOfAdvantageInArea(RobotInfo[], int)}
+     * 
+     * A value to use might be 10.
+     */
+     static int macroScoringFriendlyLocationThreshold;
+
+    /**
+     * The threshold of advantage, as given by the equation in
+     * {@link #macroScoringOfAdvantageInArea}, before the unit will retreat.
+     * 
+     * A greater number here will make the unit retreat even in the face of good
+     * odds.
+     * 
+     * Bias: Enemy units may be invisible beyond sight range, but friendly units
+     * are not. Hence, you might consistently overestimate the advantage in your
+     * area. You might thus want to set this greater than 1.0 to balance for this.
+     * 
+     * Note the caveats about missiles and launchers.
+     */
+     static double advantageBeforeRetreating;
+    
     /**
      * Entry point into robot from external code.
      * @throws GameActionException
      */
-    public static void start() throws GameActionException {
+    public static void start(int macroScoringFriendlyLocationThreshold, double advantageBeforeRetreating) throws GameActionException {
+        AttackingUnit.macroScoringFriendlyLocationThreshold = macroScoringFriendlyLocationThreshold;
+        AttackingUnit.advantageBeforeRetreating = advantageBeforeRetreating;
+
         init();
         while(true) {
             loop();
@@ -62,9 +98,8 @@ public class AttackingUnit extends MovableUnit{
 
     }
 
-    private static void setAttackTargetToNearestEnemy()
+    private static void setAttackTargetToNearestEnemy(RobotInfo[] nearbyEnemies)
     {
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30, Common.enemyTeam);
 
         RobotInfo nearestEnemy = null;
         int nearestEnemyDistance = Integer.MAX_VALUE;
@@ -95,62 +130,65 @@ public class AttackingUnit extends MovableUnit{
             advanceLocation = target;
         }
         
-        double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25));
+        double macroScoringAdvantage = macroScoringOfAdvantageInArea(
+                rc.senseNearbyRobots(25), macroScoringFriendlyLocationThreshold);
 
         // State transitions
-        if (macroScoringAdvantage < 2) {
+        if (macroScoringAdvantage < advantageBeforeRetreating) {
             state = MovableUnitState.RETREATING;
         } else {
-            if (rc.senseNearbyRobots(30, Common.enemyTeam).length != 0) {
-                setAttackTargetToNearestEnemy();
+            RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(30, Common.enemyTeam);
+            if (nearbyEnemies.length != 0) {
+                setAttackTargetToNearestEnemy(nearbyEnemies);
                 state = MovableUnitState.ATTACKING_UNIT;
             } else {
                 state = MovableUnitState.ADVANCING;
             }
         }
-        
+
         rc.setIndicatorString(2, "State: " + state);
         // Action
-        switch (state)
-        {
-            case ADVANCING:
-                if (rc.getType() == RobotType.COMMANDER){
-                    if (rc.hasLearnedSkill(CommanderSkillType.FLASH)
-                            && macroScoringAdvantage > 2.5
-                            && rc.getFlashCooldown() == 0
-                            && rc.getCoreDelay() < 1
-                            && bugDirection(advanceLocation) != myLocation.directionTo(advanceLocation)) {
+        switch (state) {
+        case ADVANCING:
+            if (myType == RobotType.COMMANDER
+                    && rc.hasLearnedSkill(CommanderSkillType.FLASH)
+                    && macroScoringAdvantage > 2.5
+                    && rc.getFlashCooldown() == 0
+                    && rc.getCoreDelay() < 1
+                    && bugDirection(advanceLocation) != myLocation
+                            .directionTo(advanceLocation)) {
 
-                            MapLocation bestFlashLocation = getBestFlashLocation(advanceLocation);
+                MapLocation bestFlashLocation = getBestFlashLocation(advanceLocation);
 
-                            if (bestFlashLocation != null) {
-                               rc.castFlash(bestFlashLocation);
-                           } else {
-                               bug(advanceLocation);
-                           }
-                    } else {
-                        bug(advanceLocation);
-                    }
+                if (bestFlashLocation != null) {
+                    rc.castFlash(bestFlashLocation);
+                } else {
+                    bug(advanceLocation);
                 }
-                break;
-            case ATTACKING_UNIT:
-                rc.setIndicatorString(2, "State: " + state + " with target " + attackTarget.location);
-                attackTarget(macroScoringAdvantage);
-                break;
-            case RETREATING:
-                if (myType.cooldownDelay == 0 && rc.isWeaponReady()) {
-                    MovableUnit.basicAttack(rc.senseNearbyRobots(myType.attackRadiusSquared, Common.enemyTeam));
-                }
+            } else {
+                bug(advanceLocation);
+            }
+            break;
+        case ATTACKING_UNIT:
+            rc.setIndicatorString(2, "State: " + state + " with target "
+                    + attackTarget.location);
+            attackTarget(macroScoringAdvantage);
+            break;
+        case RETREATING:
+            if (myType.cooldownDelay == 0 && rc.isWeaponReady()) {
+                MovableUnit.basicAttack(rc.senseNearbyRobots(
+                        myType.attackRadiusSquared, Common.enemyTeam));
+            }
 
-                if (!MovableUnit.retreat()) {
-                    bug(retreatLocation);
-                }
-                break;
-            default:
-                break;
+            if (!MovableUnit.retreat()) {
+                bug(retreatLocation);
+            }
+            break;
+        default:
+            break;
         }
     }
-    
+
     /**
      * Scoring function for advantage in an area.
      * 
@@ -171,7 +209,7 @@ public class AttackingUnit extends MovableUnit{
      *            all movable robots in an area (excluding HQ and towers)
      * @return a positive score if area is safe, negative if dangerous
      */
-    public static double macroScoringOfAdvantageInArea(RobotInfo[] robots) {
+    public static double macroScoringOfAdvantageInArea(RobotInfo[] robots, int macroScoringFriendlyDistanceThreshold) {
         double yourHP = rc.getHealth();
         double yourDamageDealtPerUnitTime = myType.attackPower/myType.attackDelay;
 
@@ -181,11 +219,11 @@ public class AttackingUnit extends MovableUnit{
         for (int i = 0; i < robots.length; ++i) {
             final RobotInfo robot = robots[i];
             if (!robot.type.isBuilding && robot.type != RobotType.LAUNCHER && robot.type != RobotType.MISSILE) {
-                if (robot.team == Common.myTeam) {
+                if (robot.team == Common.myTeam && myLocation.distanceSquaredTo(robot.location) < macroScoringFriendlyLocationThreshold) {
                     yourHP += robot.health;
                     yourDamageDealtPerUnitTime += robot.type.attackPower
                             / robot.type.attackDelay;
-                } else {
+                } else if (robot.team != Common.myTeam) {
                     enemyHP += robot.health;
                     enemyDamageDealtPerUnitTime += robot.type.attackPower
                             / robot.type.attackDelay;
@@ -199,18 +237,18 @@ public class AttackingUnit extends MovableUnit{
                     // (Missile damage)/(Time taken to produce next missile)
                     robotDamageDealtPerUnitTime += RobotType.MISSILE.attackPower/robot.weaponDelay;
                 }
-                if (robot.team == Common.myTeam) {
+                if (robot.team == Common.myTeam && myLocation.distanceSquaredTo(robot.location) < macroScoringFriendlyLocationThreshold) {
                     yourHP += robot.health;
                     yourDamageDealtPerUnitTime += robotDamageDealtPerUnitTime;
-                } else {
+                } else if (robot.team != Common.myTeam) {
                     enemyHP += robot.health;
                     enemyDamageDealtPerUnitTime += robotDamageDealtPerUnitTime;
                 }
             } else if (robot.type == RobotType.MISSILE){
                 // Again, special purpose code for missiles, which only add damage
-                if (robot.team == Common.myTeam)
+                if (robot.team == Common.myTeam && myLocation.distanceSquaredTo(robot.location) < macroScoringFriendlyLocationThreshold)
                     yourDamageDealtPerUnitTime += RobotType.MISSILE.attackPower;
-                else
+                else if (robot.team != Common.myTeam)
                     enemyDamageDealtPerUnitTime += RobotType.MISSILE.attackPower;
             }
         }
