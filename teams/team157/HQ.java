@@ -78,8 +78,12 @@ public class HQ extends Structure {
         if(Clock.getRoundNum()%10 == 0) {
             enemyTowers = rc.senseEnemyTowerLocations();
             numberOfTowers = enemyTowers.length;
-            if(numberOfTowers < 5) Map.turnOffEnemyHQSplashRegion();
-            if(numberOfTowers < 2) Map.turnOffEnemyHQBuffedRange();
+            if(numberOfTowers < 5 && !Map.isEnemyHQSplashRegionTurnedOff()) {
+                Map.turnOffEnemyHQSplashRegion();
+            }
+            if(numberOfTowers < 2 && !Map.isEnemyHQBuffedRangeTurnedOff()) {
+                Map.turnOffEnemyHQBuffedRange();
+            }
         }
         
         // Code that runs in every robot (including buildings, excepting missiles)
@@ -152,7 +156,7 @@ public class HQ extends Structure {
         dispenseSupply(suppliabilityMultiplier);
         
         //Debug
-        if(Clock.getRoundNum() == 800) Map.printRadio();
+        //if(Clock.getRoundNum() == 800) Map.printRadio();
         //if(Clock.getRoundNum() == 1500) BuildOrder.print();
 
     }

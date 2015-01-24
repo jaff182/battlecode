@@ -309,12 +309,13 @@ public class Tank extends MovableUnit {
         }
     }
     
-    public static void setAreaAroundTargetAsPathable() {
-        // set area around target as pathable
-        int targetID = Map.getInternalMap(target);
-        for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, targetAttackRadius)) {          
-            if (Map.getInternalMap(inSightOfTarget) == targetID) {
-                Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
+    public static void setAreaAroundTargetAsPathable() throws GameActionException {
+        int value = Map.getRadioMap(target.x,target.y);
+        for(int i=0; i<6; i++) {
+            if(Map.decodeInEnemyTowerRange(value,i) 
+                && !Map.isEnemyTowerRangeTurnedOff(i)) {
+                    Map.turnOffEnemyTowerRange(i);
+                    break;
             }
         }
         keepAwayFromTarget = false;

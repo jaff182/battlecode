@@ -628,7 +628,7 @@ public class Map {
         //Set HQ
         MapLocation HQLocation = Common.HQLocation;
         setRadioMap(HQLocation.x,HQLocation.y,encodePathState(0,PathState.HQ));
-        System.out.println(""+Clock.getBytecodesLeft());
+        //System.out.println(""+Clock.getBytecodesLeft());
         
         //Set enemy towers
         MapLocation[] enemyTowers = Common.enemyTowers;
@@ -640,7 +640,7 @@ public class Map {
                 value = encodeInEnemyTowerRange(value,i);
                 setRadioMap(loc.x,loc.y,value);
             }
-            System.out.println(""+Clock.getBytecodesLeft());
+            //System.out.println(""+Clock.getBytecodesLeft());
         }
         
         //Set enemy HQ
