@@ -65,7 +65,6 @@ public class Launcher extends MovableUnit {
     
     private static void loop() throws GameActionException {
         // Code that runs in every robot (including buildings, excepting missiles)
-        // TODO: add code to move launchers
         sharedLoopCode();
         
         myLocation = rc.getLocation();
@@ -217,28 +216,8 @@ public class Launcher extends MovableUnit {
         case ATTACK:
             // basic attacking micro by spawning missile in direction with most dangerous enemies and least friendly units
             if (numberOfEnemiesInSight != 0) {
-                RobotInfo[] unitsInSight = rc.senseNearbyRobots(24);
-                int[] dangerInDir = new int[8];
-                for (RobotInfo info: unitsInSight) {
-                    if (info.team == myTeam) {
-                        dangerInDir[myLocation.directionTo(info.location).ordinal()]-= dangerRating[info.type.ordinal()];
-                    } else {
-                        dangerInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
-                    }
-                    
-                }
-                int maxDirScore = (-1)*Integer.MAX_VALUE;
-                int dirScore = 0;
-                int maxIndex = 0;
-                for (int i = 0; i < 8; i++) {
-                    dirScore = dangerInDir[i] + dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8] + dangerInDir[(i+6)%8] + dangerInDir[(i+2)%8];
-                    if (dirScore >= maxDirScore && rc.canLaunch(directions[i])) {
-                            maxDirScore = dirScore;
-                            maxIndex = i;         
-                    }
-                }
-                launchInThreeDir(directions[maxIndex]);
-                while (rc.isCoreReady()) {
+                launcherAttack();
+                if (rc.isCoreReady()) {
                     retreat();
                 }
                 attackTimeout = baseAttackTimeout;
@@ -273,12 +252,13 @@ public class Launcher extends MovableUnit {
             break;
         case RETREAT:
             if (numberOfEnemiesInSight!= 0) {
-                while (rc.isCoreReady()) {
+                launcherAttack();
+                if (rc.isCoreReady()) {
                     retreat();
                 }
             } else {
                 if (retreatTimeout > baseRetreatTimeout - 2) {
-                    while (rc.isCoreReady()) {
+                    if (rc.isCoreReady()) {
                         retreat();
                     }
                 }
@@ -294,6 +274,43 @@ public class Launcher extends MovableUnit {
     
     // Attacking ==================================================================
 
+    
+    /**
+     * Launch missiles in direction with most enemies and least friends.
+     * Use only if number of enemies in sight is nonzero.
+     * @throws GameActionException
+     */
+    public static void launcherAttack() throws GameActionException {
+        RobotInfo[] unitsInSight = rc.senseNearbyRobots(24);
+        int[] dangerInDir = new int[8];
+        for (RobotInfo info: unitsInSight) {
+            if (info.team == myTeam) {
+                dangerInDir[myLocation.directionTo(info.location).ordinal()]-= dangerRating[info.type.ordinal()];
+            } else {
+                dangerInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
+            }
+            
+        }
+        int maxDirScore = (-1)*Integer.MAX_VALUE;
+        int dirScore = 0;
+        int maxIndex = 0;
+        for (int i = 0; i < 8; i++) {
+            dirScore = dangerInDir[i] + dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8] + dangerInDir[(i+6)%8] + dangerInDir[(i+2)%8];
+            if (dirScore > maxDirScore) {
+                if (rc.canLaunch(directions[i])) {
+                    maxDirScore = dirScore;
+                    maxIndex = i;  
+                }
+            }
+        }
+        if (maxDirScore > 0) {
+            launchInThreeDir(directions[maxIndex]);
+        }
+        
+        
+    }
+    
+    
     /**
      * Launches three missiles around input direction
      * @param dir
