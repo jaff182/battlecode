@@ -51,23 +51,12 @@ public class Beaver extends MiningUnit {
         //Set building parameters
         CHECKERBOARD_PARITY = (HQLocation.x+HQLocation.y)%2;
         
-        //set locations within attack radius of enemy tower or hq as unpathable
-        initInternalMap();
-        
-        //initialSense(rc.getLocation());
     }
     
     
     private static void loop() throws GameActionException {
         //Update location
         myLocation = rc.getLocation();
-        
-        //Sense map
-        //Must be before movement methods
-        if(previousDirection != Direction.NONE) {
-            senseWhenMove(myLocation, previousDirection);
-            previousDirection = Direction.NONE;
-        }
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();

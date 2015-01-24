@@ -22,10 +22,6 @@ public class Miner extends MiningUnit {
         minOreWorthMining = minMiningRate*GameConstants.MINER_MINE_RATE;
         minOreWorthConsidering = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.MINER_MINE_RATE;
         
-        //set locations within attack radius of enemy tower or hq as unpathable
-        //Commented out because uses too much bytecode.
-        initInternalMap();
-        
     }
     
     private static void loop() throws GameActionException {
@@ -41,12 +37,6 @@ public class Miner extends MiningUnit {
         //Sense nearby units
         updateEnemyInSight();
         
-        //Sense map while exploring
-        //Must be before movement methods
-        if(previousDirection != Direction.NONE) {
-            senseWhenMove(myLocation, previousDirection);
-            previousDirection = Direction.NONE;
-        }
         
         //State machine -------------------------------------------------------
         //Switch state
@@ -67,6 +57,17 @@ public class Miner extends MiningUnit {
             case RETREAT: minerRetreat(); break;
             default: throw new IllegalStateException();
         }
+        //---------------------------------------------------------------------
+        
+        
+        //Sense map while exploring
+        //Low bytecode priority
+        //Leave this at end of round to reduce bytecode usage
+        if(previousDirection != Direction.NONE) {
+            senseWhenMove(myLocation, previousPreviousDirection);
+        }
+        previousPreviousDirection = previousDirection;
+        previousDirection = Direction.NONE;
     }
     
     //State switching =========================================================

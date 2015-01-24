@@ -4,6 +4,7 @@ import java.util.Random;
 
 import battlecode.common.*;
 import team157.Utility.RobotCount;
+import team157.Utility.Map;
 
 public class MiningUnit extends MovableUnit {
     
@@ -124,8 +125,7 @@ public class MiningUnit extends MovableUnit {
             int maxCount = 0;
             int bestdirectionPriority = -10000000;
             for(int dirInt=0; dirInt<8; dirInt++) {
-                //Using canMove() here because movePossible seems buggy
-                if(rc.canMove(directions[dirInt])) {
+                if(movePossible(directions[dirInt])) {
                     if(directionPriority[dirInt] > bestdirectionPriority) {
                         //Reset list to include new best direction
                         bestdirectionPriority = directionPriority[dirInt];
@@ -144,7 +144,7 @@ public class MiningUnit extends MovableUnit {
             if(maxCount > 0) {
                 Direction dirToMove = directions[bestDirInts[rand.nextInt(maxCount)]];
                 oreSearchDirInt = dirToMove.ordinal();
-                if (rc.canMove(dirToMove)) {
+                if(rc.canMove(dirToMove)) {
                     rc.move(dirToMove);
                     previousDirection = dirToMove;
                 }
@@ -160,10 +160,10 @@ public class MiningUnit extends MovableUnit {
      * @param dx Relative X coordinate
      * @param dy Relative Y coordinate
      */
-    private static void countOreInRelativeLocation(int dx, int dy) {
+    private static void countOreInRelativeLocation(int dx, int dy) throws GameActionException {
         MapLocation loc = myLocation.add(dx,dy);
         int dirInt = myLocation.directionTo(loc).ordinal();
-        if(rc.isPathable(myType,loc)) {
+        if(movePossible(loc)) {
             //Add ore contribution (10 times ore amount)
             double ore = rc.senseOre(loc);
             if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);

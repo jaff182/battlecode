@@ -20,16 +20,10 @@ public class Drone extends MovableUnit {
     }
     
     private static void init() throws GameActionException {  
-        if (Clock.getRoundNum() < roundNumAttack) {
-            // set all locations within sight range of tower and hq as void in internal map
-            initInternalMap();
-
-        } else {
+        if (Clock.getRoundNum() >= roundNumAttack) {
             droneState = DroneState.KAMIKAZE;
         }
         
-        
-
         Waypoints.refreshLocalCache();
         target = Waypoints.waypoints[0];
     }

@@ -35,12 +35,8 @@ public class Tank extends MovableUnit {
     }
     
     private static void init() throws GameActionException {
-        if (Clock.getRoundNum() < roundNumAttack) {
-            initInternalMap();//set locations within attack radius of enemy tower or hq as unpathable
-        }
- 
         tankState = TankState.GATHER;
-
+        
     }
     
     private static void loop() throws GameActionException {

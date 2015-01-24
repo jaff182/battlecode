@@ -1,7 +1,9 @@
 package team157;
 
 import team157.Utility.*;
+import team157.Utility.Map;
 import battlecode.common.*;
+import java.util.Arrays;
 
 public class HQ extends Structure {
 
@@ -11,6 +13,8 @@ public class HQ extends Structure {
     private static int baseNumberOfTanksNeeded = 0;
     private static int numberOfTanksNeeded = baseNumberOfTanksNeeded;
     private static int numberOfTowers = rc.senseTowerLocations().length;
+    
+    private static MapLocation[] initialEnemyTowers;
 
     //General methods =========================================================
     
@@ -28,22 +32,14 @@ public class HQ extends Structure {
         // call for tank defense units
         rc.broadcast(tankDefenseChannel, numberOfTanksNeeded);
 
-        //Initiate radio map TODO: towers locations?
-        Map.setMaps(HQLocation.x,HQLocation.y,3);
-        if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
-            //rotational symmetry
-            //Map.symmetry = 3;//Map.rotationSymmetry;
-            //rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
-        }
-
         MapLocation soldierLoc = myLocation.add(myLocation.directionTo(enemyHQLocation), 6);
         SoldierGroup.setNextWaypoint(soldierLoc.x, soldierLoc.y, null);
         // Init LastAttackedLocations
         team157.Utility.LastAttackedLocationsReport.HQinit();
         team157.Utility.LastAttackedLocationsReport.everyRobotInit();
         
-        // Testing new build system
-        // Add 2 Helipads on round 100, 1 Barracks on round 500
+        //Keep record of initial enemy towers
+        initialEnemyTowers = Arrays.copyOf(enemyTowers,enemyTowers.length);
         
         
         //Initial building strategy -------------------------------------------
@@ -51,20 +47,46 @@ public class HQ extends Structure {
         BuildOrder.add(RobotType.MINERFACTORY);
         
         //---------------------------------------------------------------------
-
+        
+        
+        //First spawn before bytecode intensive computation
+        trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
+        
+        //Initiate radio map (essential for attack range control system to work)
+        //Super intensive, takes almost 90000 bytecodes (~9 turns)
+        //So spawned above to fit computation within turn cost of next beaver (20 
+        //turns)
+        Map.initRadioMap();
+        
+        //Get map symmetry
+        if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
+            //rotational symmetry
+            Map.symmetry = 3;//Map.rotationSymmetry;
+            rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
+        }
+        
+        //Yield to make sure loop code does not break
+        rc.yield();
     }
     
     private static void loop() throws GameActionException {
         // Clean up robot count data for this round -- do not remove, will break invariants
         RobotCount.reset();
         MinerEffectiveness.reset();
-        numberOfTowers = rc.senseTowerLocations().length;
+        
+        //Update enemy HQ ranges in mob level
+        if(Clock.getRoundNum()%10 == 0) {
+            enemyTowers = rc.senseEnemyTowerLocations();
+            numberOfTowers = enemyTowers.length;
+            if(numberOfTowers < 5) Map.turnOffEnemyHQSplashRegion();
+            if(numberOfTowers < 2) Map.turnOffEnemyHQBuffedRange();
+        }
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
         callForTankReinforcements();
-        updateEnemyInRange(52);//52 includes spashable region
+        updateEnemyInRange(52);//52 includes splashable region
         checkForEnemies();
         
         /**
@@ -130,8 +152,8 @@ public class HQ extends Structure {
         dispenseSupply(suppliabilityMultiplier);
         
         //Debug
-        //if(Clock.getRoundNum() == 1500) Map.debug_printRadioMap();
-        //if(Clock.getRoundNum() == 1500) BuildOrder.printBuildOrder();
+        if(Clock.getRoundNum() == 800) Map.printRadio();
+        //if(Clock.getRoundNum() == 1500) BuildOrder.print();
 
     }
     
@@ -214,6 +236,7 @@ public class HQ extends Structure {
         }//*/
   
     }
+    
     
     private static boolean hasFewBeavers() throws GameActionException {
         if (Clock.getRoundNum() < 150) { 
