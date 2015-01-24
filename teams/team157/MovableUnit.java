@@ -341,7 +341,7 @@ public class MovableUnit extends Common {
                 return true;
             } else {
                 if (enemies.length > 0) {
-                    if (rc.isWeaponReady()) {
+                    if (rc.isWeaponReady() && Common.myType.cooldownDelay == 0) {
                         // basicAttack(enemies);
                         priorityAttack(enemies, attackPriorities);
                         return false;
