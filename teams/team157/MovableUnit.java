@@ -79,19 +79,17 @@ public class MovableUnit extends Common {
     public static void setTargetToTowerOrHQ(MapLocation target, int targetAttackRadiusSquared) throws GameActionException {
         int value = Map.getRadioMap(target.x,target.y);
         if(target == enemyHQLocation) {
-            //Map.turnOffEnemyHQSplashRegion();
-            //Map.turnOffEnemyHQBuffedRange();
-            //Map.turnOffEnemyHQBaseRange();
+            //It is the enemy HQ
+            Map.letMeInEnemyHQSplashRegion();
+            Map.letMeInEnemyHQBuffedRange();
+            Map.letMeInEnemyHQBaseRange();
             return;
         }
-        for(int i=0; i<6; i++) {
-            if(Map.decodeInEnemyTowerRange(value,i) 
-                && !Map.isEnemyTowerRangeTurnedOff(i)) {
-                    //Map.turnOffEnemyTowerRange(i);
-                    return;
-            }
+        //It is an enemy tower
+        int towerIndex = getEnemyTowerIndex(target);
+        if(towerIndex != -1) {
+            Map.letMeInEnemyTowerRange(towerIndex);
         }
-        
     }
     
     /**
@@ -568,19 +566,15 @@ public class MovableUnit extends Common {
                     distanceToClosestTower = towerDist;
                 }
             }
-            int value = Map.getRadioMap(target.x,target.y);
-            for(int i=0; i<6; i++) {
-                if(Map.decodeInEnemyTowerRange(value,i)
-                    && !Map.isEnemyTowerRangeTurnedOff(i)) {
-                        //Map.turnOffEnemyTowerRange(i);
-                        break;
-                }
+            int towerIndex = getEnemyTowerIndex(target);
+            if(towerIndex != -1) {
+                Map.letMeInEnemyTowerRange(towerIndex);
             }
         } else {
             target = enemyHQLocation;
-            //Map.turnOffEnemyHQSplashRegion();
-            //Map.turnOffEnemyHQBuffedRange();
-            //Map.turnOffEnemyHQBaseRange();
+            Map.letMeInEnemyHQSplashRegion();
+            Map.letMeInEnemyHQBuffedRange();
+            Map.letMeInEnemyHQBaseRange();
         }
         
     }
@@ -651,13 +645,9 @@ public class MovableUnit extends Common {
                     }
                 }
                 if (!towerAlive) {
-                    int value = Map.getRadioMap(tower.x,tower.y);
-                    for(int i=0; i<6; i++) {
-                        if(Map.decodeInEnemyTowerRange(value,i)
-                            && !Map.isEnemyTowerRangeTurnedOff(i)) {
-                                //Map.turnOffEnemyTowerRange(i);
-                                break;
-                        }
+                    int towerIndex = getEnemyTowerIndex(tower);
+                    if(towerIndex != -1) {
+                        Map.turnOffEnemyTowerRange(towerIndex);
                     }
                     towersDead--;
                 }

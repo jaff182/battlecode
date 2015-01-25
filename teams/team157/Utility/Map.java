@@ -41,6 +41,12 @@ public class Map {
      */
     public static int[][] map = new int[ALLOCATED_HEIGHT][ALLOCATED_WIDTH];
     
+    /**
+     * Internal state encoding information about which enemy attack regions are 
+     * turned off. Updated additively by radio channel every round.
+     */
+    public static int mobLevel = 0;
+    
     
     //Encoding and Decoding methods ===========================================
     
@@ -458,26 +464,30 @@ public class Map {
     
     //Enemy attack range control methods ======================================
     
+    //Global methods ----------------------------------------------------------
+    //These affect the global mob level
+    
     /**
-     * Gets the mob level containing information about which enemy attack regions can 
-     * be traversed.
-     * @return The mob level.
+     * Gets the global mob level containing information about which enemy attack 
+     * regions can be traversed.
+     * @return The global mob level.
      */
     public static int getMobLevel() throws GameActionException {
         return RobotPlayer.rc.readBroadcast(Channels.MOB_LEVEL);
     }
     
     /**
-     * Sets the mob level containing information about which enemy attack regions can 
-     * be traversed to a specified value.
-     * @param The new mob level.
+     * Sets the global mob level containing information about which enemy attack 
+     * regions can be traversed to a specified value.
+     * @param The new global mob level.
      */
     public static void setMobLevel(int value) throws GameActionException {
         RobotPlayer.rc.broadcast(Channels.MOB_LEVEL,value);
     }
     
     /**
-     * Sets the mob level to make the base attack range of the enemy HQ traversable.
+     * Sets the global mob level to make the base attack range of the enemy HQ 
+     * traversable.
      */
     public static void turnOffEnemyHQBaseRange() throws GameActionException {
         int value = RobotPlayer.rc.readBroadcast(Channels.MOB_LEVEL);
@@ -488,7 +498,8 @@ public class Map {
     }
     
     /**
-     * Sets the mob level to make the buffed attack range of the enemy HQ traversable.
+     * Sets the global mob level to make the buffed attack range of the enemy HQ 
+     * traversable.
      */
     public static void turnOffEnemyHQBuffedRange() throws GameActionException {
         int value = RobotPlayer.rc.readBroadcast(Channels.MOB_LEVEL);
@@ -499,7 +510,7 @@ public class Map {
     }
     
     /**
-     * Sets the mob level to make the splash region of the enemy HQ traversable.
+     * Sets the global mob level to make the splash region of the enemy HQ traversable.
      */
     public static void turnOffEnemyHQSplashRegion() throws GameActionException {
         int value = RobotPlayer.rc.readBroadcast(Channels.MOB_LEVEL);
@@ -510,7 +521,7 @@ public class Map {
     }
     
     /**
-     * Sets the mob level to make the attack range of the specified enemy tower 
+     * Sets the global mob level to make the attack range of the specified enemy tower 
      * traversable.
      * @param towerIndex The original 0-based index of the tower.
      */
@@ -522,23 +533,58 @@ public class Map {
         }
     }
     
+    //Local methods -----------------------------------------------------------
+    //These affect only the internal mob level
     
     /**
-     * Checks the mob level if the base attack range of the enemy HQ has been made 
+     * Sets the internal mob level to make the base attack range of the enemy HQ 
      * traversable.
-     * @return True if traversable.
      */
-    public static boolean isEnemyHQBaseRangeTurnedOff() {
-        return ((Common.mobLevel & enemyHQBaseRangeBitMask) == enemyHQBaseRangeBitMask);
+    public static void letMeInEnemyHQBaseRange() throws GameActionException {
+        mobLevel |= enemyHQBaseRangeBitMask;
     }
     
     /**
-     * Checks the mob level if the buffed attack range of the enemy HQ has been made 
+     * Sets the internal mob level to make the buffed attack range of the enemy HQ 
      * traversable.
+     */
+    public static void letMeInEnemyHQBuffedRange() throws GameActionException {
+        mobLevel |= enemyHQBuffedRangeBitMask;
+    }
+    
+    /**
+     * Sets the internal mob level to make the splash region of the enemy HQ 
+     * traversable.
+     */
+    public static void letMeInEnemyHQSplashRegion() throws GameActionException {
+        mobLevel |= enemyHQSplashRegionBitMask;
+    }
+    
+    /**
+     * Sets the internal mob level to make the attack range of the specified enemy 
+     * tower traversable.
+     * @param towerIndex The original 0-based index of the tower.
+     */
+    public static void letMeInEnemyTowerRange(int towerIndex) throws GameActionException {
+        mobLevel |= (enemyTowerBaseBitMask << towerIndex);
+    }
+    
+    /**
+     * Checks the internal mob level if the base attack range of the enemy HQ has 
+     * been made traversable.
+     * @return True if traversable.
+     */
+    public static boolean isEnemyHQBaseRangeTurnedOff() {
+        return ((mobLevel & enemyHQBaseRangeBitMask) == enemyHQBaseRangeBitMask);
+    }
+    
+    /**
+     * Checks the internal mob level if the buffed attack range of the enemy HQ has 
+     * been made traversable.
      * @return True if traversable.
      */
     public static boolean isEnemyHQBuffedRangeTurnedOff() {
-        return ((Common.mobLevel & enemyHQBuffedRangeBitMask) == enemyHQBuffedRangeBitMask);
+        return ((mobLevel & enemyHQBuffedRangeBitMask) == enemyHQBuffedRangeBitMask);
     }
     
     /**
@@ -547,7 +593,7 @@ public class Map {
      * @return True if traversable.
      */
     public static boolean isEnemyHQSplashRegionTurnedOff() {
-        return ((Common.mobLevel & enemyHQSplashRegionBitMask) == enemyHQSplashRegionBitMask);
+        return ((mobLevel & enemyHQSplashRegionBitMask) == enemyHQSplashRegionBitMask);
     }
     
     /**
@@ -558,7 +604,15 @@ public class Map {
      */
     public static boolean isEnemyTowerRangeTurnedOff(int towerIndex) {
         int enemyTowerBitMask = enemyTowerBaseBitMask << towerIndex;
-        return ((Common.mobLevel & enemyTowerBitMask) == enemyTowerBitMask);
+        return ((mobLevel & enemyTowerBitMask) == enemyTowerBitMask);
+    }
+    
+    /**
+     * Updates additively from the radio the internal state encoding which enemy 
+     * attack ranges are to be turned off.
+     */
+    public static void updateMobLevel() throws GameActionException {
+        mobLevel |= RobotPlayer.rc.readBroadcast(Channels.MOB_LEVEL);
     }
     
     
@@ -608,7 +662,7 @@ public class Map {
                     return false;
                 }
             }//*/
-            if(((value & ~pathStateBitMask) & ~Common.mobLevel) != 0) {
+            if(((value & ~pathStateBitMask) & ~mobLevel) != 0) {
                 return false;
             }
         }
@@ -626,7 +680,7 @@ public class Map {
                 setInternalMap(loc.x,loc.y,value);
                 //Can check if in enemy attack region again
                 //The following check is the same as the comment earlier
-                if(((value & ~pathStateBitMask) & ~Common.mobLevel) != 0) {
+                if(((value & ~pathStateBitMask) & ~mobLevel) != 0) {
                     return false;
                 }
             }

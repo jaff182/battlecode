@@ -105,20 +105,25 @@ public class Common extends RobotPlayer {
     }
     
     
-    //Map methods =============================================================
-    
     /**
-     * Update internal map within sensor radius using values from radio map.
-     * If some locations are unknown, then sense them and update radio map and
-     * internal map.
-     * @param robotLoc location of robot
-     * @throws GameActionException
+     * Code that runs at the start of every loop (shared by every robot).
+     * 
+     * Note that this code runs in buildings too.
+     * 
+     * Does not run in missile and towers.
+     * 
+     * @throws GameActionException 
      */
-    public static void initialSense(MapLocation robotLoc) throws GameActionException {
-        MapLocation[] sensingLoc = MapLocation.getAllMapLocationsWithinRadiusSq(robotLoc, sightRange);
-        for (MapLocation loc: sensingLoc) {
-            Map.updateOrSense(loc);
-        }
+    public static void sharedLoopCode() throws GameActionException {
+        // Update global counts of robots - do not remove
+        RobotCount.report();
+        
+        //Update Mob level to know which enemy structure ranges can be traversed
+        Map.updateMobLevel();
+        
+        // Report any drops in HP
+        // TODO: I'm not entirely sure whether you can do this without creating an instance
+        LastAttackedLocationsReport.report();
     }
     
     
@@ -128,9 +133,6 @@ public class Common extends RobotPlayer {
     //RobotInfo array of nearby units
     public static RobotInfo[] enemies;
     public static RobotInfo[] friends;
-    
-    //Attack range opening triggers
-    public static int mobLevel;
     
     /**
      * Checks whether loc is in the splash damage region of an HQ at hqloc.
@@ -256,49 +258,43 @@ public class Common extends RobotPlayer {
     }
     
     
-    /**
-     * Code that runs at the start of every loop (shared by every robot).
-     * 
-     * Note that this code runs in buildings too.
-     * 
-     * Does not run in missile and towers.
-     * 
-     * @throws GameActionException 
-     */
-    public static void sharedLoopCode() throws GameActionException {
-        // Update global counts of robots - do not remove
-        RobotCount.report();
-        
-        //Update Mob level to know which enemy structure ranges can be traversed
-        mobLevel = rc.readBroadcast(Channels.MOB_LEVEL);
-        
-        // Report any drops in HP
-        // TODO: I'm not entirely sure whether you can do this without creating an instance
-        LastAttackedLocationsReport.report();
-    }
     
+    //Other methods ===========================================================
+    
+    /**
+     * Finds the initial index of the enemy tower at a given location. Returns -1 if 
+     * not the location of an enemy tower.
+     * @param loc Location to query
+     * @return The initial tower index.
+     */
+    public static int getEnemyTowerIndex(MapLocation loc) throws GameActionException {
+        for(int i=0; i<6; i++) {
+            int channel = Channels.ENEMY_TOWER_LOCATIONS + 2*i;
+            if(rc.readBroadcast(channel) == loc.x 
+                && rc.readBroadcast(channel+1) == loc.y) {
+                    return i;
+            }
+        }
+        return -1;
+    }
     
     public static void updateMyLocation() {
         myLocation = rc.getLocation();
     }
 
-    public static void updateFriendlyInRange(int range)
-    {
+    public static void updateFriendlyInRange(int range) {
         friends = rc.senseNearbyRobots(range, myTeam);
     }
 
-    public static void updateFriendlyInSight()
-    {
+    public static void updateFriendlyInSight() {
         updateFriendlyInRange(sightRange);
     }
 
-    public static void updateEnemyInRange(int range)
-    {
+    public static void updateEnemyInRange(int range) {
         enemies = rc.senseNearbyRobots(range, enemyTeam);
     }
 
-    public static void updateEnemyInSight()
-    {
+    public static void updateEnemyInSight() {
         updateEnemyInRange(sightRange);
     }
 

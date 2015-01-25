@@ -11,7 +11,9 @@ public class Drone extends MovableUnit {
     private static int retreatTimeout = 10; // number of rounds before changing from retreat to unswarm state.
     private static int baseRetreatTimeout = 10;
     //private static int numberInSwarm = 10;
-    
+    private static double minSupplyLevelOfSupplyDrone = 2500; //min supply level before moving to supply target
+    private static double lowSupplyLevel = 500; //max supply level before returning to hq to resupply
+    private static int roundNumSupply = 800; // round number after which all newly spawned drones are supply drones
     
     public static void start() throws GameActionException {
         init();
@@ -45,6 +47,8 @@ public class Drone extends MovableUnit {
         
         if (Clock.getRoundNum() > roundNumAttack) {
             droneState = DroneState.KAMIKAZE;
+        } else if (Clock.getRoundNum() > roundNumSupply) {
+            droneState = DroneState.SUPPLY;
         }
         
         enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
@@ -141,7 +145,15 @@ public class Drone extends MovableUnit {
             }
             break;
         case SUPPLY:
-            //TODO
+            if (supplyTarget == HQLocation) {
+                if (rc.getSupplyLevel() > minSupplyLevelOfSupplyDrone) {
+                chooseSupplyTarget();
+                }
+            } else {
+                if (rc.getSupplyLevel() < lowSupplyLevel) {
+                    supplyTarget = HQLocation;
+                } 
+            }
             break;
         default:
             throw new IllegalStateException();
@@ -195,7 +207,14 @@ public class Drone extends MovableUnit {
             }
             break;
         case SUPPLY:
-            // TODO scout not implemented yet!
+            if (supplyTarget == HQLocation) {
+                // staying near HQ to collect supply
+                checkForEnemies();
+                bug(HQLocation);
+            } else {
+                // try to avoid enemies while moving to supplytarget
+                moveAndAvoidEnemies(myLocation.directionTo(supplyTarget));
+            }
             break;
         default:
             throw new IllegalStateException();
@@ -204,29 +223,101 @@ public class Drone extends MovableUnit {
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
+    // Supply state methods ===============================================================
+    
+    private static int supplyRadius = 48; // radius within which to sense for friendly units for distributing supply
+    private static MapLocation supplyTarget = HQLocation; // target to distribute supply at
+    
     /**
-     * TODO untested
-     * If there is only 1 or 2 enemies in sight, decide whether to follow it or not
-     * based on danger rating and health of enemy.
+     * Sense locations that are within supplyRadius of each tower (both friendly and enemy),
+     * and sums up number of friendly units with supply lower than a threshold. Sets supplyTarget
+     * as location with the highest sum.
+     * @return true if a supplytarget is set, false otherwise.
      */
-    private static void switchToFollowState(RobotInfo[] enemiesInSight, int numberOfEnemiesInSight) {
-        if (numberOfEnemiesInSight == 1) {
-            int enemyType = enemiesInSight[0].type.ordinal();
-            if (dangerRating[enemyType] == 1) {
-                droneState = DroneState.FOLLOW;
-            } else if (dangerRating[enemyType] == 2) {
-                if (enemiesInSight[0].health < lowHP[enemyType]) {
-                    droneState = DroneState.FOLLOW;
+    private static boolean chooseSupplyTarget() {
+        int numberOfSupplyLessUnits = 0;
+        for (MapLocation tower: rc.senseTowerLocations()) {
+            int supplyDef = 0;
+            for (RobotInfo unit: rc.senseNearbyRobots(tower, supplyRadius, myTeam)) {
+                if (unit.supplyLevel < lowSupply[unit.type.ordinal()]) {
+                    supplyDef++;
                 }
             }
-        } else if (numberOfEnemiesInSight == 2) {
-            if (dangerRating[enemiesInSight[0].type.ordinal()] == 0) {
-                switchToFollowState(new RobotInfo[]{enemiesInSight[1]}, 1);
-            } else if (dangerRating[enemiesInSight[1].type.ordinal()] == 0) {
-                switchToFollowState(new RobotInfo[]{enemiesInSight[0]}, 1);
+            if (supplyDef > numberOfSupplyLessUnits) {
+                supplyTarget = tower;
+                numberOfSupplyLessUnits = supplyDef;
             }
         }
+        for (MapLocation tower: rc.senseEnemyTowerLocations()) {
+            int supplyDef = 0;
+            for (RobotInfo unit: rc.senseNearbyRobots(tower, supplyRadius, myTeam)) {
+                if (unit.supplyLevel < lowSupply[unit.type.ordinal()]) {
+                    supplyDef++;
+                }
+            }
+            if (supplyDef > numberOfSupplyLessUnits) {
+                supplyTarget = tower;
+                numberOfSupplyLessUnits = supplyDef;
+            }
+        }     
+        if (numberOfSupplyLessUnits == 0) {
+            supplyTarget = HQLocation;
+            return false;
+        } else{
+            return true;
+        }
     }
+    
+    /**
+     * Move in direction that avoids enemies while favoring input direction.
+     * @param dir favored direction
+     * @throws GameActionException 
+     */
+    private static void moveAndAvoidEnemies(Direction dir) throws GameActionException {
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(65, enemyTeam);
+        if (nearbyEnemies.length != 0) {
+            int[] enemiesInDir = new int[8];
+            for (RobotInfo info: nearbyEnemies) {
+                enemiesInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
+            }
+            int minDirScore = Integer.MAX_VALUE;
+            int dirScore = 0;
+            int minIndex = 0;
+            int distFromTarget = 0;
+            int dirOrdinal = dir.ordinal();
+            for (int i = 0; i < 8; i++) {
+                dirScore = enemiesInDir[i] + enemiesInDir[(i+7)%8] + enemiesInDir[(i+1)%8] + enemiesInDir[(i+6)%8] + enemiesInDir[(i+2)%8];
+                if (dirScore < minDirScore && movePossible(directions[i])) {
+                        minDirScore = dirScore;
+                        minIndex = i;
+                        distFromTarget = Math.abs(i - dirOrdinal);
+                } else if (dirScore == minDirScore && movePossible(directions[i])) {
+                    int newDistFromTarget = Math.abs(i - dirOrdinal);
+                    if (newDistFromTarget < distFromTarget) {
+                        distFromTarget = newDistFromTarget;
+                        minIndex = i;
+                    }
+                }
+            }
+            
+            if (movePossible(directions[minIndex])) {
+                rc.move(directions[minIndex]);
+            } else {
+                if (enemies.length > 0) {
+                    if (rc.isWeaponReady()) {
+                        // basicAttack(enemies);
+                        priorityAttack(enemies, attackPriorities);
+                        
+                    }
+                }
+            }
+        }
+        
+    }
+    
+    
+    
+    // Retreat or follow methods ===================================================================
     
     /**
      * If there is only 1 enemy in sight, decide whether to follow it or not
@@ -265,35 +356,12 @@ public class Drone extends MovableUnit {
     }
     
     /**
-     * Returns true if one should retreat from enemies in sight and 
-     * false otherwise, based on danger rating and health of enemy.
-     * @return
-     */
-    private static boolean shouldRetreat() {
-        if (numberOfEnemiesInSight == 0) {
-            return false;
-        } else if (numberOfEnemiesInSight == 1) {
-            int enemyType = enemiesInSight[0].type.ordinal();
-            int enemyDangerRating = dangerRating[enemyType];
-            if (enemyDangerRating == 0 || enemyDangerRating == 1) {
-                return false;
-            } else if (enemyDangerRating == 2) {
-                if (enemiesInSight[0].health < lowHP[enemyType]) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-    
-    
-    /**
      * Retreat in preference of direction with least enemies
      * Update enemiesInSight before using!
      * @return true if unit was moved by this function, false otherwise
      * @throws GameActionException
      */
-    public static boolean droneRetreat() throws GameActionException {
+    private static boolean droneRetreat() throws GameActionException {
         if (rc.isCoreReady() && enemiesInSight != null && enemiesInSight.length != 0) {
             int[] enemiesInDir = new int[8];
             for (RobotInfo info: enemiesInSight) {
@@ -343,7 +411,7 @@ public class Drone extends MovableUnit {
     };
     
     /**
-     * Values of hp if respective units such that if the unit has lower hp, then
+     * Values of hp of respective units such that if the unit has lower hp, then
      * one should attack it.
      */
     private static int[] lowHP = {
@@ -353,6 +421,21 @@ public class Drone extends MovableUnit {
         8/*12:COMPUTER*/,   16/*13:SOLDIER*/,   8/*14:BASHER*/,    50/*15:MINER*/,
         8/*16:DRONE*/,     8/*17:TANK*/,      8/*18:COMMANDER*/, 8/*19:LAUNCHER*/,
         2/*20:MISSILE*/
+    };
+    
+    
+    
+    /**
+     * Values of supply of respective units such that if the unit has lower supply, then
+     * one should distribute supply to it, usually a multiple (10, 20, or 30) of supply upkeep.
+     */
+    private static int[] lowSupply = {
+        -1/*0:HQ*/,         -1/*1:TOWER*/,      -1/*2:SUPPLYDPT*/,   -1/*3:TECHINST*/,
+        -1/*4:BARRACKS*/,    -1/*5:HELIPAD*/,     -1/*6:TRNGFIELD*/,   -1/*7:TANKFCTRY*/,
+        -1/*8:MINERFCTRY*/,  -1/*9:HNDWSHSTN*/,   -1/*10:AEROLAB*/,   100/*11:BEAVER*/,
+        -1/*12:COMPUTER*/,   100/*13:SOLDIER*/,   120/*14:BASHER*/,    160/*15:MINER*/,
+        300/*16:DRONE*/,     450/*17:TANK*/,      150/*18:COMMANDER*/, 750/*19:LAUNCHER*/,
+        -1/*20:MISSILE*/
     };
     
     /**

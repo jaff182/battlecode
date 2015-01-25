@@ -62,10 +62,15 @@ public class Channels {
     public static final int MISSILE_TARGET = 17120;
     
     /**
-     * Channel for mob level signal. Encodes which enemy HQ/tower attack regions may 
-     * be traversed.
+     * Channel for global mob level signal. Encodes which enemy HQ/tower attack 
+     * regions may be traversed.
      */
     public static final int MOB_LEVEL = 17121;
     
+    /**
+     * Starting channel for storing the coordinates of initially existing enemy towers.
+     * 12 channels needed (17130 to 17141);
+     */
+    public static final int ENEMY_TOWER_LOCATIONS = 17130;
     
 }
