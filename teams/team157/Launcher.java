@@ -401,8 +401,8 @@ public class Launcher extends MovableUnit {
         if (rc.canLaunch(dir.rotateLeft())) {
             rc.launchMissile(dir.rotateLeft());
         }
-        if (rc.canLaunch(dir.rotateLeft())) {
-            rc.launchMissile(dir.rotateLeft());
+        if (rc.canLaunch(dir.rotateRight())) {
+            rc.launchMissile(dir.rotateRight());
         }
     }
     /**
