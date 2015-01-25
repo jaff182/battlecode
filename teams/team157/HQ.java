@@ -86,6 +86,8 @@ public class HQ extends Structure {
             }
         }
         
+        rc.setIndicatorString(0,"moblevel is "+rc.readBroadcast(Channels.MOB_LEVEL));
+        
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
@@ -93,7 +95,7 @@ public class HQ extends Structure {
         updateEnemyInRange(52);//52 includes splashable region
         checkForEnemies();
         
-        /**
+        
         // For testing launcher bot
         if(Clock.getRoundNum() == 100) {
             BuildOrder.add(RobotType.HELIPAD);
@@ -115,9 +117,9 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
-        **/
         
         
+        /**
         //Building strategy ---------------------------------------------------
         if(Clock.getRoundNum() == 140) {
             BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
@@ -145,7 +147,7 @@ public class HQ extends Structure {
             //BuildOrder.printBuildOrder();
         }
         //---------------------------------------------------------------------
-        
+        **/
         
         //Spawn beavers
         if (hasFewBeavers()) { 

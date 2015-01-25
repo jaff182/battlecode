@@ -121,7 +121,7 @@ public class AttackingUnit extends MovableUnit{
         numberOfEnemiesInSight = enemiesInSight.length;
         enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
         
-        if (Clock.getRoundNum() >= 1750) {
+        if (Clock.getRoundNum() >= roundNumAttack) {
             setTargetToClosestTowerOrHQ();
             advanceLocation = target;
         }
