@@ -1,5 +1,7 @@
 package team157;
 
+import java.util.Random;
+
 import battlecode.common.*;
 
 public class Missile {
@@ -15,6 +17,8 @@ public class Missile {
     private static RobotInfo[] unitsInSight;
     private static MapLocation myLocation;
     private static RobotController rc = RobotPlayer.rc;
+    private static Random rand = new Random(rc.getID()); //seed random number generator
+    
 
     private static Team enemyTeam = rc.getTeam().opponent();
     private static int numberOfEnemiesInAttackRange = 0;
@@ -69,7 +73,21 @@ public class Missile {
      * @throws GameActionException
      */
     private static void moveInOptimalDir() throws GameActionException {
-        unitsInSight = rc.senseNearbyRobots(24, enemyTeam);
+        unitsInSight = rc.senseNearbyRobots((roundsLeft+2)*(roundsLeft+2), enemyTeam);
+        int numberOfUnitsInSight = unitsInSight.length;
+        if (numberOfUnitsInSight != 0) {
+            Direction dir = myLocation.directionTo(unitsInSight[rand.nextInt(numberOfUnitsInSight)].location);
+            if (rc.isCoreReady()) {
+                if (rc.canMove(dir)) {
+                    rc.move(dir);
+                } else if (rc.canMove(dir.rotateLeft())) {
+                    rc.move(dir.rotateLeft());
+                } else if (rc.canMove(dir.rotateRight())) {
+                    rc.move(dir.rotateRight());
+                }
+            }
+        }
+        /**
         if (unitsInSight.length != 0) {
             int[] dangerInDir = new int[8];
             for (RobotInfo info: unitsInSight) {
@@ -96,6 +114,7 @@ public class Missile {
                 }
             }
         } 
+        **/
         
     }
     

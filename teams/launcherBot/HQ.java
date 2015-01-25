@@ -70,11 +70,13 @@ public class HQ extends Structure {
         
         // For testing launcher bot
         if(Clock.getRoundNum() == 100) {
-            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.HELIPAD); 
         }
         if(Clock.getRoundNum() == 225) {
             BuildOrder.add(RobotType.AEROSPACELAB);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            
         }
         if (Clock.getRoundNum() == 400) {
             BuildOrder.add(RobotType.AEROSPACELAB);
@@ -199,9 +201,11 @@ public class HQ extends Structure {
     }
     
     private static boolean hasFewBeavers() throws GameActionException {
-        if (Clock.getRoundNum() < 150) { 
+        if (Clock.getRoundNum() < 20) { 
         //hard code initial miner factory and helipad
             return RobotCount.read(RobotType.BEAVER)<1;
+        } else if (Clock.getRoundNum() < 250) {
+            return RobotCount.read(RobotType.BEAVER)<2;
         }
         return RobotCount.read(RobotType.BEAVER) < 3;
     }

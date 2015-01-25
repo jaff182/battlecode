@@ -8,8 +8,10 @@ public class Drone extends MovableUnit {
     //General methods =========================================================
 
     private static DroneState droneState = DroneState.UNSWARM;
-    private static int retreatTimeout = 5; // number of rounds before changing from retreat to unswarm state.
-    private static int numberInSwarm = 10;
+    private static int retreatTimeout = 10; // number of rounds before changing from retreat to unswarm state.
+    private static int baseRetreatTimeout = 10;
+    //private static int numberInSwarm = 10;
+    
     
     public static void start() throws GameActionException {
         init();
@@ -24,15 +26,17 @@ public class Drone extends MovableUnit {
             droneState = DroneState.KAMIKAZE;
         }
         
-        Waypoints.refreshLocalCache();
-        target = Waypoints.waypoints[0];
+        target = enemyHQLocation;
+        // TODO waypoint system has a bug, drones try to move to offmap location at the start
+        //Waypoints.refreshLocalCache();
+        //target = Waypoints.waypoints[0];
     }
     
     
     private static void loop() throws GameActionException {
         updateMyLocation();
 
-        waypointTimeout--;
+        //waypointTimeout--;
         // rc.setIndicatorString(1, "Waypoint timeout " + waypointTimeout + " " + indexInWaypoints + " " + Waypoints.numberOfWaypoints
         //        + " x: " + target.x + "y: " + target.y);
         
@@ -47,7 +51,8 @@ public class Drone extends MovableUnit {
         numberOfEnemiesInSight = enemiesInSight.length;
         enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
 
-        setTargetToWayPoints();
+        // TODO: fix waypoint bug
+        //setTargetToWayPoints();
         
         // switch state based on number of enemies in sight
         droneSwitchState();
@@ -104,6 +109,7 @@ public class Drone extends MovableUnit {
             if (numberOfEnemiesInSight > 2) {
              // goes into retreat state if there are enemies in sight range
                 droneState = DroneState.RETREAT;
+                retreatTimeout = baseRetreatTimeout;
             }
             break;
         /**
@@ -134,7 +140,7 @@ public class Drone extends MovableUnit {
                 droneState = DroneState.UNSWARM;
             }
             break;
-        case SCOUT:
+        case SUPPLY:
             //TODO
             break;
         default:
@@ -149,11 +155,10 @@ public class Drone extends MovableUnit {
      */
     private static void droneMove(MapLocation target) throws GameActionException{
         // first check for enemies and attacks if there are
-        checkForEnemies();
-
         switch(droneState) {
         case UNSWARM:
             // defensive state for lone drones, stays away from target and waits for reinforcements.
+            /*
             if (keepAwayFromTarget) {
                 // target is tower or hq
                 if(myLocation.distanceSquaredTo(target) < 35) {
@@ -163,7 +168,8 @@ public class Drone extends MovableUnit {
                 if(myLocation.distanceSquaredTo(target) < 25) {
                     return;
                 }
-            }
+            }*/
+            checkForEnemies();
             bug(target);
             break;
         /**
@@ -173,20 +179,22 @@ public class Drone extends MovableUnit {
             break;
         **/
         case KAMIKAZE:
+            checkForEnemies();
             bug(target);
             break;
         case FOLLOW:
+            checkForEnemies();
             followTarget(enemiesInSight, followPriorities);
             break;
         case RETREAT:
             if (numberOfEnemiesInSight == 0) {
                 retreatTimeout--;
             } else {
-                retreat();
-                retreatTimeout = 5;
+                droneRetreat();
+                retreatTimeout = baseRetreatTimeout;
             }
             break;
-        case SCOUT:
+        case SUPPLY:
             // TODO scout not implemented yet!
             break;
         default:
@@ -235,7 +243,7 @@ public class Drone extends MovableUnit {
             if (enemyDangerRating == 1) {
                 droneState = DroneState.FOLLOW;
             } else if (enemyDangerRating == 2) {
-                if (enemiesInSight[0].health < lowHP[enemyType]) {
+                if (enemiesInSight[0].health <= lowHP[enemyType]) {
                     droneState = DroneState.FOLLOW;
                 }else {
                     droneState = DroneState.RETREAT;
@@ -278,6 +286,44 @@ public class Drone extends MovableUnit {
         return true;
     }
     
+    
+    /**
+     * Retreat in preference of direction with least enemies
+     * Update enemiesInSight before using!
+     * @return true if unit was moved by this function, false otherwise
+     * @throws GameActionException
+     */
+    public static boolean droneRetreat() throws GameActionException {
+        if (rc.isCoreReady() && enemiesInSight != null && enemiesInSight.length != 0) {
+            int[] enemiesInDir = new int[8];
+            for (RobotInfo info: enemiesInSight) {
+                enemiesInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
+            }
+            int minDirScore = 100;
+            int dirScore = 0;
+            int minIndex = 0;
+            for (int i = 0; i < 8; i++) {
+                dirScore = enemiesInDir[i] + enemiesInDir[(i+7)%8] + enemiesInDir[(i+1)%8] + enemiesInDir[(i+6)%8] + enemiesInDir[(i+2)%8];
+                if (dirScore <= minDirScore && movePossible(directions[i])) {
+                        minDirScore = dirScore;
+                        minIndex = i;         
+                }
+            }
+            if (movePossible(directions[minIndex])) {
+                rc.move(directions[minIndex]);
+                return true;
+            } else {
+                if (enemies.length > 0) {
+                    if (rc.isWeaponReady()) {
+                        // basicAttack(enemies);
+                        priorityAttack(enemies, attackPriorities);
+                        return false;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     //Parameters ==============================================================
     
@@ -291,7 +337,7 @@ public class Drone extends MovableUnit {
         3/*0:HQ*/,         3/*1:TOWER*/,      0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
         1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     1/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
         1/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,   1/*11:BEAVER*/,
-        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,
+        0/*12:COMPUTER*/,   2/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,
         2/*16:DRONE*/,     2/*17:TANK*/,      2/*18:COMMANDER*/, 2/*19:LAUNCHER*/,
         2/*20:MISSILE*/
     };
@@ -304,7 +350,7 @@ public class Drone extends MovableUnit {
         100/*0:HQ*/,         100/*1:TOWER*/,      8/*2:SUPPLYDPT*/,   8/*3:TECHINST*/,
         100/*4:BARRACKS*/,    100/*5:HELIPAD*/,     100/*6:TRNGFIELD*/,   100/*7:TANKFCTRY*/,
         100/*8:MINERFCTRY*/,  8/*9:HNDWSHSTN*/,   100/*10:AEROLAB*/,   30/*11:BEAVER*/,
-        8/*12:COMPUTER*/,   8/*13:SOLDIER*/,   8/*14:BASHER*/,    50/*15:MINER*/,
+        8/*12:COMPUTER*/,   16/*13:SOLDIER*/,   8/*14:BASHER*/,    50/*15:MINER*/,
         8/*16:DRONE*/,     8/*17:TANK*/,      8/*18:COMMANDER*/, 8/*19:LAUNCHER*/,
         2/*20:MISSILE*/
     };
@@ -352,10 +398,10 @@ public class Drone extends MovableUnit {
      */
     private static int[] followPriorities = {
         0/*0:HQ*/,         0/*1:TOWER*/,      0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
-        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
-        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,   6/*11:BEAVER*/,
-        0/*12:COMPUTER*/,   5/*13:SOLDIER*/,   4/*14:BASHER*/,    7/*15:MINER*/,
-        5/*16:DRONE*/,     1/*17:TANK*/,      1/*18:COMMANDER*/, 1/*19:LAUNCHER*/,
+        8/*4:BARRACKS*/,    8/*5:HELIPAD*/,     8/*6:TRNGFIELD*/,   8/*7:TANKFCTRY*/,
+        8/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   8/*10:AEROLAB*/,   6/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   3/*13:SOLDIER*/,   0/*14:BASHER*/,    7/*15:MINER*/,
+        3/*16:DRONE*/,     0/*17:TANK*/,      0/*18:COMMANDER*/, 0/*19:LAUNCHER*/,
         8/*20:MISSILE*/
     };
 
@@ -366,6 +412,6 @@ public class Drone extends MovableUnit {
         FOLLOW, // following enemy
         KAMIKAZE, // all out attack
         RETREAT, // retreats when enemy is in sight range and then stays still.
-        SCOUT // scouting map for enemies or terrain
+        SUPPLY // move back to hq to collect supply and distribute it to other units
     }
 }
