@@ -65,6 +65,7 @@ public class MiningUnit extends MovableUnit {
             //Add attractive forces from ore around robot
             while(noPreferredDirFound && HCL < 4) {
                 //Add ore contributions
+                int bc = Clock.getBytecodeNum();
                 for(int i=0; i<shellsX[HCL].length; i++) {
                     countOreInRelativeLocation(shellsX[HCL][i],shellsY[HCL][i]);
                     countOreInRelativeLocation(-shellsY[HCL][i],shellsX[HCL][i]);
@@ -79,6 +80,9 @@ public class MiningUnit extends MovableUnit {
                         break;
                     }
                 }
+                
+                bc = Clock.getBytecodeNum() - bc;
+                
                 
                 //Go to next hill climb level if no direction is preferred
                 HCL++;
@@ -163,10 +167,13 @@ public class MiningUnit extends MovableUnit {
     private static void countOreInRelativeLocation(int dx, int dy) throws GameActionException {
         MapLocation loc = myLocation.add(dx,dy);
         int dirInt = myLocation.directionTo(loc).ordinal();
-        if(movePossible(loc)) {
-            //Add ore contribution (10 times ore amount)
-            double ore = rc.senseOre(loc);
-            if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);
+        if(rc.isPathable(myType,loc) 
+            //The following is movePossible(loc) with no updates,
+            //abstraction broken and inlined to save bytecodes
+            && (((rc.readBroadcast(Map.mapIndexToChannel(Map.locationToMapXIndex(loc.x),Map.locationToMapYIndex(loc.y))) & ~7) & ~Map.mobLevel) == 0)) {
+                //Add ore contribution (10 times ore amount)
+                double ore = rc.senseOre(loc);
+                if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);
         } else if(myLocation.distanceSquaredTo(loc) <= 2) {
             //block the direction if obstructed
             //subtract a value much more than typical ore contribution

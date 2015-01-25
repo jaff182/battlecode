@@ -13,8 +13,6 @@ public class HQ extends Structure {
     private static int baseNumberOfTanksNeeded = 0;
     private static int numberOfTanksNeeded = baseNumberOfTanksNeeded;
     private static int numberOfTowers = rc.senseTowerLocations().length;
-    
-    private static MapLocation[] initialEnemyTowers;
 
     //General methods =========================================================
     
@@ -38,8 +36,12 @@ public class HQ extends Structure {
         team157.Utility.LastAttackedLocationsReport.HQinit();
         team157.Utility.LastAttackedLocationsReport.everyRobotInit();
         
-        //Keep record of initial enemy towers
-        initialEnemyTowers = Arrays.copyOf(enemyTowers,enemyTowers.length);
+        //Upload initial enemy tower locations
+        for(int i=0; i<enemyTowers.length; i++) {
+            int channel = Channels.ENEMY_TOWER_LOCATIONS + 2*i;
+            rc.broadcast(channel,enemyTowers[i].x);
+            rc.broadcast(channel+1,enemyTowers[i].y);
+        }
         
         
         //Initial building strategy -------------------------------------------

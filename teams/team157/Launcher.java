@@ -216,20 +216,16 @@ public class Launcher extends MovableUnit {
                         }
                     }
                     if (!targetIsAlive) {
-                     // set area around tower as pathable
-                        int value = Map.getRadioMap(surroundLocation.x,surroundLocation.y);
-                        for(int i=0; i<6; i++) {
-                            if(Map.decodeInEnemyTowerRange(value,i) 
-                                && !Map.isEnemyTowerRangeTurnedOff(i)) {
-                                    Map.turnOffEnemyTowerRange(i);
-                                    break;
-                            }
+                        //Tower is destroyed!
+                        // set area around tower as pathable
+                        int towerIndex = getEnemyTowerIndex(surroundLocation);
+                        if(towerIndex != -1) {
+                            Map.turnOffEnemyTowerRange(towerIndex);
                         }
                         setNextSurroundTarget();
-                        /*
                         state = LauncherState.GATHER;
                         previousState = LauncherState.SURROUND;
-                        gatherLocation = surroundLocation;*/
+                        gatherLocation = surroundLocation;
                     }
                     break;
                 }
