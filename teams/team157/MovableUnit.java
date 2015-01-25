@@ -776,31 +776,39 @@ public class MovableUnit extends Common {
             //Sense nearby friendly robots
             RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myTeam);
             if(friends.length > 0) {
+                //Initiate
                 int targetidx = -1;
-                double mycapacity = rc.getHealth()*multiplier[rc.getType().ordinal()];
-                double totalsupply = rc.getSupplyLevel(), totalcapacity = mycapacity;
-                double minsupplyratio = 10000000;
+                double myCapacity = rc.getHealth()*multiplier[rc.getType().ordinal()];
+                double totalSupply = rc.getSupplyLevel(), totalCapacity = myCapacity;
+                double minSupplyRatio = Integer.MAX_VALUE; //some big number
                 
+                //Iterate through friends for as long as bytecodes allow
                 for(int i=0; i<friends.length; i++) {
                     //Keep track of total values to find mean later
-                    totalsupply += friends[i].supplyLevel;
-                    totalcapacity += friends[i].health/(1+0.2*friends[i].type.supplyUpkeep);
+                    totalSupply += friends[i].supplyLevel;
+                    double friendCapacity = friends[i].health*multiplier[friends[i].type.ordinal()];
+                    totalCapacity += friendCapacity;
                     
-                    //Find robot with lowest supply per capacity
-                    double supplyratio = friends[i].supplyLevel*(1+0.2*friends[i].type.supplyUpkeep)/friends[i].health;
-                    if(supplyratio < minsupplyratio) {
-                        minsupplyratio = supplyratio;
-                        targetidx = i;
+                    //Find robot with lowest supply per capacity and positive capacity
+                    if(friendCapacity > 0) {
+                        double supplyRatio = friends[i].supplyLevel/friendCapacity;
+                        if(supplyRatio < minSupplyRatio) {
+                            minSupplyRatio = supplyRatio;
+                            targetidx = i;
+                        }
                     }
                     
+                    //Stop checking if insufficient bytecode left
                     if(Clock.getBytecodesLeft() < 600) break;
                 }
                 
-                //Transfer excess supply above mean
-                double meansupply = totalsupply/totalcapacity*mycapacity;
-                if(targetidx != -1 && rc.getSupplyLevel() > meansupply) {
+                //Transfer any excess supply
+                double myMeanSupply = totalSupply/totalCapacity*myCapacity;
+                if(targetidx != -1 && rc.getSupplyLevel() > myMeanSupply) {
                     MapLocation loc = friends[targetidx].location;
-                    rc.transferSupplies((int)(rc.getSupplyLevel()-meansupply),loc);
+                    //Transfer all supply above my mean level amount
+                    double transferAmount = rc.getSupplyLevel()-myMeanSupply;
+                    rc.transferSupplies((int)transferAmount,loc);
                 }
             }
         }

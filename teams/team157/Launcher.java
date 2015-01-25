@@ -333,6 +333,8 @@ public class Launcher extends MovableUnit {
         default:
             break;
         }
+        
+        distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
 
@@ -556,6 +558,16 @@ public class Launcher extends MovableUnit {
         1/*12:COMPUTER*/,   2/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,
         3/*16:DRONE*/,     4/*17:TANK*/,      5/*18:COMMANDER*/, 5/*19:LAUNCHER*/,
         3/*20:MISSILE*/
+    };
+    
+    
+    private static double[] suppliabilityMultiplier_Preattack = {
+        0/*0:HQ*/,          0/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     1/*15:MINER*/,
+        1/*16:DRONE*/,      3/*17:TANK*/,       2/*18:COMMANDER*/,  5/*19:LAUNCHER*/,
+        0/*20:MISSILE*/
     };
     
 

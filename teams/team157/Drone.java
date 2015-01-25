@@ -11,9 +11,14 @@ public class Drone extends MovableUnit {
     private static int retreatTimeout = 10; // number of rounds before changing from retreat to unswarm state.
     private static int baseRetreatTimeout = 10;
     //private static int numberInSwarm = 10;
-    private static double minSupplyLevelOfSupplyDrone = 2500; //min supply level before moving to supply target
-    private static double lowSupplyLevel = 500; //max supply level before returning to hq to resupply
-    private static int roundNumSupply = 800; // round number after which all newly spawned drones are supply drones
+    
+    // parameters for supply drone
+    private static double minSupplyLevelOfSupplyDrone = 4000; //min supply level before moving to supply target
+    private static double lowSupplyLevel = 200; //max supply level before returning to hq to resupply
+    private static int roundNumSupply = 400; // round number after which all newly spawned drones are supply drones
+    private static int baseSupplyTimeout = 15;
+    private static int supplyTimeout = baseSupplyTimeout; // number of rounds after staying near supply target before returning to hq
+    private static int supplyDistributeRadius = 200;
     
     public static void start() throws GameActionException {
         init();
@@ -26,6 +31,8 @@ public class Drone extends MovableUnit {
     private static void init() throws GameActionException {  
         if (Clock.getRoundNum() >= roundNumAttack) {
             droneState = DroneState.KAMIKAZE;
+        } else if (Clock.getRoundNum() > roundNumSupply) {
+            droneState = DroneState.SUPPLY;
         }
         
         target = enemyHQLocation;
@@ -47,9 +54,7 @@ public class Drone extends MovableUnit {
         
         if (Clock.getRoundNum() > roundNumAttack) {
             droneState = DroneState.KAMIKAZE;
-        } else if (Clock.getRoundNum() > roundNumSupply) {
-            droneState = DroneState.SUPPLY;
-        }
+        } 
         
         enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
         numberOfEnemiesInSight = enemiesInSight.length;
@@ -100,10 +105,11 @@ public class Drone extends MovableUnit {
      * Switches drone state based on number of enemies in sight
      */
     private static void droneSwitchState() {
-        checkForDanger();
+        
         
         switch (droneState) {
         case UNSWARM:
+            checkForDanger();
             /**
             if (rc.senseNearbyRobots(sightRange, Common.myTeam).length >= numberInSwarm) {
                 // Switches to swarm state when >4 friendly units within sensing radius.
@@ -127,12 +133,14 @@ public class Drone extends MovableUnit {
         case KAMIKAZE:
             break;
         case FOLLOW:
+            checkForDanger();
             if (numberOfEnemiesInSight == 0 || numberOfEnemiesInSight > 2) {
                 // lost sight of follow target or too many enemies
                 droneState = DroneState.UNSWARM;
             }
             break;
         case RETREAT:
+            checkForDanger();
             /**
             if (rc.senseNearbyRobots(sightRange, Common.myTeam).length >= numberInSwarm) {
                 // switch to swarm state when enough friendly units in range
@@ -148,12 +156,12 @@ public class Drone extends MovableUnit {
             if (supplyTarget == HQLocation) {
                 if (rc.getSupplyLevel() > minSupplyLevelOfSupplyDrone) {
                 chooseSupplyTarget();
+                supplyTimeout = baseSupplyTimeout;
                 }
-            } else {
-                if (rc.getSupplyLevel() < lowSupplyLevel) {
-                    supplyTarget = HQLocation;
-                } 
-            }
+            } else if (rc.getSupplyLevel() < lowSupplyLevel || supplyTimeout < 0) {
+                supplyTarget = HQLocation;
+            } 
+            rc.setIndicatorString(0, supplyTarget.toString());
             break;
         default:
             throw new IllegalStateException();
@@ -183,6 +191,7 @@ public class Drone extends MovableUnit {
             }*/
             checkForEnemies();
             bug(target);
+            distributeSupply(suppliabilityMultiplier_Preattack);
             break;
         /**
         case SWARM:
@@ -197,6 +206,7 @@ public class Drone extends MovableUnit {
         case FOLLOW:
             checkForEnemies();
             followTarget(enemiesInSight, followPriorities);
+            distributeSupply(suppliabilityMultiplier_Preattack);
             break;
         case RETREAT:
             if (numberOfEnemiesInSight == 0) {
@@ -205,42 +215,50 @@ public class Drone extends MovableUnit {
                 droneRetreat();
                 retreatTimeout = baseRetreatTimeout;
             }
+            distributeSupply(suppliabilityMultiplier_Preattack);
             break;
         case SUPPLY:
             if (supplyTarget == HQLocation) {
                 // staying near HQ to collect supply
                 checkForEnemies();
                 bug(HQLocation);
+                if (supplyTimeout < 0) {
+                    distributeSupply(suppliabilityMultiplier_Preattack);
+                }
             } else {
                 // try to avoid enemies while moving to supplytarget
                 moveAndAvoidEnemies(myLocation.directionTo(supplyTarget));
+                if (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius || supplyTimeout < 0) {
+                    distributeSupply(suppliabilityMultiplier_Preattack);
+                    supplyTimeout--;
+                }
             }
             break;
         default:
             throw new IllegalStateException();
         }
 
-        distributeSupply(suppliabilityMultiplier_Preattack);
+        
     }
     
     // Supply state methods ===============================================================
     
-    private static int supplyRadius = 48; // radius within which to sense for friendly units for distributing supply
+    private static int supplyRadius = 64; // radius within which to sense for friendly units for distributing supply
     private static MapLocation supplyTarget = HQLocation; // target to distribute supply at
     
     /**
      * Sense locations that are within supplyRadius of each tower (both friendly and enemy),
      * and sums up number of friendly units with supply lower than a threshold. Sets supplyTarget
      * as location with the highest sum.
-     * @return true if a supplytarget is set, false otherwise.
      */
-    private static boolean chooseSupplyTarget() {
+    private static void chooseSupplyTarget() {
         int numberOfSupplyLessUnits = 0;
         for (MapLocation tower: rc.senseTowerLocations()) {
             int supplyDef = 0;
             for (RobotInfo unit: rc.senseNearbyRobots(tower, supplyRadius, myTeam)) {
-                if (unit.supplyLevel < lowSupply[unit.type.ordinal()]) {
-                    supplyDef++;
+                int unitType = unit.type.ordinal();
+                if (unit.supplyLevel < lowSupply[unitType]) {
+                    supplyDef+=supplyPriority[unitType];
                 }
             }
             if (supplyDef > numberOfSupplyLessUnits) {
@@ -251,8 +269,9 @@ public class Drone extends MovableUnit {
         for (MapLocation tower: rc.senseEnemyTowerLocations()) {
             int supplyDef = 0;
             for (RobotInfo unit: rc.senseNearbyRobots(tower, supplyRadius, myTeam)) {
-                if (unit.supplyLevel < lowSupply[unit.type.ordinal()]) {
-                    supplyDef++;
+                int unitType = unit.type.ordinal();
+                if (unit.supplyLevel < lowSupply[unitType]) {
+                    supplyDef+=3*supplyPriority[unitType];
                 }
             }
             if (supplyDef > numberOfSupplyLessUnits) {
@@ -262,9 +281,6 @@ public class Drone extends MovableUnit {
         }     
         if (numberOfSupplyLessUnits == 0) {
             supplyTarget = HQLocation;
-            return false;
-        } else{
-            return true;
         }
     }
     
@@ -274,11 +290,16 @@ public class Drone extends MovableUnit {
      * @throws GameActionException 
      */
     private static void moveAndAvoidEnemies(Direction dir) throws GameActionException {
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(65, enemyTeam);
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(48, enemyTeam);
         if (nearbyEnemies.length != 0) {
             int[] enemiesInDir = new int[8];
             for (RobotInfo info: nearbyEnemies) {
                 enemiesInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
+            }
+            // add bias towards direction of friendly units at supply target
+            RobotInfo[] nearbyFriends = rc.senseNearbyRobots(supplyTarget, 48, myTeam);
+            for (RobotInfo info: nearbyFriends) {
+                enemiesInDir[myLocation.directionTo(info.location).ordinal()]-= dangerRating[info.type.ordinal()];
             }
             int minDirScore = Integer.MAX_VALUE;
             int dirScore = 0;
@@ -292,6 +313,7 @@ public class Drone extends MovableUnit {
                         minIndex = i;
                         distFromTarget = Math.abs(i - dirOrdinal);
                 } else if (dirScore == minDirScore && movePossible(directions[i])) {
+                    // if there is a tie, favor direction closer to supply target
                     int newDistFromTarget = Math.abs(i - dirOrdinal);
                     if (newDistFromTarget < distFromTarget) {
                         distFromTarget = newDistFromTarget;
@@ -300,7 +322,7 @@ public class Drone extends MovableUnit {
                 }
             }
             
-            if (movePossible(directions[minIndex])) {
+            if (movePossible(directions[minIndex]) && rc.isCoreReady()) {
                 rc.move(directions[minIndex]);
             } else {
                 if (enemies.length > 0) {
@@ -311,6 +333,8 @@ public class Drone extends MovableUnit {
                     }
                 }
             }
+        } else {
+            bug(supplyTarget);
         }
         
     }
@@ -439,6 +463,19 @@ public class Drone extends MovableUnit {
     };
     
     /**
+     * Priority for supply drone to decide where to go: if unit has a higher priority,
+     * supply drone has a higher preference to go there.
+     */
+    private static int[] supplyPriority = {
+        -1/*0:HQ*/,         -1/*1:TOWER*/,      -1/*2:SUPPLYDPT*/,   -1/*3:TECHINST*/,
+        -1/*4:BARRACKS*/,    -1/*5:HELIPAD*/,     -1/*6:TRNGFIELD*/,   -1/*7:TANKFCTRY*/,
+        -1/*8:MINERFCTRY*/,  -1/*9:HNDWSHSTN*/,   -1/*10:AEROLAB*/,   2/*11:BEAVER*/,
+        -1/*12:COMPUTER*/,   4/*13:SOLDIER*/,   5/*14:BASHER*/,    3/*15:MINER*/,
+        2/*16:DRONE*/,     8/*17:TANK*/,      8/*18:COMMANDER*/, 10/*19:LAUNCHER*/,
+        -1/*20:MISSILE*/
+    };
+    
+    /**
      * The importance rating that enemy units of each RobotType should be attacked 
      * (so higher means attack first). Needs to be adjusted dynamically based on 
      * defence strategy.
@@ -471,7 +508,7 @@ public class Drone extends MovableUnit {
         0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
         0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
         0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     1/*15:MINER*/,
-        1/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
+        1/*16:DRONE*/,      3/*17:TANK*/,       2/*18:COMMANDER*/,  5/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };
     
