@@ -52,7 +52,6 @@ public class Launcher extends MovableUnit {
     }
     
     private static void init() throws GameActionException {
-        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
         target = enemyHQLocation;
         missileCount = 0;
         numberOfEnemyTowers = enemyTowers.length;
@@ -218,10 +217,12 @@ public class Launcher extends MovableUnit {
                     }
                     if (!targetIsAlive) {
                      // set area around tower as pathable
-                        int targetID = Map.getInternalMap(surroundLocation);
-                        for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(surroundLocation, towerAttackRadius)) {          
-                            if (Map.getInternalMap(inSightOfTarget) == targetID) {
-                                Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
+                        int value = Map.getRadioMap(surroundLocation.x,surroundLocation.y);
+                        for(int i=0; i<6; i++) {
+                            if(Map.decodeInEnemyTowerRange(value,i) 
+                                && !Map.isEnemyTowerRangeTurnedOff(i)) {
+                                    Map.turnOffEnemyTowerRange(i);
+                                    break;
                             }
                         }
                         setNextSurroundTarget();

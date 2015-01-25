@@ -44,6 +44,18 @@ public class Map {
     
     //Encoding and Decoding methods ===========================================
     
+    //0...000000000111 in binary
+    private static final int pathStateBitMask = 7;
+    //0...000000001000 in binary
+    private static final int enemyHQBaseRangeBitMask = 8;
+    //0...000000010000 in binary
+    private static final int enemyHQBuffedRangeBitMask = 16;
+    //0...000000100000 in binary
+    private static final int enemyHQSplashRegionBitMask = 32;
+    //0...000001000000 in binary
+    private static final int enemyTowerBaseBitMask = 64;
+    
+    
     /**
      * The pathability state of a given tile, to be recorded in the internal and 
      * radio maps.
@@ -64,18 +76,18 @@ public class Map {
      * @return The new value to use.
      */
     public static int encodePathState(int value, PathState pathState) {
-        return (value/8)*8 + pathState.ordinal();
+        return (value & ~pathStateBitMask) | pathState.ordinal();
     }
     
     /**
      * Encodes the pathability state information into the allocated bits (lowest 3 
      * bits) of an integer.
      * @param value The value to replace.
-     * @param pathStateOrdinal The ordinal of the pathability state to write.
+     * @param pathStateOrdinal The ordinal of the pathability state (0 to 7) to write.
      * @return The new value to use.
      */
     public static int encodePathState(int value, int pathStateOrdinal) {
-        return (value/8)*8 + pathStateOrdinal;
+        return (value & ~pathStateBitMask) | pathStateOrdinal;
     }
     
     /**
@@ -85,7 +97,7 @@ public class Map {
      * @return The new value to use.
      */
     public static int encodeInEnemyHQBaseRange(int value) {
-        return value%8 + (value/16)*16 + 8;
+        return (value & ~enemyHQBaseRangeBitMask) | enemyHQBaseRangeBitMask;
     }
     
     /**
@@ -95,7 +107,7 @@ public class Map {
      * @return The new value to use.
      */
     public static int encodeInEnemyHQBuffedRange(int value) {
-        return value%16 + (value/32)*32 + 16;
+        return (value & ~enemyHQBuffedRangeBitMask) | enemyHQBuffedRangeBitMask;
     }
     
     /**
@@ -105,7 +117,7 @@ public class Map {
      * @return The new value to use.
      */
     public static int encodeInEnemyHQSplashRegion(int value) {
-        return value%32 + (value/64)*64 + 32;
+        return (value & ~enemyHQSplashRegionBitMask) | enemyHQSplashRegionBitMask;
     }
     
     /**
@@ -116,11 +128,8 @@ public class Map {
      * @return The new value to use.
      */
     public static int encodeInEnemyTowerRange(int value, int towerIndex) {
-        int lowBits = 64;
-        for(int i=0; i<towerIndex; i++) {
-            lowBits *= 2;
-        }
-        return value%lowBits + (value/(2*lowBits))*2*lowBits + lowBits;
+        int enemyTowerBitMask = enemyTowerBaseBitMask << towerIndex;
+        return (value & ~enemyTowerBitMask) | enemyTowerBitMask;
     }
     
     
@@ -130,7 +139,7 @@ public class Map {
      * @return The ordinal of the pathability state.
      */
     public static int decodePathStateOrdinal(int value) {
-        return value%8;
+        return (value & pathStateBitMask);
     }
     
     /**
@@ -139,7 +148,7 @@ public class Map {
      * @return The ordinal of the pathability state.
      */
     public static PathState decodePathState(int value) {
-        return pathStates[value%8];
+        return pathStates[value & pathStateBitMask];
     }
     
     /**
@@ -149,7 +158,7 @@ public class Map {
      * @return True if in range.
      */
     public static boolean decodeInEnemyHQBaseRange(int value) {
-        return ((value%16)/8 == 1);
+        return ((value & enemyHQBaseRangeBitMask) == enemyHQBaseRangeBitMask);
     }
     
     /**
@@ -159,7 +168,7 @@ public class Map {
      * @return True if in range.
      */
     public static boolean decodeInEnemyHQBuffedRange(int value) {
-        return ((value%32)/16 == 1);
+        return ((value & enemyHQBuffedRangeBitMask) == enemyHQBuffedRangeBitMask);
     }
     
     /**
@@ -169,7 +178,7 @@ public class Map {
      * @return True if in region.
      */
     public static boolean decodeInEnemyHQSplashRegion(int value) {
-        return ((value%64)/32 == 1);
+        return ((value & enemyHQSplashRegionBitMask) == enemyHQSplashRegionBitMask);
     }
     
     /**
@@ -180,11 +189,8 @@ public class Map {
      * @return True if in range.
      */
     public static boolean decodeInEnemyTowerRange(int value, int towerIndex) {
-        int lowBits = 64;
-        for(int i=0; i<towerIndex; i++) {
-            lowBits *= 2;
-        }
-        return ((value%(2*lowBits))/lowBits == 1);
+        int enemyTowerBitMask = enemyTowerBaseBitMask << towerIndex;
+        return ((value & enemyTowerBitMask) == enemyTowerBitMask);
     }
     
     
@@ -261,14 +267,14 @@ public class Map {
         if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(loc.x);
         if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(loc.y);
         if(symmetry%4 != 0) {
-            PathState pathState = pathStates[decodePathStateOrdinal(value)];
-            switch(pathState) {
-                case NORMAL:
-                case VOID:
-                case OFF_MAP:
+            int pathStateOrdinal = decodePathStateOrdinal(value);
+            switch(pathStateOrdinal) {
+                case 1/*NORMAL*/:
+                case 2/*VOID*/:
+                case 5/*OFF_MAP*/:
                     //Copy pathability state to symmetric position
                     int value2 = map[yidx][xidx];
-                    value2 = encodePathState(value2,pathState);
+                    value2 = encodePathState(value2,pathStateOrdinal);
                     map[yidx][xidx] = value2;
             }
         }
@@ -287,14 +293,14 @@ public class Map {
         if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
         if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
         if(symmetry%4 != 0) {
-            PathState pathState = pathStates[decodePathStateOrdinal(value)];
-            switch(pathState) {
-                case NORMAL:
-                case VOID:
-                case OFF_MAP:
+            int pathStateOrdinal = decodePathStateOrdinal(value);
+            switch(pathStateOrdinal) {
+                case 1/*NORMAL*/:
+                case 2/*VOID*/:
+                case 5/*OFF_MAP*/:
                     //Copy pathability state to symmetric position
                     int value2 = map[yidx][xidx];
-                    value2 = encodePathState(value2,pathState);
+                    value2 = encodePathState(value2,pathStateOrdinal);
                     map[yidx][xidx] = value2;
             }
         }
@@ -383,10 +389,20 @@ public class Map {
         if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
         if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
         if(symmetry%4 != 0) {
-            //Copy pathability state to symmetric position
-            int value2 = RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx));
-            value2 = encodePathState(value2,decodePathStateOrdinal(value));
-            RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value2);
+            int pathStateOrdinal = decodePathStateOrdinal(value);
+            switch(pathStateOrdinal) {
+                case 1/*NORMAL*/:
+                case 2/*VOID*/:
+                case 5/*OFF_MAP*/:
+                    //Copy pathability state to symmetric position
+                    int channel = mapIndexToChannel(xidx,yidx);
+                    int value2 = RobotPlayer.rc.readBroadcast(channel);
+                    if(decodePathStateOrdinal(value2) != pathStateOrdinal) {
+                        //Path state is not updated
+                        value2 = encodePathState(value2,pathStateOrdinal);
+                        RobotPlayer.rc.broadcast(channel, value2);
+                    }
+            }
         }
     }
     
@@ -420,15 +436,361 @@ public class Map {
         if(symmetry%2 == 1) xidx = locationToReflectedMapXIndex(locX);
         if((symmetry/2)%2 == 1) yidx = locationToReflectedMapYIndex(locY);
         if(symmetry%4 != 0) {
-            //Copy pathability state to symmetric position
             int pathStateOrdinal = decodePathStateOrdinal(value);
-            int value2 = map[yidx][xidx];
-            value2 = encodePathState(value2,pathStateOrdinal);
-            map[yidx][xidx] = value2;
-            value2 = RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx));
-            value2 = encodePathState(value2,pathStateOrdinal);
-            RobotPlayer.rc.broadcast(mapIndexToChannel(xidx,yidx), value2);
+            switch(pathStateOrdinal) {
+                case 1/*NORMAL*/:
+                case 2/*VOID*/:
+                case 5/*OFF_MAP*/:
+                    //Copy pathability state to symmetric position
+                    int channel = mapIndexToChannel(xidx,yidx);
+                    int value2 = RobotPlayer.rc.readBroadcast(channel);
+                    if(decodePathStateOrdinal(value2) != pathStateOrdinal) {
+                        //Path state is not updated
+                        //Assume radio map is more up-to-date than internal map
+                        value2 = encodePathState(value2,pathStateOrdinal);
+                        map[yidx][xidx] = value2;
+                        RobotPlayer.rc.broadcast(channel, value2);
+                    }
+            }
         }
+    }
+    
+    
+    //Enemy attack range control methods ======================================
+    
+    /**
+     * Gets the mob level containing information about which enemy attack regions can 
+     * be traversed.
+     * @return The mob level.
+     */
+    public static int getMobLevel() throws GameActionException {
+        return RobotPlayer.rc.readBroadcast(Channels.MOB_LEVEL);
+    }
+    
+    /**
+     * Sets the mob level containing information about which enemy attack regions can 
+     * be traversed to a specified value.
+     * @param The new mob level.
+     */
+    public static void setMobLevel(int value) throws GameActionException {
+        RobotPlayer.rc.broadcast(Channels.MOB_LEVEL,value);
+    }
+    
+    /**
+     * Sets the mob level to make the base attack range of the enemy HQ traversable.
+     */
+    public static void turnOffEnemyHQBaseRange() throws GameActionException {
+        int value = RobotPlayer.rc.readBroadcast(Channels.MOB_LEVEL);
+        int value2 = (value | enemyHQBaseRangeBitMask);
+        if(value != value2) {
+            RobotPlayer.rc.broadcast(Channels.MOB_LEVEL,value2);
+        }
+    }
+    
+    /**
+     * Sets the mob level to make the buffed attack range of the enemy HQ traversable.
+     */
+    public static void turnOffEnemyHQBuffedRange() throws GameActionException {
+        int value = RobotPlayer.rc.readBroadcast(Channels.MOB_LEVEL);
+        int value2 = (value | enemyHQBuffedRangeBitMask);
+        if(value != value2) {
+            RobotPlayer.rc.broadcast(Channels.MOB_LEVEL,value2);
+        }
+    }
+    
+    /**
+     * Sets the mob level to make the splash region of the enemy HQ traversable.
+     */
+    public static void turnOffEnemyHQSplashRegion() throws GameActionException {
+        int value = RobotPlayer.rc.readBroadcast(Channels.MOB_LEVEL);
+        int value2 = (value | enemyHQSplashRegionBitMask);
+        if(value != value2) {
+            RobotPlayer.rc.broadcast(Channels.MOB_LEVEL,value2);
+        }
+    }
+    
+    /**
+     * Sets the mob level to make the attack range of the specified enemy tower 
+     * traversable.
+     * @param towerIndex The original 0-based index of the tower.
+     */
+    public static void turnOffEnemyTowerRange(int towerIndex) throws GameActionException {
+        int value = RobotPlayer.rc.readBroadcast(Channels.MOB_LEVEL);
+        int value2 = (value | (enemyTowerBaseBitMask << towerIndex));
+        if(value != value2) {
+            RobotPlayer.rc.broadcast(Channels.MOB_LEVEL,value2);
+        }
+    }
+    
+    
+    /**
+     * Checks the mob level if the base attack range of the enemy HQ has been made 
+     * traversable.
+     * @return True if traversable.
+     */
+    public static boolean isEnemyHQBaseRangeTurnedOff() {
+        return ((Common.mobLevel & enemyHQBaseRangeBitMask) == enemyHQBaseRangeBitMask);
+    }
+    
+    /**
+     * Checks the mob level if the buffed attack range of the enemy HQ has been made 
+     * traversable.
+     * @return True if traversable.
+     */
+    public static boolean isEnemyHQBuffedRangeTurnedOff() {
+        return ((Common.mobLevel & enemyHQBuffedRangeBitMask) == enemyHQBuffedRangeBitMask);
+    }
+    
+    /**
+     * Checks the mob level if the splash region of the enemy HQ has been made  
+     * traversable.
+     * @return True if traversable.
+     */
+    public static boolean isEnemyHQSplashRegionTurnedOff() {
+        return ((Common.mobLevel & enemyHQSplashRegionBitMask) == enemyHQSplashRegionBitMask);
+    }
+    
+    /**
+     * Checks the mob level if the attack range of the specified enemy tower has been 
+     * made traversable.
+     * @param towerIndex The index of the tower.
+     * @return True if traversable.
+     */
+    public static boolean isEnemyTowerRangeTurnedOff(int towerIndex) {
+        int enemyTowerBitMask = enemyTowerBaseBitMask << towerIndex;
+        return ((Common.mobLevel & enemyTowerBitMask) == enemyTowerBitMask);
+    }
+    
+    
+    //Other methods ===========================================================
+    
+    /**
+     * Checks pathability of a location using in order: internal map, then radio map, 
+     * but no direct sensing to save bytecode. Updates accordingly. Need to be called 
+     * with isPathable() or canMove() since it only queries map values.
+     * @param loc Location to query
+     * @return True if map values alone do not indicate movement restrictions
+     */
+    public static boolean checkPathable(MapLocation loc) throws GameActionException {
+        //In interest of bytecode conservation, the abstraction for methods in 
+        //Map.java will be broken in this method, since this is a core method used 
+        //rather frequently.
+        
+        //Get maximum pathability state ordinal
+        int maxPathableOrdinal = 1; //NORMAL only
+        if(RobotPlayer.myType == RobotType.DRONE) maxPathableOrdinal = 2; //VOID too
+        
+        //Check internal map pathability first
+        //The following is "int value = getInternalMap_(loc.x,loc.y);"
+        //and "int pathStateOrdinal = decodePathStateOrdinal(value);"
+        int xidx = locationToMapXIndex(loc.x);
+        int yidx = locationToMapYIndex(loc.y);
+        int value = map[yidx][xidx];
+        int pathStateOrdinal = (value & pathStateBitMask);
+        
+        if(pathStateOrdinal > maxPathableOrdinal) {
+            //Internal PathState is (VOID,) ENEMY_HQ, HQ, OFF_MAP
+            return false;
+        } else if(pathStateOrdinal == 0) {
+            //Internal PathState is UNKNOWN
+            //Check radio map pathability next
+            //The following is "int valueRadio = getRadioMap(loc.x,loc.y);"
+            //and "int pathStateOrdinalRadio = decodePathStateOrdinal(valueRadio);"
+            int valueRadio = RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx));
+            int pathStateOrdinalRadio = (valueRadio & pathStateBitMask);
+            
+            if(pathStateOrdinalRadio != 0) {
+                //Update internal map
+                //radio is more up to date so just copy into internal map as well
+                setInternalMap(loc.x,loc.y,valueRadio);
+                if(pathStateOrdinalRadio > maxPathableOrdinal) {
+                    //Radio PathState is (VOID,) ENEMY_HQ, HQ, OFF_MAP
+                    return false;
+                }
+            } else {
+                //Radio PathState is UNKNOWN
+                //No direct sensing here because it is bytecode expensive, use 
+                //checkPathableOrSense() to include sensing instead.
+            }
+        }
+        
+        //At this point internal map should already be consistent with radio map
+        //as long as all terrain tile checks also update the radio map.
+        //Now check whether in attack regions of enemy HQ or towers
+        //The following does
+        /*
+        if(decodeInEnemyHQBaseRange(value) 
+            && !isEnemyHQBaseRangeTurnedOff()) {
+                //In enemy HQ base range which is not turned off
+                return false;
+        } else if(decodeInEnemyHQBuffedRange(value) 
+            && !isEnemyHQBuffedRangeTurnedOff()) {
+                //In enemy HQ buffed range which is not turned off
+                return false;
+        } else if(decodeInEnemyHQSplashRegion(value) 
+            && !isEnemyHQSplashRegionTurnedOff()) {
+                //In enemy HQ buffed range which is not turned off
+                return false;
+        }
+        for(int i=0; i<Common.enemyTowers.length; i++) {
+            int enemyTowerBitMask = enemyTowerBaseBitMask << i;
+            if(decodeInEnemyTowerRange(value,i) && !isEnemyTowerRangeTurnedOff(i)) {
+                //In ith enemy tower's range which is not turned off
+                return false;
+            }
+        }//*/
+        if(((value & ~pathStateBitMask) & ~Common.mobLevel) != 0) return false;
+        
+        return true;
+    }
+    
+    /**
+     * Checks pathability of a location using in order: internal map, then radio map, 
+     * then direct sensing. Updates accordingly. Need to be called with isPathable() 
+     * or canMove() since it only queries map values. Primarily used by map
+     * @param loc Location to query
+     * @return True if map values alone do not indicate movement restrictions
+     */
+    public static boolean checkPathableOrSense(MapLocation loc) throws GameActionException {
+        //In interest of bytecode conservation, the abstraction for methods in 
+        //Map.java will be broken in this method, since this is a core method used 
+        //rather frequently.
+        
+        //Get maximum pathability state ordinal
+        int maxPathableOrdinal = 1; //NORMAL only
+        if(RobotPlayer.myType == RobotType.DRONE) maxPathableOrdinal = 2; //VOID too
+        
+        //Check internal map pathability first
+        //The following is "int value = getInternalMap_(loc.x,loc.y);"
+        //and "int pathStateOrdinal = decodePathStateOrdinal(value);"
+        int xidx = locationToMapXIndex(loc.x);
+        int yidx = locationToMapYIndex(loc.y);
+        int value = map[yidx][xidx];
+        int pathStateOrdinal = (value & pathStateBitMask);
+        
+        if(pathStateOrdinal > maxPathableOrdinal) {
+            //Internal PathState is (VOID,) ENEMY_HQ, HQ, OFF_MAP
+            return false;
+        } else if(pathStateOrdinal == 0) {
+            //Internal PathState is UNKNOWN
+            //Check radio map pathability next
+            //The following is "int valueRadio = getRadioMap(loc.x,loc.y);"
+            //and "int pathStateOrdinalRadio = decodePathStateOrdinal(valueRadio);"
+            int valueRadio = RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx));
+            int pathStateOrdinalRadio = (valueRadio & pathStateBitMask);
+            
+            if(pathStateOrdinalRadio != 0) {
+                //Update internal map
+                //radio is more up to date so just copy into internal map as well
+                setInternalMap(loc.x,loc.y,valueRadio);
+                if(pathStateOrdinalRadio > maxPathableOrdinal) {
+                    //Radio PathState is (VOID,) ENEMY_HQ, HQ, OFF_MAP
+                    return false;
+                }
+            } else {
+                //Radio PathState is UNKNOWN
+                //Sense directly for terrain tile
+                switch (RobotPlayer.rc.senseTerrainTile(loc)) {
+                    case VOID: pathStateOrdinal = 2/*VOID*/; break;
+                    case NORMAL: pathStateOrdinal = 1/*NORMAL*/; break;
+                    case OFF_MAP: pathStateOrdinal = 5/*OFF_MAP*/; break;
+                    case UNKNOWN: pathStateOrdinal = 0/*UNKNOWN*/; break;
+                    default: break;
+                }
+                //The following is
+                //"valueRadio = Map.encodePathState(valueRadio,pathStateOrdinal);"
+                valueRadio = (valueRadio & ~pathStateBitMask) | pathStateOrdinal;
+                
+                //radio is more up to date so just copy into internal map as well
+                setMaps(loc.x,loc.y,valueRadio);
+                //Check PathState again
+                if(pathStateOrdinal > maxPathableOrdinal) return false;
+            }
+        }
+        
+        //At this point internal map should already be consistent with radio map
+        //as long as all terrain tile checks also update the radio map.
+        //Now check whether in attack regions of enemy HQ or towers
+        //The following does
+        /*
+        if(decodeInEnemyHQBaseRange(value) 
+            && !isEnemyHQBaseRangeTurnedOff()) {
+                //In enemy HQ base range which is not turned off
+                return false;
+        } else if(decodeInEnemyHQBuffedRange(value) 
+            && !isEnemyHQBuffedRangeTurnedOff()) {
+                //In enemy HQ buffed range which is not turned off
+                return false;
+        } else if(decodeInEnemyHQSplashRegion(value) 
+            && !isEnemyHQSplashRegionTurnedOff()) {
+                //In enemy HQ buffed range which is not turned off
+                return false;
+        }
+        for(int i=0; i<Common.enemyTowers.length; i++) {
+            int enemyTowerBitMask = enemyTowerBaseBitMask << i;
+            if(decodeInEnemyTowerRange(value,i) && !isEnemyTowerRangeTurnedOff(i)) {
+                //In ith enemy tower's range which is not turned off
+                return false;
+            }
+        }//*/
+        if(((value & ~pathStateBitMask) & ~Common.mobLevel) != 0) return false;
+        
+        return true;
+    }
+    
+    
+    /**
+     * Initialize radio map with enemy HQ and tower locations, attack regions, etc
+     * HQ must run this before symmetry is set (not crucial, just that it will be 
+     * faster).
+     */
+    public static void initRadioMap() throws GameActionException {
+        //Set HQ
+        MapLocation HQLocation = Common.HQLocation;
+        setRadioMap(HQLocation.x,HQLocation.y,encodePathState(0,PathState.HQ));
+        //System.out.println(""+Clock.getBytecodesLeft());
+        
+        //Set enemy towers
+        MapLocation[] enemyTowers = Common.enemyTowers;
+        for (int i=0; i<enemyTowers.length; i++) {
+            MapLocation[] inRange = MapLocation.getAllMapLocationsWithinRadiusSq
+                (enemyTowers[i],RobotType.TOWER.attackRadiusSquared);
+            for (MapLocation loc: inRange) {
+                int value = getRadioMap(loc.x,loc.y);
+                value = encodeInEnemyTowerRange(value,i);
+                setRadioMap(loc.x,loc.y,value);
+            }
+            //System.out.println(""+Clock.getBytecodesLeft());
+        }
+        
+        //Set enemy HQ
+        MapLocation enemyHQLocation = Common.enemyHQLocation;
+        MapLocation[] inRange = MapLocation.getAllMapLocationsWithinRadiusSq
+            (enemyHQLocation,52);
+        for(MapLocation loc: inRange) {
+            int distance = enemyHQLocation.distanceSquaredTo(loc);
+            int value = getRadioMap(loc.x,loc.y);
+            if(distance == 0) {
+                //Set pathability to ENEMY_HQ
+                value = encodePathState(value,PathState.ENEMY_HQ);
+            }
+            if(distance <= RobotType.HQ.attackRadiusSquared) {
+                //in enemy HQ base attack range
+                value = encodeInEnemyHQBaseRange(value);
+            }
+            if(distance <= GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED 
+                && enemyTowers.length >= 2) {
+                    //in enemy HQ buffed attack range
+                    value = encodeInEnemyHQBuffedRange(value);
+            }
+            if(Common.isInSplashRegion(loc,enemyHQLocation) 
+                && enemyTowers.length >= 5) {
+                    //in enemy HQ base attack range
+                    value = encodeInEnemyHQSplashRegion(value);
+            }
+            setRadioMap(loc.x,loc.y,value);
+        }
+        
     }
     
     
@@ -449,9 +811,9 @@ public class Map {
             case NORMAL: //normal
                 if(decodeInEnemyHQBaseRange(value)) {
                     return "*";
-                } else if(decodeInEnemyHQBaseRange(value)) {
-                    return "+";
                 } else if(decodeInEnemyHQBuffedRange(value)) {
+                    return "+";
+                } else if(decodeInEnemyHQSplashRegion(value)) {
                     return "!";
                 } else if(decodeInEnemyTowerRange(value,0)) {
                     return "0";

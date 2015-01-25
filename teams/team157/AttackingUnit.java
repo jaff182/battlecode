@@ -91,10 +91,6 @@ public class AttackingUnit extends MovableUnit{
         advanceLocation = Common.enemyHQLocation;
         retreatLocation = Common.HQLocation;
         state = MovableUnitState.ADVANCING;
-        if (Clock.getRoundNum() < 1800) {
-            initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
-            //Map.printInternalMap();
-        } 
 
     }
 

@@ -1,5 +1,7 @@
 package team157;
+
 import team157.Utility.*;
+import team157.Utility.Map;
 import battlecode.common.*;
 
 public class MovableUnit extends Common {
@@ -12,7 +14,7 @@ public class MovableUnit extends Common {
     public static final int towerAttackRadius = RobotType.TOWER.attackRadiusSquared;
     public static final int HQ0towerAttackRadius = RobotType.HQ.attackRadiusSquared;
     public static final int HQ2towerAttackRadius = GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED;
-    public static final int HQ5towerAttackRadius = 54;//Math.pow(Math.sqrt(GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED)+Math.sqrt(GameConstants.HQ_BUFFED_SPLASH_RADIUS_SQUARED),2);
+    public static final int HQ5towerAttackRadius = 52;//Math.pow(Math.sqrt(GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED)+Math.sqrt(GameConstants.HQ_BUFFED_SPLASH_RADIUS_SQUARED),2);
     public static int HQAttackRadius = HQ2towerAttackRadius;
     public static MapLocation[] previousTowerLocations = enemyTowers;
     
@@ -35,12 +37,10 @@ public class MovableUnit extends Common {
     private static final int noDir = 8;
     private static int[] prohibitedDir = {noDir, noDir};
     private static boolean goneAround = false;
-    //Previously moved direction
-    public static Direction previousDirection = Direction.NONE;
     
-    private static final Direction[] movableDirections = {Direction.NORTH, Direction.NORTH_EAST,
-        Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST,
-        Direction.WEST, Direction.NORTH_WEST};
+    //Previously moved directions
+    public static Direction previousDirection = Direction.NONE;
+    public static Direction previousPreviousDirection = Direction.NONE;
     
     public static Direction[] intToDirection =
             {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST,
@@ -87,108 +87,50 @@ public class MovableUnit extends Common {
     
     
     /**
-     * Returns true if robot can move in input direction, return false otherwise.
-     * @param dir target direction
+     * Wrapper for canMove(). Checks pathability using in order: Internal 
+     * map, radio map, direct sensing, isPathable(). Returns true if robot can move to 
+     * the input location, return false otherwise.
+     * @param dir Target direction
      * @return true if robot can move in dir, false otherwise.
-     * @throws GameActionException 
      */
     protected static boolean movePossible(Direction dir) throws GameActionException {
         MapLocation loc = myLocation.add(dir);
-        int val = Map.getInternalMap(loc);
-        if (val > 1) {
-            return false;
-        } else if (val == 1) {
-            if(rc.canMove(dir)) {
-                return true;
-            }
-        } else if (val == 0) {
-            int radioVal = Map.getRadioMap(loc.x,loc.y);
-            if (radioVal == 0) {
-                switch (rc.senseTerrainTile(loc)) {
-                    case VOID: 
-                        Map.setMaps(loc.x,loc.y, 4); 
-                        return false;
-                    case NORMAL: 
-                        Map.setMaps(loc.x,loc.y, 1); 
-                        if (rc.canMove(dir)) {
-                            return true;
-                        }
-                    case OFF_MAP: 
-                        Map.setMaps(loc.x,loc.y, 5); 
-                        return false;
-                    case UNKNOWN: 
-                        break;
-                    default: 
-                        break;
-                }
-            } else {
-                Map.setInternalMap(loc.x,loc.y,radioVal);
-            } 
-        }
-        return false;
+        return Map.checkPathable(loc) && rc.canMove(dir);
     }
     
     /**
-     * Returns true if robot can move to the input location, return false otherwise.
-     * @param location target location
+     * Wrapper for isPathable(). Checks pathability using in order: Internal 
+     * map, radio map, direct sensing, isPathable(). Returns true if robot can move to 
+     * the input location, return false otherwise.
+     * @param loc Target location
      * @return true if robot can move in dir, false otherwise.
      */
-    protected static boolean movePossible(MapLocation location) {
-        if (Map.getInternalMap(location) > 1 ) {
-            return false;
-        } else if (rc.isPathable(myType, location)) {
-                return true;
-        }
-        return false;
+    protected static boolean movePossible(MapLocation loc) throws GameActionException {
+        return Map.checkPathable(loc) && rc.isPathable(myType,loc);
     }
     
-    /**
-     * Initialize internal map when units are spawned, to bug around tower and hq attack radius.
-     */
-    public static void initInternalMap() {
-        int towerID = 7;
-        for (MapLocation tower: enemyTowers) {
-            for (MapLocation inSightOfTower: MapLocation.getAllMapLocationsWithinRadiusSq(tower, towerAttackRadius)) {
-                Map.setInternalMapWithoutSymmetry(inSightOfTower, towerID);
-            }
-            towerID++;
-        }
-        if (towerID < 9) {
-            HQAttackRadius = HQ0towerAttackRadius;
-            for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,HQAttackRadius)) {
-                Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);   
-            }
-        } else if (towerID > 10) {
-            HQAttackRadius = HQ5towerAttackRadius;
-            for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation, 52)) {
-                if (Math.abs(inSightOfHQ.x - enemyHQLocation.x) < 7 && Math.abs(inSightOfHQ.y - enemyHQLocation.y) < 7) {
-                    Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
-                } else {
-                    if (Common.isInSplashRegion(inSightOfHQ, enemyHQLocation)) {
-                        Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);
-                    }
-                }
-            }
-        } else {
-            for (MapLocation inSightOfHQ: MapLocation.getAllMapLocationsWithinRadiusSq(enemyHQLocation,HQAttackRadius)) {
-                Map.setInternalMapWithoutSymmetry(inSightOfHQ, towerID);   
-            }
-        }
-        
-    }
     
     /**
      * Set all MapLocations in attack radius of tower or hq as pathable.
      * @param target MapLocation of tower or hq.
      * @param targetAttackRadiusSquared attack radius squared of target tower or hq.
      */
-    public static void setTargetToTowerOrHQ(MapLocation target, int targetAttackRadiusSquared) {
-        int targetID = Map.getInternalMap(target);
-        for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, targetAttackRadiusSquared)) {          
-            if (Map.getInternalMap(inSightOfTarget) <= targetID) {
-                    Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);
-            }        
+    public static void setTargetToTowerOrHQ(MapLocation target, int targetAttackRadiusSquared) throws GameActionException {
+        int value = Map.getRadioMap(target.x,target.y);
+        if(target == enemyHQLocation) {
+            if(!Map.isEnemyHQSplashRegionTurnedOff()) Map.turnOffEnemyHQSplashRegion();
+            if(!Map.isEnemyHQBuffedRangeTurnedOff()) Map.turnOffEnemyHQBuffedRange();
+            if(!Map.isEnemyHQBaseRangeTurnedOff()) Map.turnOffEnemyHQBaseRange();
+            return;
         }
+        for(int i=0; i<6; i++) {
+            if(Map.decodeInEnemyTowerRange(value,i) 
+                && !Map.isEnemyTowerRangeTurnedOff(i)) {
+                    Map.turnOffEnemyTowerRange(i);
+                    return;
+            }
+        }
+        
     }
     
     /**
@@ -304,7 +246,7 @@ public class MovableUnit extends Common {
         int maxStat = 500;
         Direction bestDir = Direction.NONE;
         int statsInDir;
-        for (Direction dir: movableDirections) {
+        for (Direction dir: directions) {
             statsInDir = mapStats(x,y,dir);
             if (statsInDir < maxStat && movePossible(dir)) {
                 bestDir = dir;
@@ -502,15 +444,11 @@ public class MovableUnit extends Common {
      * @param dir target direction
      * @return true if robot can move in dir, false otherwise.
      */
-    private static boolean bugMovePossible(Direction dir) {
+    private static boolean bugMovePossible(Direction dir) throws GameActionException {
         if (blockedDirs[prohibitedDir[0]][prohibitedDir[1]][dir.ordinal()]) {
             return false;
-        } else if (Map.getInternalMap(myLocation.add(dir)) > 1 ) { //do not change!!!
-            return false;
-        } else if (rc.canMove(dir)) {
-            return true;
         }
-        return false;
+        return movePossible(dir);
     }
     
     /**
@@ -665,7 +603,6 @@ public class MovableUnit extends Common {
     public static void setTargetToClosestTowerOrHQ() throws GameActionException {
         MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
         int distanceToClosestTower = Integer.MAX_VALUE;
-        int enemyAttackRadius = towerAttackRadius;
         if (towerLoc.length != 0) {
             for (MapLocation loc: towerLoc) {
                 int towerDist = myLocation.distanceSquaredTo(loc);
@@ -674,18 +611,21 @@ public class MovableUnit extends Common {
                     distanceToClosestTower = towerDist;
                 }
             }
+            int value = Map.getRadioMap(target.x,target.y);
+            for(int i=0; i<6; i++) {
+                if(Map.decodeInEnemyTowerRange(value,i)
+                    && !Map.isEnemyTowerRangeTurnedOff(i)) {
+                        Map.turnOffEnemyTowerRange(i);
+                        break;
+                }
+            }
         } else {
-            target = rc.senseEnemyHQLocation();
-            enemyAttackRadius = HQAttackRadius;
+            target = enemyHQLocation;
+            if(!Map.isEnemyHQSplashRegionTurnedOff()) Map.turnOffEnemyHQSplashRegion();
+            if(!Map.isEnemyHQBuffedRangeTurnedOff()) Map.turnOffEnemyHQBuffedRange();
+            if(!Map.isEnemyHQBaseRangeTurnedOff()) Map.turnOffEnemyHQBaseRange();
         }
         
-     // set area around target as pathable
-        int targetID = Map.getInternalMap(target);
-        for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, enemyAttackRadius)) {          
-            if (Map.getInternalMap(inSightOfTarget) == targetID) {
-                Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
-            }
-        }
     }
 
     /**
@@ -738,7 +678,7 @@ public class MovableUnit extends Common {
      * Set internal map around enemy tower as pathable if tower dies.
      * Must manually update previousTowerLocations at the end of every round to use this.
      */
-    public static void setInternalMapAroundTowers() {
+    public static void setInternalMapAroundTowers() throws GameActionException {
         enemyTowers = rc.senseEnemyTowerLocations();
         int towersDead = previousTowerLocations.length - enemyTowers.length;
         if (towersDead > 0) {
@@ -754,11 +694,12 @@ public class MovableUnit extends Common {
                     }
                 }
                 if (!towerAlive) {
-                    int towerID = Map.getInternalMap(tower);
-                    // set area around tower as pathable
-                    for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(tower, towerAttackRadius)) {          
-                        if (Map.getInternalMap(inSightOfTarget) == towerID) {
-                            Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
+                    int value = Map.getRadioMap(tower.x,tower.y);
+                    for(int i=0; i<6; i++) {
+                        if(Map.decodeInEnemyTowerRange(value,i)
+                            && !Map.isEnemyTowerRangeTurnedOff(i)) {
+                                Map.turnOffEnemyTowerRange(i);
+                                break;
                         }
                     }
                     towersDead--;
@@ -781,28 +722,28 @@ public class MovableUnit extends Common {
         int sum = 0;
         switch(dir) {
         case NORTH:
-            sum += Map.getInternalMap(x,y-1) + Map.getInternalMap(x,y-2);
+            sum += Map.decodePathStateOrdinal(Map.getInternalMap(x,y-1)) + Map.decodePathStateOrdinal(Map.getInternalMap(x,y-2));
             break;
         case EAST:
-            sum += Map.getInternalMap(x+1,y) + Map.getInternalMap(x+2,y);
+            sum += Map.decodePathStateOrdinal(Map.getInternalMap(x+1,y)) + Map.decodePathStateOrdinal(Map.getInternalMap(x+2,y));
             break;
         case SOUTH:
-            sum += Map.getInternalMap(x,y+1) + Map.getInternalMap(x,y+2);
+            sum += Map.decodePathStateOrdinal(Map.getInternalMap(x,y+1)) + Map.decodePathStateOrdinal(Map.getInternalMap(x,y+2));
             break;
         case WEST:
-            sum += Map.getInternalMap(x-1,y) + Map.getInternalMap(x-2,y);
+            sum += Map.decodePathStateOrdinal(Map.getInternalMap(x-1,y)) + Map.decodePathStateOrdinal(Map.getInternalMap(x-2,y));
             break;
         case NORTH_EAST:
-            sum += Map.getInternalMap(x+1,y-1) + Map.getInternalMap(x+2,y-2);
+            sum += Map.decodePathStateOrdinal(Map.getInternalMap(x+1,y-1)) + Map.decodePathStateOrdinal(Map.getInternalMap(x+2,y-2));
             break;
         case SOUTH_EAST:
-            sum += Map.getInternalMap(x+1,y+1) + Map.getInternalMap(x+2,y+2);
+            sum += Map.decodePathStateOrdinal(Map.getInternalMap(x+1,y+1)) + Map.decodePathStateOrdinal(Map.getInternalMap(x+2,y+2));
             break;
         case NORTH_WEST:
-            sum += Map.getInternalMap(x-1,y-1) + Map.getInternalMap(x-2,y-2);
+            sum += Map.decodePathStateOrdinal(Map.getInternalMap(x-1,y-1)) + Map.decodePathStateOrdinal(Map.getInternalMap(x-2,y-2));
             break;
         case SOUTH_WEST:
-            sum += Map.getInternalMap(x-1,y+1) + Map.getInternalMap(x-2,y+2);
+            sum += Map.decodePathStateOrdinal(Map.getInternalMap(x-1,y+1)) + Map.decodePathStateOrdinal(Map.getInternalMap(x-2,y+2));
             break;
         default:
             break;
@@ -830,32 +771,40 @@ public class MovableUnit extends Common {
     public static void senseWhenMove(MapLocation robotLoc, Direction dir) throws GameActionException {
         int i = 0;
         if(dir.ordinal()%2 == 0) {
-            while(i < 9 && Clock.getBytecodesLeft() > 3000) {
+            while(i < 9 && Clock.getBytecodesLeft() > 450) {
                 switch (dir) {
                     // Wx = Ny, Ey = Nx, Sx = Nx, Ex = Sy, Wy = Nx
-                    case NORTH: senseMap(robotLoc.add(senseNx[i], senseNy[i])); break;
-                    case EAST: senseMap(robotLoc.add(senseSy[i], senseNx[i])); break;
-                    case SOUTH: senseMap(robotLoc.add(senseNx[i], senseSy[i])); break;
-                    case WEST: senseMap(robotLoc.add(senseNy[i], senseNx[i])); break;
+                    case NORTH:
+                        Map.checkPathableOrSense(robotLoc.add(senseNx[i], senseNy[i]));
+                        break;
+                    case EAST:
+                        Map.checkPathableOrSense(robotLoc.add(senseSy[i], senseNx[i]));
+                        break;
+                    case SOUTH:
+                        Map.checkPathableOrSense(robotLoc.add(senseNx[i], senseSy[i]));
+                        break;
+                    case WEST:
+                        Map.checkPathableOrSense(robotLoc.add(senseNy[i], senseNx[i]));
+                        break;
                     default: break;
                 }
                 i++;
             }
         } else {
-            while(i < 13 && Clock.getBytecodesLeft() > 3000) {
+            while(i < 13 && Clock.getBytecodesLeft() > 450) {
                 switch (dir) {
                     // NEx = SEy, SEx = SWy, SWx = NWy, NEy = NWx
                     case NORTH_WEST:
-                        senseMap(robotLoc.add(senseNWx[i], senseNWy[i]));
+                        Map.checkPathableOrSense(robotLoc.add(senseNWx[i], senseNWy[i]));
                         break;
                     case NORTH_EAST:
-                        senseMap(robotLoc.add(senseSEy[i], senseNWx[i]));
+                        Map.checkPathableOrSense(robotLoc.add(senseSEy[i], senseNWx[i]));
                         break;
                     case SOUTH_EAST:
-                        senseMap(robotLoc.add(senseSEx[i], senseSEy[i]));
+                        Map.checkPathableOrSense(robotLoc.add(senseSEx[i], senseSEy[i]));
                         break;
                     case SOUTH_WEST:
-                        senseMap(robotLoc.add(senseNWy[i], senseSEx[i]));
+                        Map.checkPathableOrSense(robotLoc.add(senseNWy[i], senseSEx[i]));
                         break;
                     default: break;
                 }

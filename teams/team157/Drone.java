@@ -22,17 +22,14 @@ public class Drone extends MovableUnit {
     }
     
     private static void init() throws GameActionException {  
-        if (Clock.getRoundNum() < roundNumAttack) {
-            // set all locations within sight range of tower and hq as void in internal map
-            initInternalMap();
-
-        } else {
+        if (Clock.getRoundNum() >= roundNumAttack) {
             droneState = DroneState.KAMIKAZE;
         }
         
-        
-
         target = enemyHQLocation;
+        // TODO waypoint system has a bug, drones try to move to offmap location at the start
+        //Waypoints.refreshLocalCache();
+        //target = Waypoints.waypoints[0];
     }
     
     

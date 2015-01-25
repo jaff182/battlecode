@@ -3,6 +3,7 @@ package team157;
 import java.util.Random;
 
 import team157.Utility.*;
+import team157.Utility.Map;
 import battlecode.common.*;
 
 public class Common extends RobotPlayer {
@@ -116,29 +117,7 @@ public class Common extends RobotPlayer {
     public static void initialSense(MapLocation robotLoc) throws GameActionException {
         MapLocation[] sensingLoc = MapLocation.getAllMapLocationsWithinRadiusSq(robotLoc, sightRange);
         for (MapLocation loc: sensingLoc) {
-            senseMap(loc);
-        }
-    }
-    
-    /**
-     * Update internal map at input loc using values from radio map.
-     * If loc is unknown, then sense it and update radio map and
-     * internal map.
-     * @param loc location to sense
-     * @throws GameActionException
-     */
-    public static void senseMap(MapLocation loc) throws GameActionException {
-        int value = Map.getRadioMap(loc.x,loc.y);
-        if (value == 0) {
-            switch (rc.senseTerrainTile(loc)) {
-                case VOID: Map.setMaps(loc.x,loc.y, 4); break;
-                case NORMAL: Map.setMaps(loc.x,loc.y, 1); break;
-                case OFF_MAP: Map.setMaps(loc.x,loc.y, 5); break;
-                case UNKNOWN: break;
-                default: break;
-            }
-        } else {
-            Map.setInternalMap(loc.x,loc.y,value);
+            Map.checkPathable(loc);
         }
     }
     
@@ -149,6 +128,9 @@ public class Common extends RobotPlayer {
     //RobotInfo array of nearby units
     public static RobotInfo[] enemies;
     public static RobotInfo[] friends;
+    
+    //Attack range opening triggers
+    public static int mobLevel;
     
     /**
      * Checks whether loc is in the splash damage region of an HQ at hqloc.
@@ -286,6 +268,9 @@ public class Common extends RobotPlayer {
     public static void sharedLoopCode() throws GameActionException {
         // Update global counts of robots - do not remove
         RobotCount.report();
+        
+        //Update Mob level to know which enemy structure ranges can be traversed
+        mobLevel = rc.readBroadcast(Channels.MOB_LEVEL);
         
         // Report any drops in HP
         // TODO: I'm not entirely sure whether you can do this without creating an instance
