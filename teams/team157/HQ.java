@@ -100,21 +100,33 @@ public class HQ extends Structure {
         
         // For testing launcher bot
         if(Clock.getRoundNum() == 100) {
-            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.HELIPAD); 
         }
         if(Clock.getRoundNum() == 225) {
+            BuildOrder.add(RobotType.BARRACKS);
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        }
+        if (Clock.getRoundNum() == 400) {
+            BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
         if (Clock.getRoundNum() == 800) {
-            BuildOrder.add(RobotType.AEROSPACELAB);
-            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
-        if (Clock.getRoundNum() == 1200) {
+        if (Clock.getRoundNum() == 1000) {
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.AEROSPACELAB);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);

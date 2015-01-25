@@ -102,7 +102,7 @@ public class Beaver extends MiningUnit {
                 moveTargetLocation = null;
                 robotState = RobotState.BUILD;
             }
-        } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10 
+        } else if (rc.getRoundLimit()-Clock.getRoundNum() < 250 && rc.getHealth() > 10 
             && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
                 //Lategame handwash station attack
                 robotState = RobotState.BUILD;
@@ -130,7 +130,7 @@ public class Beaver extends MiningUnit {
                 moveTargetLocation = null;
                 robotState = RobotState.BUILD;
             }
-        } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10 
+        } else if (rc.getRoundLimit()-Clock.getRoundNum() < 250 && rc.getHealth() > 10 
             && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
                 //Lategame handwash station attack
                 robotState = RobotState.BUILD;
