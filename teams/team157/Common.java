@@ -117,7 +117,7 @@ public class Common extends RobotPlayer {
     public static void initialSense(MapLocation robotLoc) throws GameActionException {
         MapLocation[] sensingLoc = MapLocation.getAllMapLocationsWithinRadiusSq(robotLoc, sightRange);
         for (MapLocation loc: sensingLoc) {
-            Map.checkPathable(loc);
+            Map.checkPathableOrSense(loc);
         }
     }
     

@@ -66,7 +66,9 @@ public class Miner extends MiningUnit {
         if(previousPreviousDirection != Direction.NONE) {
             senseWhenMove(myLocation, previousPreviousDirection);
         }
-        previousPreviousDirection = previousDirection;
+        if(previousDirection != Direction.NONE) {
+            previousPreviousDirection = previousDirection;
+        }
         previousDirection = Direction.NONE;
     }
     

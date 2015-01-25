@@ -65,6 +65,7 @@ public class MiningUnit extends MovableUnit {
             //Add attractive forces from ore around robot
             while(noPreferredDirFound && HCL < 4) {
                 //Add ore contributions
+                int bc = Clock.getBytecodeNum();
                 for(int i=0; i<shellsX[HCL].length; i++) {
                     countOreInRelativeLocation(shellsX[HCL][i],shellsY[HCL][i]);
                     countOreInRelativeLocation(-shellsY[HCL][i],shellsX[HCL][i]);
@@ -79,6 +80,9 @@ public class MiningUnit extends MovableUnit {
                         break;
                     }
                 }
+                
+                bc = Clock.getBytecodeNum() - bc;
+                
                 
                 //Go to next hill climb level if no direction is preferred
                 HCL++;

@@ -94,8 +94,10 @@ public class MovableUnit extends Common {
      * @return true if robot can move in dir, false otherwise.
      */
     protected static boolean movePossible(Direction dir) throws GameActionException {
-        MapLocation loc = myLocation.add(dir);
-        return Map.checkPathable(loc) && rc.canMove(dir);
+        if(rc.canMove(dir)) {
+            MapLocation loc = myLocation.add(dir);
+            return Map.checkPathable(loc);
+        } else return false;
     }
     
     /**
@@ -106,7 +108,7 @@ public class MovableUnit extends Common {
      * @return true if robot can move in dir, false otherwise.
      */
     protected static boolean movePossible(MapLocation loc) throws GameActionException {
-        return Map.checkPathable(loc) && rc.isPathable(myType,loc);
+        return rc.isPathable(myType,loc) && Map.checkPathable(loc);
     }
     
     
