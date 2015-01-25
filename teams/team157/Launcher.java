@@ -13,7 +13,8 @@ public class Launcher extends MovableUnit {
     
     private static MapLocation gatherLocation;
     private static MapLocation surroundLocation;
-    private static int numberInSwarm = 2;
+    private static MapLocation defendLocation = HQLocation;
+    private static int numberInSwarm = 4;
     private static LauncherState state;
     private static LauncherState previousState;
     private static int gatherRange = 24;
@@ -23,6 +24,10 @@ public class Launcher extends MovableUnit {
     private static int retreatTimeout = baseRetreatTimeout;
     private static int[] launchOffsets = new int[]{0,1,-1};
     private static int numberOfEnemyTowers;
+    private static MapLocation enemyTarget; //used only in defend state
+    private static int defendRadius = distanceBetweenHQs/4;
+    
+    private static int sensingRange = 35;
 
     
     
@@ -32,7 +37,8 @@ public class Launcher extends MovableUnit {
         ADVANCE, // advance to enemy location
         SURROUND, // only for surrounding towers/hqs and nothing else
         GATHER, // wait until there are enough reinforcements
-        RETREAT // wait or retreat if no missiles
+        RETREAT, // wait or retreat if no missiles
+        DEFEND //defend hq or towers
     } ;
     
     
@@ -51,14 +57,30 @@ public class Launcher extends MovableUnit {
         missileCount = 0;
         numberOfEnemyTowers = enemyTowers.length;
         
-        if (myTowers.length > 0) {
-            gatherLocation = getClosestFriendlyTower(enemyHQLocation);
-        } else {
-            gatherLocation = HQLocation.add(HQLocation.directionTo(enemyHQLocation), distanceBetweenHQs/2);
-        }
-        state = LauncherState.GATHER; // start by gathering near own hq
-        previousState = state;
+        /*
+        if (Clock.getRoundNum() < 800 && rand.nextInt(2) == 0) {
+            // set some launchers to protect hq
+            state = LauncherState.DEFEND;
+            previousState = state;
+        } else 
         
+        if (myTowers.length > 0) {
+            // gather at nearest tower to enemy hq
+            gatherLocation = getClosestFriendlyTower(enemyHQLocation);
+            state = LauncherState.GATHER;
+            previousState = state;
+        } else {
+            //gather halfway between hqs
+            gatherLocation = HQLocation.add(HQLocation.directionTo(enemyHQLocation), distanceBetweenHQs/2);
+            state = LauncherState.GATHER; 
+            previousState = state;
+        }
+        */
+        int midX = (3*HQLocation.x + enemyHQLocation.x)/4;
+        int midY = (3*HQLocation.y + enemyHQLocation.y)/4;
+        gatherLocation = new MapLocation(midX,midY); 
+        state = LauncherState.GATHER; 
+        previousState = state;
 
     }
     
@@ -68,7 +90,7 @@ public class Launcher extends MovableUnit {
         sharedLoopCode();
         
         myLocation = rc.getLocation();
-        enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
+        enemiesInSight = rc.senseNearbyRobots(sensingRange, enemyTeam);
         numberOfEnemiesInSight = enemiesInSight.length;
         enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
         missileCount = rc.getMissileCount();
@@ -137,11 +159,39 @@ public class Launcher extends MovableUnit {
                     previousState = LauncherState.GATHER;
                     attackTimeout = baseAttackTimeout;
                 }
-            } else if (getNearbyFriendlyLaunchers() >= numberInSwarm
-                    && missileCount > 2) {
-                state = LauncherState.ADVANCE;
-                previousState = LauncherState.GATHER;
-                setNextSurroundTarget();
+            } else {
+                RobotInfo[] enemiesAroundDefendLocation = rc.senseNearbyRobots(gatherLocation, defendRadius, enemyTeam);
+                if (enemiesAroundDefendLocation.length!=0) {
+                    enemyTarget = getNearestEnemy(enemiesAroundDefendLocation).location;
+                } else {
+                    enemyTarget = null;
+                    if (getNearbyFriendlyLaunchers() >= numberInSwarm
+                            && missileCount > 2) {
+                        state = LauncherState.ADVANCE;
+                        previousState = LauncherState.GATHER;
+                        setNextSurroundTarget();
+                    }
+                }
+            }
+            break;
+        case DEFEND:
+            if (numberOfEnemiesInSight > 0) {
+                if (missileCount == 0 ) {
+                    state = LauncherState.RETREAT;
+                    previousState = LauncherState.DEFEND;
+                    retreatTimeout = baseRetreatTimeout;
+                } else {
+                    state = LauncherState.ATTACK;
+                    previousState = LauncherState.DEFEND;
+                    attackTimeout = baseAttackTimeout;
+                }
+            } else {
+                RobotInfo[] enemiesAroundDefendLocation = rc.senseNearbyRobots(defendLocation, defendRadius, enemyTeam);
+                if (enemiesAroundDefendLocation.length!=0) {
+                    enemyTarget = getNearestEnemy(enemiesAroundDefendLocation).location;
+                } else {
+                    enemyTarget = null;
+                }
             }
             break;
         case SURROUND:
@@ -174,18 +224,23 @@ public class Launcher extends MovableUnit {
                                 Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
                             }
                         }
+                        setNextSurroundTarget();
+                        /*
                         state = LauncherState.GATHER;
                         previousState = LauncherState.SURROUND;
-                        gatherLocation = surroundLocation;
+                        gatherLocation = surroundLocation;*/
                     }
                     break;
                 }
                 if (myLocation.distanceSquaredTo(surroundLocation) <= 24) {
                     if (rc.senseRobotAtLocation(surroundLocation) == null ||
                             rc.senseRobotAtLocation(surroundLocation).team == myTeam) {
+                                setNextSurroundTarget();
+                                /*
                                 state = LauncherState.GATHER;
                                 previousState = LauncherState.SURROUND;
                                 gatherLocation = surroundLocation;
+                                */
                             }
                 }
             }
@@ -230,9 +285,23 @@ public class Launcher extends MovableUnit {
             bug(surroundLocation);
             break;
         case GATHER:
-            int distanceToGatherLoc = myLocation.distanceSquaredTo(gatherLocation);
-            if (distanceToGatherLoc > 2) {
-                bug(gatherLocation);
+            if (enemyTarget != null) {
+                bug(enemyTarget);
+            } else {
+                int distanceToGatherLoc = myLocation.distanceSquaredTo(gatherLocation);
+                if (distanceToGatherLoc > 2) {
+                    bug(gatherLocation);
+                }
+            }
+            break;
+        case DEFEND:
+            if (enemyTarget!=null) {
+                bug(enemyTarget);
+            } else {
+                int distanceToDefendLoc = myLocation.distanceSquaredTo(defendLocation);
+                if (distanceToDefendLoc > 36) {
+                    bug(defendLocation);
+                }
             }
             break;
         case SURROUND:
@@ -292,19 +361,29 @@ public class Launcher extends MovableUnit {
             
         }
         int maxDirScore = (-1)*Integer.MAX_VALUE;
+        int secondMaxDirScore = (-1)*Integer.MAX_VALUE;
         int dirScore = 0;
         int maxIndex = 0;
+        int secondMaxIndex = 0;
         for (int i = 0; i < 8; i++) {
-            dirScore = dangerInDir[i] + dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8] + dangerInDir[(i+6)%8] + dangerInDir[(i+2)%8];
-            if (dirScore > maxDirScore) {
+            dirScore = dangerInDir[i] + dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8];
+            if (dirScore > secondMaxDirScore) {
                 if (rc.canLaunch(directions[i])) {
-                    maxDirScore = dirScore;
-                    maxIndex = i;  
-                }
+                    if (dirScore > maxDirScore) {
+                        maxDirScore = dirScore;
+                        maxIndex = i;
+                    } else {
+                        secondMaxDirScore = dirScore;
+                        secondMaxIndex = i;
+                    }
+                } 
             }
         }
         if (maxDirScore > 0) {
-            launchInThreeDir(directions[maxIndex]);
+            tryLaunch(directions[maxIndex]);
+            if (secondMaxDirScore > 0) {
+                tryLaunch(directions[secondMaxIndex]);
+            }
         }
         
         
@@ -344,6 +423,25 @@ public class Launcher extends MovableUnit {
         }
     }
     
+    
+    
+    /**
+     * Returns nearest enemy or null if there are no nearby enemies
+     * @return
+     */
+    public static RobotInfo getNearestEnemy(RobotInfo[] enemyInfo) {
+        RobotInfo nearestEnemy = null;
+        int nearestEnemyDistance = Integer.MAX_VALUE;
+        for (int i=0; i<enemyInfo.length; i++) {
+            int distance = enemyInfo[i].location.distanceSquaredTo(myLocation);
+            if (nearestEnemyDistance > distance) {
+                nearestEnemy = enemyInfo[i];
+                nearestEnemyDistance = distance;
+            }
+        }
+        return nearestEnemy;
+    }
+    
     //Pathing  ===================================================================
     
     
@@ -368,6 +466,26 @@ public class Launcher extends MovableUnit {
         }
         return null;
     }
+    
+    /**
+     * Returns furthest enemy tower from enemy hq
+     * check that enemytowers is nonempty before using.
+     * @return
+     */
+    private static MapLocation getFurthestTowerFromEnemyHQ() {
+        int furthestTowerDistance = 0;
+        MapLocation furthestTower = enemyTowers[0];
+        for (MapLocation towerLoc: enemyTowers) {
+            int towerDist = towerLoc.distanceSquaredTo(enemyHQLocation);
+            if (towerDist > furthestTowerDistance) {
+                furthestTower = towerLoc;
+                furthestTowerDistance = towerDist;
+            }
+        }
+        return furthestTower;
+    }
+    
+    
     
     /**
      * Returns number of friendly launchers in gather range
@@ -398,10 +516,21 @@ public class Launcher extends MovableUnit {
     }
     
     
+    
     /**
      * Sets next target for launchers to surround
      */
     private static void setNextSurroundTarget() {
+        /**
+        enemyTowers = rc.senseEnemyTowerLocations();
+        if (enemyTowers.length > 1) {
+            surroundLocation = getFurthestTowerFromEnemyHQ();
+        } else {
+            surroundLocation = enemyHQLocation;
+        }
+        **/
+        
+        
         MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
         int distanceToClosestTower = Integer.MAX_VALUE;
         if (towerLoc.length > 1) {
@@ -415,6 +544,7 @@ public class Launcher extends MovableUnit {
         } else {
             surroundLocation = rc.senseEnemyHQLocation();
         }
+       
     }
     
     // Parameters =================================================================

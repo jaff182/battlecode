@@ -26,8 +26,9 @@ public class Barracks extends SpawnableStructure {
         //Report existence if built because of build order
         claimBuildOrderEntry();
 
-        //Spawn
-        if (RobotCount.read(RobotType.SOLDIER) < 20) {
+        if(RobotCount.read(RobotType.SOLDIER) < 20
+                && RobotCount.read(RobotType.LAUNCHER) < 10) {
+            //System.out.println("Trying to spawn tanks");
             trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.SOLDIER);
         }
 

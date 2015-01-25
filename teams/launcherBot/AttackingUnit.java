@@ -88,10 +88,15 @@ public class AttackingUnit extends MovableUnit{
      * @throws GameActionException 
      */
     private static void init() throws GameActionException {
+        /*
+        int midX = (HQLocation.x + enemyHQLocation.x)/2;
+        int midY = (HQLocation.y + enemyHQLocation.y)/2; 
+        advanceLocation = new MapLocation(midX,midY);
+        */
         advanceLocation = Common.enemyHQLocation;
         retreatLocation = Common.HQLocation;
         state = MovableUnitState.ADVANCING;
-        if (Clock.getRoundNum() < 1800) {
+        if (Clock.getRoundNum() < rc.getRoundLimit() - 200) {
             initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
             //Map.printInternalMap();
         } 
@@ -125,7 +130,9 @@ public class AttackingUnit extends MovableUnit{
         numberOfEnemiesInSight = enemiesInSight.length;
         enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
         
-        if (Clock.getRoundNum() >= 1750) {
+        sharedLoopCode();
+        
+        if (Clock.getRoundNum() >= rc.getRoundLimit() - 250) {
             setTargetToClosestTowerOrHQ();
             advanceLocation = target;
         }

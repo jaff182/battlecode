@@ -64,6 +64,7 @@ public class Beaver extends MiningUnit {
         
         //Sense map
         //Must be before movement methods
+        
         if(previousDirection != Direction.NONE) {
             senseWhenMove(myLocation, previousDirection);
             previousDirection = Direction.NONE;

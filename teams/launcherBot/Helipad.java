@@ -8,7 +8,7 @@ import battlecode.common.*;
 
 public class Helipad extends Structure {
     
-    private static int maxNumberOfDrones = 40;
+    private static int maxNumberOfDrones = 30;
     
     //General methods =========================================================
     
@@ -38,6 +38,7 @@ public class Helipad extends Structure {
                 && RobotCount.read(RobotType.AEROSPACELAB) < 2) {
             trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);
         }
+        
         
         
         //Dispense Supply
