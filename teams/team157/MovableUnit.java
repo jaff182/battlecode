@@ -25,51 +25,10 @@ public class MovableUnit extends Common {
     public static int indexInWaypoints = 0;
     public static int waypointTimeout = 100; // timeout before waypoint changes
     public static final int roundNumAttack = rc.getRoundLimit() - 200; // round number when end game attack starts
-    public static int numberInSwarm = 5; // minimum size of group for units to start swarming
     public static boolean keepAwayFromTarget = false; // true if target is tower or hq, false otherwise
     public static RobotInfo attackTarget; // current attack target
     
-    // For pathing
-    private static PathingState pathingState = PathingState.BUGGING;
-    private static boolean turnClockwise = rand.nextBoolean();
-    private static double startDistance; //distance squared before hugging
-    private static Direction startTargetDir; //target direction before hugging.
-    private static final int noDir = 8;
-    private static int[] prohibitedDir = {noDir, noDir};
-    private static boolean goneAround = false;
-    
-    //Previously moved directions
-    public static Direction previousDirection = Direction.NONE;
-    public static Direction previousPreviousDirection = Direction.NONE;
-    
-    public static Direction[] intToDirection =
-            {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST,
-            Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST,
-            Direction.NORTH_WEST, Direction.NONE, Direction.OMNI};
-    
-    private static final boolean[][][] blockedDirs; 
-    static {
-        blockedDirs = new boolean[10][10][10];
-        for (Direction d: Direction.values()) {
-            if (d == Direction.NONE || d == Direction.OMNI || d.isDiagonal())
-                continue;
-            for (Direction b: Direction.values()) {
-                // Blocking a dir that is the first prohibited dir, or one
-                // rotation to the side
-                blockedDirs[d.ordinal()][b.ordinal()][d.ordinal()] = true;
-                blockedDirs[d.ordinal()][b.ordinal()][d.rotateLeft().ordinal()] = true;
-                blockedDirs[d.ordinal()][b.ordinal()][d.rotateRight().ordinal()] = true;
-                // b is diagonal, ignore it
-                if (!b.isDiagonal() && b != Direction.NONE && b != Direction.OMNI) {
-                    // Blocking a dir that is the second prohibited dir, or one
-                    // rotation to the side
-                    blockedDirs[d.ordinal()][b.ordinal()][b.ordinal()] = true;
-                    blockedDirs[d.ordinal()][b.ordinal()][b.rotateLeft().ordinal()] = true;
-                    blockedDirs[d.ordinal()][b.ordinal()][b.rotateRight().ordinal()] = true;
-                }
-            }
-        }
-    }
+ 
 
     // Robot overall state ====================================================
     // Only modify these variables before and after loop(), at clearly specified locations
@@ -166,27 +125,6 @@ public class MovableUnit extends Common {
     }
     
     /**
-     * Primitive pathing with randomness to target location, with no knowledge of terrain.
-     * @param target
-     * @throws GameActionException
-     */
-    public static void exploreRandom(MapLocation target) throws GameActionException {
-        if(rc.isCoreReady()) {
-            updateMyLocation();
-            int dirInt = myLocation.directionTo(target).ordinal() + rand.nextInt(5)-2;
-            int offsetIndex = 0;
-            while (offsetIndex < 5 && !movePossible(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
-                offsetIndex++;
-            }
-            if (offsetIndex < 5) {
-                Direction dirToMove = directions[(dirInt+offsets[offsetIndex]+8)%8];
-                rc.move(dirToMove);
-                previousDirection = dirToMove;
-            }
-        }
-    }
-    
-    /**
      * Move around randomly.
      * @throws GameActionException
      */
@@ -205,56 +143,8 @@ public class MovableUnit extends Common {
         }
     }
     
-    /**
-     * Return preferred direction to move in given input Direction, based on mapStats.
-     * @param x x coordinate of robot position in internal map
-     * @param y y coordinate of robot position in internal map
-     * @param targetDir desired direction to move in.
-     * @return preferred direction to move in, or NONE if cannot move into 3 forward directions.
-     * @throws GameActionException
-     */
-    private static Direction chooseForwardDir(int x, int y, Direction targetDir) throws GameActionException {
-        Direction leftDir = targetDir.rotateLeft();
-        Direction rightDir = targetDir.rotateRight();
-        Direction[] directions = new Direction[3];
-        directions[0] = targetDir;
-        boolean turnLeft = mapStats(x,y,leftDir) < mapStats(x,y,rightDir);
-        directions[1] = (turnLeft ? leftDir : rightDir);
-        directions[2] = (turnLeft ? rightDir : leftDir);
 
-        for (int i = 0; i<3; i++) {
-            if (movePossible(directions[i])) {
-                return directions[i];
-            }
-        }
-        return Direction.NONE;
-    }
-    
     // Retreating ==============================================================
-    
-    
-    /**
-     * Return preferred enemy/obstacle avoidance direction based on mapStats.
-     * @param x x coordinate of robot position in internal map
-     * @param y y coordinate of robot position in internal map
-     * @return preferred avoidance direction to move in, or Direction.NONE if cannot move into any of the non-forward directions.
-     * @throws GameActionException
-     */
-    public static Direction chooseAvoidanceDir(MapLocation myLoc) throws GameActionException {
-        int x = Map.locationToMapXIndex(myLoc.x);
-        int y = Map.locationToMapYIndex(myLoc.y);
-        int maxStat = 500;
-        Direction bestDir = Direction.NONE;
-        int statsInDir;
-        for (Direction dir: directions) {
-            statsInDir = mapStats(x,y,dir);
-            if (statsInDir < maxStat && movePossible(dir)) {
-                bestDir = dir;
-                maxStat = statsInDir;
-            }
-        }
-        return bestDir;
-    }
     
     /**
      * Retreat in preference of direction with least enemies
@@ -298,6 +188,73 @@ public class MovableUnit extends Common {
     
     // Bugging ==================================================================
     
+    
+    // For pathing
+    private static PathingState pathingState = PathingState.BUGGING;
+    private static boolean turnClockwise = rand.nextBoolean();
+    private static double startDistance; //distance squared before hugging
+    private static Direction startTargetDir; //target direction before hugging.
+    private static final int noDir = 8;
+    private static int[] prohibitedDir = {noDir, noDir};
+    private static boolean goneAround = false;
+    
+    //Previously moved directions
+    public static Direction previousDirection = Direction.NONE;
+    public static Direction previousPreviousDirection = Direction.NONE;
+    
+    public static Direction[] intToDirection =
+            {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST,
+            Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST,
+            Direction.NORTH_WEST, Direction.NONE, Direction.OMNI};
+    
+    private static final boolean[][][] blockedDirs; 
+    static {
+        blockedDirs = new boolean[10][10][10];
+        for (Direction d: Direction.values()) {
+            if (d == Direction.NONE || d == Direction.OMNI || d.isDiagonal())
+                continue;
+            for (Direction b: Direction.values()) {
+                // Blocking a dir that is the first prohibited dir, or one
+                // rotation to the side
+                blockedDirs[d.ordinal()][b.ordinal()][d.ordinal()] = true;
+                blockedDirs[d.ordinal()][b.ordinal()][d.rotateLeft().ordinal()] = true;
+                blockedDirs[d.ordinal()][b.ordinal()][d.rotateRight().ordinal()] = true;
+                // b is diagonal, ignore it
+                if (!b.isDiagonal() && b != Direction.NONE && b != Direction.OMNI) {
+                    // Blocking a dir that is the second prohibited dir, or one
+                    // rotation to the side
+                    blockedDirs[d.ordinal()][b.ordinal()][b.ordinal()] = true;
+                    blockedDirs[d.ordinal()][b.ordinal()][b.rotateLeft().ordinal()] = true;
+                    blockedDirs[d.ordinal()][b.ordinal()][b.rotateRight().ordinal()] = true;
+                }
+            }
+        }
+    }
+    
+    /**
+     * Return direction to move in given input Direction.
+     * @param targetDir desired direction to move in.
+     * @return preferred direction to move in, or NONE if cannot move into 3 forward directions.
+     * @throws GameActionException
+     */
+    private static Direction chooseForwardDir(Direction targetDir) throws GameActionException {
+        if (movePossible(targetDir)) {
+            return targetDir;
+        } else {
+            Direction leftDir = targetDir.rotateLeft();
+            Direction rightDir = targetDir.rotateRight();
+            if (movePossible(leftDir)) {
+                return leftDir;
+            } else if (movePossible(rightDir)) {
+                return rightDir;
+            }
+            
+        }
+        return Direction.NONE;
+    }
+    
+    
+    
     /**
      * Return direction to bug in.
      * @param target location of target.
@@ -327,9 +284,7 @@ public class MovableUnit extends Common {
         switch(pathingState) {
         case BUGGING:
             rc.setIndicatorString(0,"bug " + targetDir);
-            int x = Map.locationToMapXIndex(myLocation.x);
-            int y = Map.locationToMapYIndex(myLocation.y);
-            Direction forwardDir = chooseForwardDir(x, y, targetDir);
+            Direction forwardDir = chooseForwardDir(targetDir);
             if (forwardDir!= Direction.NONE) {
                 return forwardDir;
             }

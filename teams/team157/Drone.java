@@ -10,7 +10,7 @@ public class Drone extends MovableUnit {
     private static DroneState droneState = DroneState.UNSWARM;
     private static int retreatTimeout = 10; // number of rounds before changing from retreat to unswarm state.
     private static int baseRetreatTimeout = 10;
-    private static int numberInSwarm = 10;
+    //private static int numberInSwarm = 10;
     
     
     public static void start() throws GameActionException {
@@ -140,7 +140,7 @@ public class Drone extends MovableUnit {
                 droneState = DroneState.UNSWARM;
             }
             break;
-        case SCOUT:
+        case SUPPLY:
             //TODO
             break;
         default:
@@ -194,7 +194,7 @@ public class Drone extends MovableUnit {
                 retreatTimeout = baseRetreatTimeout;
             }
             break;
-        case SCOUT:
+        case SUPPLY:
             // TODO scout not implemented yet!
             break;
         default:
@@ -412,6 +412,6 @@ public class Drone extends MovableUnit {
         FOLLOW, // following enemy
         KAMIKAZE, // all out attack
         RETREAT, // retreats when enemy is in sight range and then stays still.
-        SCOUT // scouting map for enemies or terrain
+        SUPPLY // move back to hq to collect supply and distribute it to other units
     }
 }
