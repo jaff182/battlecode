@@ -572,7 +572,7 @@ public class Map {
      * @param loc Location to query
      * @return True if map values alone do not indicate movement restrictions
      */
-    public static boolean checkPathable(MapLocation loc) throws GameActionException {
+    public static boolean checkNotBlocked(MapLocation loc) throws GameActionException {
         //In interest of bytecode conservation, the abstraction for methods in 
         //Map.java will be broken in this method, since this is a core method used 
         //rather frequently.
@@ -625,7 +625,7 @@ public class Map {
                 //radio is more up to date so just copy into internal map as well
                 setInternalMap(loc.x,loc.y,value);
                 //Can check if in enemy attack region again
-                //The following check is the same as the comment at the end
+                //The following check is the same as the comment earlier
                 if(((value & ~pathStateBitMask) & ~Common.mobLevel) != 0) {
                     return false;
                 }
@@ -636,23 +636,17 @@ public class Map {
         return true;
     }
     
+    
     /**
-     * Checks pathability of a location using in order: internal map, then radio map, 
-     * then direct sensing. Updates accordingly. Need to be called with isPathable() 
-     * or canMove() since it only queries map values. Primarily used by map
+     * Checks and updates in order: internal map, then radio map, then direct sensing.
      * @param loc Location to query
-     * @return True if map values alone do not indicate movement restrictions
      */
-    public static boolean checkPathableOrSense(MapLocation loc) throws GameActionException {
+    public static void updateOrSense(MapLocation loc) throws GameActionException {
         //In interest of bytecode conservation, the abstraction for methods in 
         //Map.java will be broken in this method, since this is a core method used 
         //rather frequently.
         
-        //Get maximum pathability state ordinal
-        int maxPathableOrdinal = 1; //NORMAL only
-        if(RobotPlayer.myType == RobotType.DRONE) maxPathableOrdinal = 2; //VOID too
-        
-        //Check internal map pathability first
+        //Check internal map first
         //The following is "int value = getInternalMap_(loc.x,loc.y);"
         //and "int pathStateOrdinal = decodePathStateOrdinal(value);"
         int xidx = locationToMapXIndex(loc.x);
@@ -660,74 +654,39 @@ public class Map {
         int value = map[yidx][xidx];
         int pathStateOrdinal = (value & pathStateBitMask);
         
-        if(pathStateOrdinal > maxPathableOrdinal) {
-            //Internal PathState is (VOID,) ENEMY_HQ, HQ, OFF_MAP
-            return false;
-        } else if(pathStateOrdinal == 0) {
+        if(pathStateOrdinal == 0) {
             //Internal PathState is UNKNOWN
             //Check radio map pathability next
             //The following is "int valueRadio = getRadioMap(loc.x,loc.y);"
-            //and "int pathStateOrdinalRadio = decodePathStateOrdinal(valueRadio);"
-            int valueRadio = RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx));
-            int pathStateOrdinalRadio = (valueRadio & pathStateBitMask);
+            value = RobotPlayer.rc.readBroadcast(mapIndexToChannel(xidx,yidx));
             
-            if(pathStateOrdinalRadio != 0) {
-                //Update internal map
-                //radio is more up to date so just copy into internal map as well
-                setInternalMap(loc.x,loc.y,valueRadio);
-                if(pathStateOrdinalRadio > maxPathableOrdinal) {
-                    //Radio PathState is (VOID,) ENEMY_HQ, HQ, OFF_MAP
-                    return false;
+            if(value != 0) {
+                //The following is "int pathStateOrdinal = decodePathStateOrdinal(value);"
+                pathStateOrdinal = (value & pathStateBitMask);
+                if(pathStateOrdinal == 0) {
+                    //Radio PathState is UNKNOWN
+                    //Sense directly for terrain tile
+                    switch (RobotPlayer.rc.senseTerrainTile(loc)) {
+                        case VOID: pathStateOrdinal = 2/*VOID*/; break;
+                        case NORMAL: pathStateOrdinal = 1/*NORMAL*/; break;
+                        case OFF_MAP: pathStateOrdinal = 5/*OFF_MAP*/; break;
+                        case UNKNOWN: pathStateOrdinal = 0/*UNKNOWN*/; break;
+                        default: break;
+                    }
+                    //The following is
+                    //"value = encodePathState(value,pathStateOrdinal);"
+                    value = (value & ~pathStateBitMask) | pathStateOrdinal;
+                    
+                    //radio is more up to date so just copy into internal map as well
+                    setMaps(loc.x,loc.y,value);
+                } else {
+                    //Radio PathState is set
+                    //Update internal map
+                    //radio is more up to date so just copy into internal map as well
+                    setInternalMap(loc.x,loc.y,value);
                 }
-            } else {
-                //Radio PathState is UNKNOWN
-                //Sense directly for terrain tile
-                switch (RobotPlayer.rc.senseTerrainTile(loc)) {
-                    case VOID: pathStateOrdinal = 2/*VOID*/; break;
-                    case NORMAL: pathStateOrdinal = 1/*NORMAL*/; break;
-                    case OFF_MAP: pathStateOrdinal = 5/*OFF_MAP*/; break;
-                    case UNKNOWN: pathStateOrdinal = 0/*UNKNOWN*/; break;
-                    default: break;
-                }
-                //The following is
-                //"valueRadio = Map.encodePathState(valueRadio,pathStateOrdinal);"
-                valueRadio = (valueRadio & ~pathStateBitMask) | pathStateOrdinal;
-                
-                //radio is more up to date so just copy into internal map as well
-                setMaps(loc.x,loc.y,valueRadio);
-                //Check PathState again
-                if(pathStateOrdinal > maxPathableOrdinal) return false;
             }
         }
-        
-        //At this point internal map should already be consistent with radio map
-        //as long as all terrain tile checks also update the radio map.
-        //Now check whether in attack regions of enemy HQ or towers
-        //The following does
-        /*
-        if(decodeInEnemyHQBaseRange(value) 
-            && !isEnemyHQBaseRangeTurnedOff()) {
-                //In enemy HQ base range which is not turned off
-                return false;
-        } else if(decodeInEnemyHQBuffedRange(value) 
-            && !isEnemyHQBuffedRangeTurnedOff()) {
-                //In enemy HQ buffed range which is not turned off
-                return false;
-        } else if(decodeInEnemyHQSplashRegion(value) 
-            && !isEnemyHQSplashRegionTurnedOff()) {
-                //In enemy HQ buffed range which is not turned off
-                return false;
-        }
-        for(int i=0; i<Common.enemyTowers.length; i++) {
-            int enemyTowerBitMask = enemyTowerBaseBitMask << i;
-            if(decodeInEnemyTowerRange(value,i) && !isEnemyTowerRangeTurnedOff(i)) {
-                //In ith enemy tower's range which is not turned off
-                return false;
-            }
-        }//*/
-        if(((value & ~pathStateBitMask) & ~Common.mobLevel) != 0) return false;
-        
-        return true;
     }
     
     

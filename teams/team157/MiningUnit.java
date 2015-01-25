@@ -129,7 +129,7 @@ public class MiningUnit extends MovableUnit {
             int maxCount = 0;
             int bestdirectionPriority = -10000000;
             for(int dirInt=0; dirInt<8; dirInt++) {
-                if(movePossible(directions[dirInt])) {
+                if(rc.canMove(directions[dirInt]) && Map.checkNotBlockedWithoutUpdate(myLocation.add(directions[dirInt]))) {
                     if(directionPriority[dirInt] > bestdirectionPriority) {
                         //Reset list to include new best direction
                         bestdirectionPriority = directionPriority[dirInt];
@@ -167,7 +167,8 @@ public class MiningUnit extends MovableUnit {
     private static void countOreInRelativeLocation(int dx, int dy) throws GameActionException {
         MapLocation loc = myLocation.add(dx,dy);
         int dirInt = myLocation.directionTo(loc).ordinal();
-        if(movePossible(loc)) {
+        if(rc.isPathable(myType,loc) 
+            && (((rc.readBroadcast(Map.mapIndexToChannel(Map.locationToMapXIndex(loc.x),Map.locationToMapYIndex(loc.y))) & ~7) & ~Common.mobLevel) == 0)) {
             //Add ore contribution (10 times ore amount)
             double ore = rc.senseOre(loc);
             if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);

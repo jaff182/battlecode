@@ -55,7 +55,7 @@ public class MovableUnit extends Common {
     protected static boolean movePossible(Direction dir) throws GameActionException {
         if(rc.canMove(dir)) {
             MapLocation loc = myLocation.add(dir);
-            return Map.checkPathable(loc);
+            return Map.checkNotBlocked(loc);
         } else return false;
     }
     
@@ -67,7 +67,7 @@ public class MovableUnit extends Common {
      * @return true if robot can move in dir, false otherwise.
      */
     protected static boolean movePossible(MapLocation loc) throws GameActionException {
-        return rc.isPathable(myType,loc) && Map.checkPathable(loc);
+        return rc.isPathable(myType,loc) && Map.checkNotBlocked(loc);
     }
     
     
@@ -79,15 +79,15 @@ public class MovableUnit extends Common {
     public static void setTargetToTowerOrHQ(MapLocation target, int targetAttackRadiusSquared) throws GameActionException {
         int value = Map.getRadioMap(target.x,target.y);
         if(target == enemyHQLocation) {
-            if(!Map.isEnemyHQSplashRegionTurnedOff()) Map.turnOffEnemyHQSplashRegion();
-            if(!Map.isEnemyHQBuffedRangeTurnedOff()) Map.turnOffEnemyHQBuffedRange();
-            if(!Map.isEnemyHQBaseRangeTurnedOff()) Map.turnOffEnemyHQBaseRange();
+            //Map.turnOffEnemyHQSplashRegion();
+            //Map.turnOffEnemyHQBuffedRange();
+            //Map.turnOffEnemyHQBaseRange();
             return;
         }
         for(int i=0; i<6; i++) {
             if(Map.decodeInEnemyTowerRange(value,i) 
                 && !Map.isEnemyTowerRangeTurnedOff(i)) {
-                    Map.turnOffEnemyTowerRange(i);
+                    //Map.turnOffEnemyTowerRange(i);
                     return;
             }
         }
@@ -572,15 +572,15 @@ public class MovableUnit extends Common {
             for(int i=0; i<6; i++) {
                 if(Map.decodeInEnemyTowerRange(value,i)
                     && !Map.isEnemyTowerRangeTurnedOff(i)) {
-                        Map.turnOffEnemyTowerRange(i);
+                        //Map.turnOffEnemyTowerRange(i);
                         break;
                 }
             }
         } else {
             target = enemyHQLocation;
-            if(!Map.isEnemyHQSplashRegionTurnedOff()) Map.turnOffEnemyHQSplashRegion();
-            if(!Map.isEnemyHQBuffedRangeTurnedOff()) Map.turnOffEnemyHQBuffedRange();
-            if(!Map.isEnemyHQBaseRangeTurnedOff()) Map.turnOffEnemyHQBaseRange();
+            //Map.turnOffEnemyHQSplashRegion();
+            //Map.turnOffEnemyHQBuffedRange();
+            //Map.turnOffEnemyHQBaseRange();
         }
         
     }
@@ -655,7 +655,7 @@ public class MovableUnit extends Common {
                     for(int i=0; i<6; i++) {
                         if(Map.decodeInEnemyTowerRange(value,i)
                             && !Map.isEnemyTowerRangeTurnedOff(i)) {
-                                Map.turnOffEnemyTowerRange(i);
+                                //Map.turnOffEnemyTowerRange(i);
                                 break;
                         }
                     }
@@ -732,16 +732,16 @@ public class MovableUnit extends Common {
                 switch (dir) {
                     // Wx = Ny, Ey = Nx, Sx = Nx, Ex = Sy, Wy = Nx
                     case NORTH:
-                        Map.checkPathableOrSense(robotLoc.add(senseNx[i], senseNy[i]));
+                        Map.updateOrSense(robotLoc.add(senseNx[i], senseNy[i]));
                         break;
                     case EAST:
-                        Map.checkPathableOrSense(robotLoc.add(senseSy[i], senseNx[i]));
+                        Map.updateOrSense(robotLoc.add(senseSy[i], senseNx[i]));
                         break;
                     case SOUTH:
-                        Map.checkPathableOrSense(robotLoc.add(senseNx[i], senseSy[i]));
+                        Map.updateOrSense(robotLoc.add(senseNx[i], senseSy[i]));
                         break;
                     case WEST:
-                        Map.checkPathableOrSense(robotLoc.add(senseNy[i], senseNx[i]));
+                        Map.updateOrSense(robotLoc.add(senseNy[i], senseNx[i]));
                         break;
                     default: break;
                 }
@@ -752,16 +752,16 @@ public class MovableUnit extends Common {
                 switch (dir) {
                     // NEx = SEy, SEx = SWy, SWx = NWy, NEy = NWx
                     case NORTH_WEST:
-                        Map.checkPathableOrSense(robotLoc.add(senseNWx[i], senseNWy[i]));
+                        Map.updateOrSense(robotLoc.add(senseNWx[i], senseNWy[i]));
                         break;
                     case NORTH_EAST:
-                        Map.checkPathableOrSense(robotLoc.add(senseSEy[i], senseNWx[i]));
+                        Map.updateOrSense(robotLoc.add(senseSEy[i], senseNWx[i]));
                         break;
                     case SOUTH_EAST:
-                        Map.checkPathableOrSense(robotLoc.add(senseSEx[i], senseSEy[i]));
+                        Map.updateOrSense(robotLoc.add(senseSEx[i], senseSEy[i]));
                         break;
                     case SOUTH_WEST:
-                        Map.checkPathableOrSense(robotLoc.add(senseNWy[i], senseSEx[i]));
+                        Map.updateOrSense(robotLoc.add(senseNWy[i], senseSEx[i]));
                         break;
                     default: break;
                 }
