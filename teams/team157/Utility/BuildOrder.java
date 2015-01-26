@@ -292,6 +292,16 @@ public class BuildOrder {
     //Job claiming methods ====================================================
     
     /**
+     * Checks if the job is unclaimed or the timestamp has expired.
+     * @param idx The index to check.
+     * @return True if the job is unclaimed or expired
+     */
+    public static boolean isUnclaimedOrExpired(int idx) throws GameActionException {
+        int value = get(idx);
+        return decodeID(value) == 0 || decodeTimeStamp(value) < Clock.getRoundNum()-TIMESTAMP_EXPIRY;
+    }
+    
+    /**
      * Every beaver should call this to check if they have to build a building. 
      * Iterates through the build order to check that the IDs are not 0 (job has been 
      * claimed) and the time stamps are up to date, otherwise the building might have 
@@ -302,10 +312,8 @@ public class BuildOrder {
     public static int doIHaveToBuildABuilding() throws GameActionException {
         int length = Common.rc.readBroadcast(BASE_CHANNEL);
         for(int idx=0; idx<length; idx++) {
-            int value = get(idx);
             //Check claimed job and unexpired timestamp
-            if(decodeID(value) == 0 
-                || decodeTimeStamp(value) < Clock.getRoundNum()-TIMESTAMP_EXPIRY) {
+            if(isUnclaimedOrExpired(idx)) {
                     //Need to build this building
                     return idx;
             }
