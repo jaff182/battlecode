@@ -95,37 +95,32 @@ public class HQ extends Structure {
         updateEnemyInRange(52);//52 includes splashable region
         checkForEnemies();
         
+        int rn = Clock.getRoundNum();
         
         // For testing launcher bot
-        if(Clock.getRoundNum() == 100) {
+        if(rn == 80) {
             BuildOrder.add(RobotType.HELIPAD); 
-        }
-        if(Clock.getRoundNum() == 225) {
-            BuildOrder.add(RobotType.BARRACKS);
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-        }
-        if (Clock.getRoundNum() == 400) {
-            BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.TANKFACTORY);
+        } else if(rn == 220) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+        } else if (rn == 280) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+        } else if (rn == 350) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+        } else if (rn == 410) {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
+        } else if (rn == 500) {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
-        }
-        if (Clock.getRoundNum() == 800) {
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        } 
+        if (rn > 500 && rn%200==0) {
             BuildOrder.add(RobotType.AEROSPACELAB);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
-        }
-        if (Clock.getRoundNum() == 1000) {
-            BuildOrder.add(RobotType.AEROSPACELAB);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.AEROSPACELAB);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
@@ -136,6 +131,8 @@ public class HQ extends Structure {
                 BuildOrder.add(RobotType.SUPPLYDEPOT);
             }
         }
+        
+        
         
         
         /**
@@ -175,9 +172,6 @@ public class HQ extends Structure {
         
         //Dispense supply
         dispenseSupply(suppliabilityMultiplier);
-        if(Clock.getRoundNum() == Drone.roundNumSupply) {
-            suppliabilityMultiplier[16] = 100;
-        }
         
         //Debug
         //if(Clock.getRoundNum() == 700) Map.printRadio();
@@ -269,7 +263,7 @@ public class HQ extends Structure {
     private static boolean hasFewBeavers() throws GameActionException {
         if (Clock.getRoundNum() < 150) { 
         //hard code initial miner factory and helipad
-            return RobotCount.read(RobotType.BEAVER)<1;
+            return RobotCount.read(RobotType.BEAVER)<2;
         }
         return RobotCount.read(RobotType.BEAVER) < 3;
     }
@@ -338,7 +332,7 @@ public class HQ extends Structure {
         1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
         1/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,    1/*11:BEAVER*/,
         0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     1/*15:MINER*/,
-        3/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
+        500/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };
     

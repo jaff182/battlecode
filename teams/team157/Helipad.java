@@ -9,8 +9,7 @@ import battlecode.common.*;
 
 public class Helipad extends Structure {
     
-    private static int maxNumberOfDrones = 20;
-    private static int supplyDrones = 0;
+    private static int maxNumberOfDrones = 2;
     //General methods =========================================================
     
     public static void start() throws GameActionException {
@@ -34,13 +33,8 @@ public class Helipad extends Structure {
         claimBuildOrderEntry();
         
         //Spawn
-        if(RobotCount.read(RobotType.DRONE) < maxNumberOfDrones && Clock.getRoundNum() < 400) {
+        if(RobotCount.read(RobotType.DRONE) < maxNumberOfDrones && Clock.getRoundNum() > Drone.roundNumSupply) {
             trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);
-        }
-        if (supplyDrones < 2 && Clock.getRoundNum() >= 400) {
-            if (trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE)) {
-                supplyDrones += 1;
-            };
         }
         
         //Dispense Supply

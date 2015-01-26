@@ -13,9 +13,9 @@ public class Drone extends MovableUnit {
     //private static int numberInSwarm = 10;
     
     // parameters for supply drone
-    private static double minSupplyLevelOfSupplyDrone = 8000; //min supply level before moving to supply target
+    private static double minSupplyLevelOfSupplyDrone = 4000; //min supply level before moving to supply target
     private static double lowSupplyLevel = 400; //min supply level before returning to hq to resupply
-    public static int roundNumSupply = 400; // round number after which all newly spawned drones are supply drones
+    public static int roundNumSupply = 0; // round number after which all newly spawned drones are supply drones
     private static int baseSupplyTimeout = 15;
     private static int supplyTimeout = baseSupplyTimeout; // number of rounds after staying near supply target before returning to hq
     private static int supplyDistributeRadius = 255;
@@ -220,19 +220,15 @@ public class Drone extends MovableUnit {
                 retreatTimeout = baseRetreatTimeout;
             }
             distributeSupply(suppliabilityMultiplier_Preattack);
-            break;
+            break; 
         case SUPPLY:
-            rc.setIndicatorString(2, "Supply target: " + supplyTargetID);
             if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
                 checkForEnemies();
                 supplyTarget = HQLocation;
                 moveAndAvoidEnemies(myLocation.directionTo(HQLocation));
-                if (supplyTimeout < 0) {
-                    distributeSupply(suppliabilityMultiplier_Preattack);
-                }
-            } else {
                 // try to avoid enemies while moving to supplytarget
+            } else {
                 try {
                     RobotInfo robot = rc.senseRobot(supplyTargetID);
                     supplyTarget = robot.location;
@@ -241,8 +237,9 @@ public class Drone extends MovableUnit {
                     RobotInfo robot = rc.senseRobot(supplyTargetID);
                     supplyTarget = robot.location;
                 }
+                rc.setIndicatorString(2, "Supply target: " + supplyTargetID + " at " + supplyTarget);
                 moveAndAvoidEnemies(myLocation.directionTo(supplyTarget));
-                if (supplyTargetID != HQID && (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius || supplyTimeout < 0)) {
+                if (supplyTargetID != HQID && (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius)) {
                     distributeSupply(suppliabilityMultiplier_Preattack);
                     supplyTimeout--;
                 }
@@ -351,6 +348,10 @@ public class Drone extends MovableUnit {
                 MapLocation newLocation = myLocation.add(newDirection);
                 
                 double damageForDirection = 0;
+
+                if (!rc.isPathable(myType, newLocation)) {
+                    damageForDirection += Double.MAX_VALUE;
+                }
                 if (rc.senseTerrainTile(newLocation) == TerrainTile.VOID) {
                     damageForDirection += currentDamage;
                 }
@@ -361,7 +362,9 @@ public class Drone extends MovableUnit {
                 }
                 
                 if (damageForDirection == 0) {
-                    bug(newLocation);
+                    if (rc.isCoreReady() && movePossible(newDirection)) {
+                        rc.move(newDirection);
+                    }
                     return;
                 } else if (damageForDirection < minDamage){
                     bestDirection = newDirection;
@@ -369,8 +372,10 @@ public class Drone extends MovableUnit {
                 }
                         
             }
-            
-            bug(myLocation.add(bestDirection));
+            if (minDamage != Double.MAX_VALUE)
+                if (rc.isCoreReady() && movePossible(bestDirection)) {
+                    rc.move(bestDirection);
+                }
             return;
         } else {
             bug(supplyTarget);
