@@ -31,19 +31,21 @@ public class Structure extends Common {
      * Spawn robot of type rbtype in direction dir0 if allowed, transfers supply
      * @param dir0 Direction to spawn at
      * @param robotType RobotType of robot to spawn
+     * @return true if the robot is spawned, false otherwise
      * @throws GameActionException
      */
-    public static void trySpawn(Direction dir0, RobotType robotType) throws GameActionException {
+    public static boolean trySpawn(Direction dir0, RobotType robotType) throws GameActionException {
         if(rc.isCoreReady() && rc.getTeamOre() >= robotType.oreCost) {
             int dirint0 = dir0.ordinal();
             for(int offset : offsets) {
                 int dirint = (dirint0+offset+8)%8;
                 if(rc.canSpawn(directions[dirint],robotType)) {
                     rc.spawn(directions[dirint],robotType);
-                    break;
+                    return true;
                 }
             }
         }
+        return false;
     }
     
     
