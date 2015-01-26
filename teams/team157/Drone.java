@@ -158,7 +158,7 @@ public class Drone extends MovableUnit {
         case SUPPLY:
             if (supplyTargetID == HQID) {
                 if (rc.getSupplyLevel() > minSupplyLevelOfSupplyDrone) {
-                System.out.println("Choosing supply target..");
+//                System.out.println("Choosing supply target..");
                 chooseSupplyTarget2();
                 supplyTimeout = baseSupplyTimeout;
                 }
@@ -325,7 +325,7 @@ public class Drone extends MovableUnit {
         
         if (minSupplyRobot != null) {
             supplyTargetID = minSupplyRobot.ID;
-            System.out.println("Set supply to " + supplyTargetID + minSupplyRobot.type + " " + minSupplyRobot.location);
+//            System.out.println("Set supply to " + supplyTargetID + minSupplyRobot.type + " " + minSupplyRobot.location);
         }
     }
     
@@ -351,6 +351,10 @@ public class Drone extends MovableUnit {
                 MapLocation newLocation = myLocation.add(newDirection);
                 
                 double damageForDirection = 0;
+
+                if (!rc.isPathable(myType, newLocation)) {
+                    damageForDirection += Double.MAX_VALUE;
+                }
                 if (rc.senseTerrainTile(newLocation) == TerrainTile.VOID) {
                     damageForDirection += currentDamage;
                 }
@@ -371,9 +375,10 @@ public class Drone extends MovableUnit {
                 }
                         
             }
-            if (rc.isCoreReady() && movePossible(bestDirection)) {
-                rc.move(bestDirection);
-            }
+            if (minDamage != Double.MAX_VALUE)
+                if (rc.isCoreReady() && movePossible(bestDirection)) {
+                    rc.move(bestDirection);
+                }
             return;
         } else {
             bug(supplyTarget);
