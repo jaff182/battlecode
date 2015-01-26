@@ -41,7 +41,7 @@ public class Beaver extends MiningUnit {
     }
 
     private static void init() throws GameActionException {
-        robotState = RobotState.WANDER;
+        robotState = RobotState.MINE;
         
         //Set mining parameters
         minMiningRate = GameConstants.BEAVER_MINE_MAX;
@@ -111,10 +111,15 @@ public class Beaver extends MiningUnit {
         } else if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
+         // TODO edited this to make beavers mine instead of wandering too much
+            if (ore >= minOreWorthConsidering) {
+                robotState = RobotState.MINE;
+            }
+            /*
             double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
             if(ore >= minOreWorthMining || rand.nextDouble() <= miningProbability) {
                 robotState = RobotState.MINE;
-            }
+            }*/
         }
     }
 
@@ -139,10 +144,16 @@ public class Beaver extends MiningUnit {
         } else if (rc.isCoreReady()) {
             //Transition to wandering around if ore level is too low
             double ore = rc.senseOre(myLocation);
+            // TODO edited this to make beavers mine instead of wandering too much
+            if (ore < minOreWorthConsidering) {
+                robotState = RobotState.WANDER;
+            }
+            /*
             double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
             if(ore < minOreWorthMining && rand.nextDouble() > miningProbability) {
                 robotState = RobotState.WANDER;
             }
+            */
         }
     }
 

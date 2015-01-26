@@ -8,7 +8,7 @@ import battlecode.common.*;
 
 public class Helipad extends Structure {
     
-    private static int maxNumberOfDrones = 20;
+    private static int maxNumberOfDrones = 5;
     
     //General methods =========================================================
     
