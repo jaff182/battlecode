@@ -88,8 +88,6 @@ public class HQ extends Structure {
             }
         }
         
-        rc.setIndicatorString(0,"moblevel is "+rc.readBroadcast(Channels.MOB_LEVEL));
-        
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
@@ -170,6 +168,9 @@ public class HQ extends Structure {
         
         //Dispense supply
         dispenseSupply(suppliabilityMultiplier);
+        if(Clock.getRoundNum() == Drone.roundNumSupply) {
+            suppliabilityMultiplier[16] = 100;
+        }
         
         //Debug
         //if(Clock.getRoundNum() == 700) Map.printRadio();

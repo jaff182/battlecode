@@ -13,12 +13,12 @@ public class Drone extends MovableUnit {
     //private static int numberInSwarm = 10;
     
     // parameters for supply drone
-    private static double minSupplyLevelOfSupplyDrone = 4000; //min supply level before moving to supply target
-    private static double lowSupplyLevel = 200; //max supply level before returning to hq to resupply
-    private static int roundNumSupply = 400; // round number after which all newly spawned drones are supply drones
+    private static double minSupplyLevelOfSupplyDrone = 2000; //min supply level before moving to supply target
+    private static double lowSupplyLevel = 200; //min supply level before returning to hq to resupply
+    public static int roundNumSupply = 400; // round number after which all newly spawned drones are supply drones
     private static int baseSupplyTimeout = 15;
     private static int supplyTimeout = baseSupplyTimeout; // number of rounds after staying near supply target before returning to hq
-    private static int supplyDistributeRadius = 200;
+    private static int supplyDistributeRadius = 255;
     
     public static void start() throws GameActionException {
         init();
@@ -96,6 +96,7 @@ public class Drone extends MovableUnit {
                     // basicAttack(enemies);
                     priorityAttack(enemies, attackPriorities);
                 }
+                droneRetreat();
             }
         }
     }

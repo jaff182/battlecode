@@ -807,7 +807,7 @@ public class MovableUnit extends Common {
                 if(targetidx != -1 && rc.getSupplyLevel() > myMeanSupply) {
                     MapLocation loc = friends[targetidx].location;
                     //Transfer all supply above my mean level amount
-                    double transferAmount = rc.getSupplyLevel()-myMeanSupply;
+                    double transferAmount = (rc.getSupplyLevel()-myMeanSupply);
                     rc.transferSupplies((int)transferAmount,loc);
                 }
             }

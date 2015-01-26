@@ -183,6 +183,9 @@ public class AttackingUnit extends MovableUnit{
         default:
             break;
         }
+        
+        //distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
     }
 
     /**
@@ -328,4 +331,19 @@ public class AttackingUnit extends MovableUnit{
             rc.setIndicatorString(1, "No attack indicated, waiting here.");
         }
     }
+    
+    
+    //Parameters ==============================================================
+    
+    
+    private static double[] suppliabilityMultiplier_Preattack = {
+        0/*0:HQ*/,          0/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    0/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     0/*15:MINER*/,
+        0/*16:DRONE*/,      5/*17:TANK*/,       5/*18:COMMANDER*/,  3/*19:LAUNCHER*/,
+        0/*20:MISSILE*/
+    };
+    
+    
 }
