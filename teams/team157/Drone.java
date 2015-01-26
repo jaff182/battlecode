@@ -154,15 +154,16 @@ public class Drone extends MovableUnit {
             }
             break;
         case SUPPLY:
-            if (supplyTarget == HQLocation) {
+            if (supplyTargetID == HQID) {
                 if (rc.getSupplyLevel() > minSupplyLevelOfSupplyDrone) {
-                chooseSupplyTarget();
+                System.out.println("Choosing supply target..");
+                chooseSupplyTarget2();
                 supplyTimeout = baseSupplyTimeout;
                 }
             } else if (rc.getSupplyLevel() < lowSupplyLevel || supplyTimeout < 0) {
-                supplyTarget = HQLocation;
+                supplyTargetID = HQID;
             } 
-            rc.setIndicatorString(0, supplyTarget.toString());
+            rc.setIndicatorString(0, "" + supplyTargetID);
             break;
         default:
             throw new IllegalStateException();
@@ -219,7 +220,8 @@ public class Drone extends MovableUnit {
             distributeSupply(suppliabilityMultiplier_Preattack);
             break;
         case SUPPLY:
-            if (supplyTarget == HQLocation) {
+            rc.setIndicatorString(2, "Supply target: " + supplyTargetID);
+            if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
                 checkForEnemies();
                 bug(HQLocation);
@@ -228,6 +230,14 @@ public class Drone extends MovableUnit {
                 }
             } else {
                 // try to avoid enemies while moving to supplytarget
+                try {
+                    RobotInfo robot = rc.senseRobot(supplyTargetID);
+                    supplyTarget = robot.location;
+                } catch (GameActionException e) {
+                    chooseSupplyTarget2();
+                    RobotInfo robot = rc.senseRobot(supplyTargetID);
+                    supplyTarget = robot.location;
+                }
                 moveAndAvoidEnemies(myLocation.directionTo(supplyTarget));
                 if (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius || supplyTimeout < 0) {
                     distributeSupply(suppliabilityMultiplier_Preattack);
@@ -245,8 +255,9 @@ public class Drone extends MovableUnit {
     // Supply state methods ===============================================================
     
     private static int supplyRadius = 64; // radius within which to sense for friendly units for distributing supply
-    private static MapLocation supplyTarget = HQLocation; // target to distribute supply at
-    
+    private static int supplyTargetID; // target to distribute supply at
+    private static int HQID;
+    private static MapLocation supplyTarget;
     /**
      * Sense locations that are within supplyRadius of each tower (both friendly and enemy),
      * and sums up number of friendly units with supply lower than a threshold. Sets supplyTarget
@@ -254,6 +265,7 @@ public class Drone extends MovableUnit {
      */
     private static void chooseSupplyTarget() {
         int numberOfSupplyLessUnits = 0;
+        MapLocation supplyTarget;
         for (MapLocation tower: rc.senseTowerLocations()) {
             int supplyDef = 0;
             for (RobotInfo unit: rc.senseNearbyRobots(tower, supplyRadius, myTeam)) {
@@ -282,6 +294,35 @@ public class Drone extends MovableUnit {
         }     
         if (numberOfSupplyLessUnits == 0) {
             supplyTarget = HQLocation;
+        }
+    }
+    
+    private static void chooseSupplyTarget2() {
+        RobotInfo[] friendlyRobots = rc.senseNearbyRobots(9999, myTeam);
+        
+        int id = Math.max(friendlyRobots.length / 70, 1); // Only examine a
+                                                          // maximum of 70
+                                                          // robots, evenly
+                                                          // sampled
+        int i = Clock.getRoundNum() % id; // Randomized start index
+
+        int minSupply = Integer.MAX_VALUE; // number of rounds minSupplyRobot
+                                           // can run for without supply
+        RobotInfo minSupplyRobot = null;
+        while (i < friendlyRobots.length) {
+            RobotInfo robot = friendlyRobots[i];
+            if (robot.type.needsSupply()) {
+                if (robot.supplyLevel / robot.type.supplyUpkeep < minSupply) {
+                    minSupplyRobot = robot;
+                    minSupply = (int) (robot.supplyLevel / robot.type.supplyUpkeep);
+                }
+            }
+            i += id;
+        }
+        
+        if (minSupplyRobot != null) {
+            supplyTargetID = minSupplyRobot.ID;
+            System.out.println("Set supply to " + supplyTargetID + minSupplyRobot.type + " " + minSupplyRobot.location);
         }
     }
     
