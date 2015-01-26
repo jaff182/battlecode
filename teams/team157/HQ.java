@@ -335,4 +335,5 @@ public class HQ extends Structure {
         0/*20:MISSILE*/
     };
     
+    
 }
