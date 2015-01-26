@@ -107,14 +107,14 @@ public class HQ extends Structure {
         }
         if (Clock.getRoundNum() == 400) {
             BuildOrder.add(RobotType.TANKFACTORY);
-            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
         if (Clock.getRoundNum() == 800) {
-            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.AEROSPACELAB);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.TANKFACTORY);
@@ -122,7 +122,7 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
         if (Clock.getRoundNum() == 1000) {
-            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.AEROSPACELAB);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.AEROSPACELAB);

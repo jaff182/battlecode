@@ -54,7 +54,7 @@ public class MovableUnit extends Common {
      */
     protected static boolean movePossible(Direction dir) throws GameActionException {
         if(rc.canMove(dir)) {
-            MapLocation loc = myLocation.add(dir);
+            MapLocation loc = rc.getLocation().add(dir);
             return Map.checkNotBlocked(loc);
         } else return false;
     }
