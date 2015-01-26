@@ -351,6 +351,10 @@ public class Drone extends MovableUnit {
                 MapLocation newLocation = myLocation.add(newDirection);
                 
                 double damageForDirection = 0;
+
+                if (!rc.isPathable(myType, newLocation)) {
+                    damageForDirection += Double.MAX_VALUE;
+                }
                 if (rc.senseTerrainTile(newLocation) == TerrainTile.VOID) {
                     damageForDirection += currentDamage;
                 }
@@ -369,8 +373,8 @@ public class Drone extends MovableUnit {
                 }
                         
             }
-            
-            bug(myLocation.add(bestDirection));
+            if (minDamage != Double.MAX_VALUE)
+                rc.move(bestDirection);
             return;
         } else {
             bug(supplyTarget);
