@@ -391,18 +391,27 @@ public class Launcher extends MovableUnit {
     
     /**
      * Launches three missiles around input direction
+     * Used only for attacking surroundLocation!
      * @param dir
      * @throws GameActionException
      */
     public static void launchInThreeDir(Direction dir) throws GameActionException {
         if (rc.canLaunch(dir)) {
-            rc.launchMissile(dir);
+            if (myLocation.add(dir).distanceSquaredTo(surroundLocation) <= 24) {
+                rc.launchMissile(dir);
+            }  
         }
-        if (rc.canLaunch(dir.rotateLeft())) {
-            rc.launchMissile(dir.rotateLeft());
+        Direction leftDir = dir.rotateLeft();
+        if (rc.canLaunch(leftDir)) {
+            if (myLocation.add(leftDir).distanceSquaredTo(surroundLocation) <= 24) {
+                rc.launchMissile(leftDir);
+            }
         }
-        if (rc.canLaunch(dir.rotateLeft())) {
-            rc.launchMissile(dir.rotateLeft());
+        Direction rightDir = dir.rotateRight();
+        if (rc.canLaunch(rightDir)) {
+            if (myLocation.add(rightDir).distanceSquaredTo(surroundLocation) <= 24) {
+                rc.launchMissile(rightDir);
+            }
         }
     }
     /**
@@ -528,16 +537,23 @@ public class Launcher extends MovableUnit {
             surroundLocation = enemyHQLocation;
         }
         **/
-        
-        
+
+        // set target to two furthest towers from enemy hq
         MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
-        int distanceToClosestTower = Integer.MAX_VALUE;
         if (towerLoc.length > 1) {
+            // fate sends launcher to closest tower if fate = 0 and 
+            // to second closest tower if fate = 1.
+            int fate = rand.nextInt(2);
+            int distanceToFurthestTower = 0;
+            int distanceToSecondFurthestTower = 0;
             for (MapLocation loc: towerLoc) {
-                int towerDist = myLocation.distanceSquaredTo(loc);
-                if (towerDist <= distanceToClosestTower) {
+                int towerDist = enemyHQLocation.distanceSquaredTo(loc);
+                if (towerDist > distanceToFurthestTower) {
                     surroundLocation = loc;
-                    distanceToClosestTower = towerDist;
+                    distanceToFurthestTower = towerDist;
+                } else if (fate == 1 && towerDist >= distanceToSecondFurthestTower) {
+                    surroundLocation = loc;
+                    distanceToSecondFurthestTower = towerDist;
                 }
             }
         } else {
