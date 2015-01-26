@@ -13,12 +13,14 @@ public class Drone extends MovableUnit {
     //private static int numberInSwarm = 10;
     
     // parameters for supply drone
-    private static double minSupplyLevelOfSupplyDrone = 3000; //min supply level before moving to supply target
-    private static double lowSupplyLevel = 200; //min supply level before returning to hq to resupply
+    private static double minSupplyLevelOfSupplyDrone = 4000; //min supply level before moving to supply target
+    private static double lowSupplyLevel = 400; //min supply level before returning to hq to resupply
     public static int roundNumSupply = 0; // round number after which all newly spawned drones are supply drones
     private static int baseSupplyTimeout = 15;
     private static int supplyTimeout = baseSupplyTimeout; // number of rounds after staying near supply target before returning to hq
     private static int supplyDistributeRadius = 255;
+    private static int[] ordinalOffsets = {0, 7, 1, 6, 2, 5, 3, 4};
+
     
     public static void start() throws GameActionException {
         init();
@@ -154,15 +156,16 @@ public class Drone extends MovableUnit {
             }
             break;
         case SUPPLY:
-            if (supplyTarget == HQLocation) {
+            if (supplyTargetID == HQID) {
                 if (rc.getSupplyLevel() > minSupplyLevelOfSupplyDrone) {
-                chooseSupplyTarget();
+                System.out.println("Choosing supply target..");
+                chooseSupplyTarget2();
                 supplyTimeout = baseSupplyTimeout;
                 }
             } else if (rc.getSupplyLevel() < lowSupplyLevel || supplyTimeout < 0) {
-                supplyTarget = HQLocation;
+                supplyTargetID = HQID;
             } 
-            rc.setIndicatorString(0, supplyTarget.toString());
+            rc.setIndicatorString(0, "" + supplyTargetID);
             break;
         default:
             throw new IllegalStateException();
@@ -219,17 +222,27 @@ public class Drone extends MovableUnit {
             distributeSupply(suppliabilityMultiplier_Preattack);
             break;
         case SUPPLY:
-            if (supplyTarget == HQLocation) {
+            rc.setIndicatorString(2, "Supply target: " + supplyTargetID);
+            if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
                 checkForEnemies();
-                bug(HQLocation);
+                supplyTarget = HQLocation;
+                moveAndAvoidEnemies(myLocation.directionTo(HQLocation));
                 if (supplyTimeout < 0) {
                     distributeSupply(suppliabilityMultiplier_Preattack);
                 }
             } else {
                 // try to avoid enemies while moving to supplytarget
+                try {
+                    RobotInfo robot = rc.senseRobot(supplyTargetID);
+                    supplyTarget = robot.location;
+                } catch (GameActionException e) {
+                    chooseSupplyTarget2();
+                    RobotInfo robot = rc.senseRobot(supplyTargetID);
+                    supplyTarget = robot.location;
+                }
                 moveAndAvoidEnemies(myLocation.directionTo(supplyTarget));
-                if (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius || supplyTimeout < 0) {
+                if (supplyTargetID != HQID && (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius || supplyTimeout < 0)) {
                     distributeSupply(suppliabilityMultiplier_Preattack);
                     supplyTimeout--;
                 }
@@ -245,8 +258,9 @@ public class Drone extends MovableUnit {
     // Supply state methods ===============================================================
     
     private static int supplyRadius = 64; // radius within which to sense for friendly units for distributing supply
-    private static MapLocation supplyTarget = HQLocation; // target to distribute supply at
-    
+    private static int supplyTargetID; // target to distribute supply at
+    private static int HQID;
+    private static MapLocation supplyTarget;
     /**
      * Sense locations that are within supplyRadius of each tower (both friendly and enemy),
      * and sums up number of friendly units with supply lower than a threshold. Sets supplyTarget
@@ -254,6 +268,7 @@ public class Drone extends MovableUnit {
      */
     private static void chooseSupplyTarget() {
         int numberOfSupplyLessUnits = 0;
+        MapLocation supplyTarget;
         for (MapLocation tower: rc.senseTowerLocations()) {
             int supplyDef = 0;
             for (RobotInfo unit: rc.senseNearbyRobots(tower, supplyRadius, myTeam)) {
@@ -285,55 +300,81 @@ public class Drone extends MovableUnit {
         }
     }
     
+    private static void chooseSupplyTarget2() {
+        RobotInfo[] friendlyRobots = rc.senseNearbyRobots(9999, myTeam);
+        
+        int id = Math.max(friendlyRobots.length / 70, 1); // Only examine a
+                                                          // maximum of 70
+                                                          // robots, evenly
+                                                          // sampled
+        int i = Clock.getRoundNum() % id; // Randomized start index
+
+        int minSupply = Integer.MAX_VALUE; // number of rounds minSupplyRobot
+                                           // can run for without supply
+        RobotInfo minSupplyRobot = null;
+        while (i < friendlyRobots.length) {
+            RobotInfo robot = friendlyRobots[i];
+            if (robot.type.needsSupply()) {
+                if (robot.supplyLevel / robot.type.supplyUpkeep < minSupply) {
+                    minSupplyRobot = robot;
+                    minSupply = (int) (robot.supplyLevel / robot.type.supplyUpkeep);
+                }
+            }
+            i += id;
+        }
+        
+        if (minSupplyRobot != null) {
+            supplyTargetID = minSupplyRobot.ID;
+            System.out.println("Set supply to " + supplyTargetID + minSupplyRobot.type + " " + minSupplyRobot.location);
+        }
+    }
+    
     /**
      * Move in direction that avoids enemies while favoring input direction.
      * @param dir favored direction
      * @throws GameActionException 
      */
     private static void moveAndAvoidEnemies(Direction dir) throws GameActionException {
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(48, enemyTeam);
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(myType.sensorRadiusSquared, enemyTeam);
+        
+        double minDamage = Double.MAX_VALUE;
+        Direction bestDirection = null;
         if (nearbyEnemies.length != 0) {
-            int[] enemiesInDir = new int[8];
-            for (RobotInfo info: nearbyEnemies) {
-                enemiesInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
-            }
-            // add bias towards direction of friendly units at supply target
-            RobotInfo[] nearbyFriends = rc.senseNearbyRobots(supplyTarget, 48, myTeam);
-            for (RobotInfo info: nearbyFriends) {
-                enemiesInDir[myLocation.directionTo(info.location).ordinal()]-= dangerRating[info.type.ordinal()];
-            }
-            int minDirScore = Integer.MAX_VALUE;
-            int dirScore = 0;
-            int minIndex = 0;
-            int distFromTarget = 0;
-            int dirOrdinal = dir.ordinal();
-            for (int i = 0; i < 8; i++) {
-                dirScore = enemiesInDir[i] + enemiesInDir[(i+7)%8] + enemiesInDir[(i+1)%8] + enemiesInDir[(i+6)%8] + enemiesInDir[(i+2)%8];
-                if (dirScore < minDirScore && movePossible(directions[i])) {
-                        minDirScore = dirScore;
-                        minIndex = i;
-                        distFromTarget = Math.abs(i - dirOrdinal);
-                } else if (dirScore == minDirScore && movePossible(directions[i])) {
-                    // if there is a tie, favor direction closer to supply target
-                    int newDistFromTarget = Math.abs(i - dirOrdinal);
-                    if (newDistFromTarget < distFromTarget) {
-                        distFromTarget = newDistFromTarget;
-                        minIndex = i;
-                    }
-                }
+            double currentDamage = 0;
+            for (RobotInfo enemy: nearbyEnemies) {
+                if (enemy.location.distanceSquaredTo(myLocation) <= enemy.type.attackRadiusSquared)
+                    currentDamage += enemy.type.attackPower;
             }
             
-            if (movePossible(directions[minIndex]) && rc.isCoreReady()) {
-                rc.move(directions[minIndex]);
-            } else {
-                if (enemies.length > 0) {
-                    if (rc.isWeaponReady()) {
-                        // basicAttack(enemies);
-                        priorityAttack(enemies, attackPriorities);
-                        
-                    }
+            for (int ordinalOffset: ordinalOffsets) {
+                Direction newDirection = Common.directions[(dir.ordinal()+ordinalOffset)%8];
+                MapLocation newLocation = myLocation.add(newDirection);
+                
+                double damageForDirection = 0;
+                if (rc.senseTerrainTile(newLocation) == TerrainTile.VOID) {
+                    damageForDirection += currentDamage;
                 }
+                for (RobotInfo enemy: nearbyEnemies) {
+                    if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
+                        damageForDirection += enemy.type.attackPower;
+                    } 
+                }
+                
+                if (damageForDirection == 0) {
+                    if (rc.isCoreReady() && movePossible(newDirection)) {
+                        rc.move(newDirection);
+                    }
+                    return;
+                } else if (damageForDirection < minDamage){
+                    bestDirection = newDirection;
+                    minDamage = damageForDirection;
+                }
+                        
             }
+            if (rc.isCoreReady() && movePossible(bestDirection)) {
+                rc.move(bestDirection);
+            }
+            return;
         } else {
             bug(supplyTarget);
         }

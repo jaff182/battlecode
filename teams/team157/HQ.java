@@ -165,9 +165,6 @@ public class HQ extends Structure {
         
         //Dispense supply
         dispenseSupply(suppliabilityMultiplier);
-        if(Clock.getRoundNum() == Drone.roundNumSupply) {
-            suppliabilityMultiplier[16] = 100;
-        }
         
         //Debug
         //if(Clock.getRoundNum() == 700) Map.printRadio();
@@ -324,12 +321,13 @@ public class HQ extends Structure {
      * higher means give more supply to units of that type).
      */
     private static double[] suppliabilityMultiplier = {
-        0/*0:HQ*/,          0/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
-        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
-        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
-        0/*12:COMPUTER*/,   5/*13:SOLDIER*/,    3/*14:BASHER*/,     3/*15:MINER*/,
-        100/*16:DRONE*/,      10/*17:TANK*/,       10/*18:COMMANDER*/,  10/*19:LAUNCHER*/,
+        0/*0:HQ*/,          1/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
+        1/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,    1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     1/*15:MINER*/,
+        500/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };
+    
     
 }

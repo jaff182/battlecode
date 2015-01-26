@@ -2,14 +2,14 @@ package team157;
 
 import java.util.Random;
 
+import team157.Drone.DroneState;
 import team157.Utility.BuildOrder;
 import team157.Utility.RobotCount;
 import battlecode.common.*;
 
 public class Helipad extends Structure {
     
-    private static int maxNumberOfDrones = 5;
-    
+    private static int maxNumberOfDrones = 2;
     //General methods =========================================================
     
     public static void start() throws GameActionException {
@@ -33,7 +33,7 @@ public class Helipad extends Structure {
         claimBuildOrderEntry();
         
         //Spawn
-        if(RobotCount.read(RobotType.DRONE) < maxNumberOfDrones) {
+        if(RobotCount.read(RobotType.DRONE) < maxNumberOfDrones && Clock.getRoundNum() > Drone.roundNumSupply) {
             trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);
         }
         
