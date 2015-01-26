@@ -13,12 +13,14 @@ public class Drone extends MovableUnit {
     //private static int numberInSwarm = 10;
     
     // parameters for supply drone
-    private static double minSupplyLevelOfSupplyDrone = 2000; //min supply level before moving to supply target
-    private static double lowSupplyLevel = 200; //min supply level before returning to hq to resupply
+    private static double minSupplyLevelOfSupplyDrone = 8000; //min supply level before moving to supply target
+    private static double lowSupplyLevel = 400; //min supply level before returning to hq to resupply
     public static int roundNumSupply = 400; // round number after which all newly spawned drones are supply drones
     private static int baseSupplyTimeout = 15;
     private static int supplyTimeout = baseSupplyTimeout; // number of rounds after staying near supply target before returning to hq
     private static int supplyDistributeRadius = 255;
+    private static int[] ordinalOffsets = {0, 7, 1, 6, 2, 5, 3, 4};
+
     
     public static void start() throws GameActionException {
         init();
@@ -224,7 +226,8 @@ public class Drone extends MovableUnit {
             if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
                 checkForEnemies();
-                bug(HQLocation);
+                supplyTarget = HQLocation;
+                moveAndAvoidEnemies(myLocation.directionTo(HQLocation));
                 if (supplyTimeout < 0) {
                     distributeSupply(suppliabilityMultiplier_Preattack);
                 }
@@ -239,7 +242,7 @@ public class Drone extends MovableUnit {
                     supplyTarget = robot.location;
                 }
                 moveAndAvoidEnemies(myLocation.directionTo(supplyTarget));
-                if (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius || supplyTimeout < 0) {
+                if (supplyTargetID != HQID && (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius || supplyTimeout < 0)) {
                     distributeSupply(suppliabilityMultiplier_Preattack);
                     supplyTimeout--;
                 }
@@ -332,49 +335,43 @@ public class Drone extends MovableUnit {
      * @throws GameActionException 
      */
     private static void moveAndAvoidEnemies(Direction dir) throws GameActionException {
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(48, enemyTeam);
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(myType.sensorRadiusSquared, enemyTeam);
+        
+        double minDamage = Double.MAX_VALUE;
+        Direction bestDirection = null;
         if (nearbyEnemies.length != 0) {
-            int[] enemiesInDir = new int[8];
-            for (RobotInfo info: nearbyEnemies) {
-                enemiesInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
-            }
-            // add bias towards direction of friendly units at supply target
-            RobotInfo[] nearbyFriends = rc.senseNearbyRobots(supplyTarget, 48, myTeam);
-            for (RobotInfo info: nearbyFriends) {
-                enemiesInDir[myLocation.directionTo(info.location).ordinal()]-= dangerRating[info.type.ordinal()];
-            }
-            int minDirScore = Integer.MAX_VALUE;
-            int dirScore = 0;
-            int minIndex = 0;
-            int distFromTarget = 0;
-            int dirOrdinal = dir.ordinal();
-            for (int i = 0; i < 8; i++) {
-                dirScore = enemiesInDir[i] + enemiesInDir[(i+7)%8] + enemiesInDir[(i+1)%8] + enemiesInDir[(i+6)%8] + enemiesInDir[(i+2)%8];
-                if (dirScore < minDirScore && movePossible(directions[i])) {
-                        minDirScore = dirScore;
-                        minIndex = i;
-                        distFromTarget = Math.abs(i - dirOrdinal);
-                } else if (dirScore == minDirScore && movePossible(directions[i])) {
-                    // if there is a tie, favor direction closer to supply target
-                    int newDistFromTarget = Math.abs(i - dirOrdinal);
-                    if (newDistFromTarget < distFromTarget) {
-                        distFromTarget = newDistFromTarget;
-                        minIndex = i;
-                    }
-                }
+            double currentDamage = 0;
+            for (RobotInfo enemy: nearbyEnemies) {
+                if (enemy.location.distanceSquaredTo(myLocation) <= enemy.type.attackRadiusSquared)
+                    currentDamage += enemy.type.attackPower;
             }
             
-            if (movePossible(directions[minIndex]) && rc.isCoreReady()) {
-                rc.move(directions[minIndex]);
-            } else {
-                if (enemies.length > 0) {
-                    if (rc.isWeaponReady()) {
-                        // basicAttack(enemies);
-                        priorityAttack(enemies, attackPriorities);
-                        
-                    }
+            for (int ordinalOffset: ordinalOffsets) {
+                Direction newDirection = Common.directions[(dir.ordinal()+ordinalOffset)%8];
+                MapLocation newLocation = myLocation.add(newDirection);
+                
+                double damageForDirection = 0;
+                if (rc.senseTerrainTile(newLocation) == TerrainTile.VOID) {
+                    damageForDirection += currentDamage;
                 }
+                for (RobotInfo enemy: nearbyEnemies) {
+                    if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
+                        damageForDirection += enemy.type.attackPower;
+                    } 
+                }
+                
+                if (damageForDirection == 0) {
+                    bug(newLocation);
+                    return;
+                } else if (damageForDirection < minDamage){
+                    bestDirection = newDirection;
+                    minDamage = damageForDirection;
+                }
+                        
             }
+            
+            bug(myLocation.add(bestDirection));
+            return;
         } else {
             bug(supplyTarget);
         }
