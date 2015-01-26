@@ -158,7 +158,7 @@ public class Drone extends MovableUnit {
         case SUPPLY:
             if (supplyTargetID == HQID) {
                 if (rc.getSupplyLevel() > minSupplyLevelOfSupplyDrone) {
-                System.out.println("Choosing supply target..");
+//                System.out.println("Choosing supply target..");
                 chooseSupplyTarget2();
                 supplyTimeout = baseSupplyTimeout;
                 }
@@ -325,7 +325,7 @@ public class Drone extends MovableUnit {
         
         if (minSupplyRobot != null) {
             supplyTargetID = minSupplyRobot.ID;
-            System.out.println("Set supply to " + supplyTargetID + minSupplyRobot.type + " " + minSupplyRobot.location);
+//            System.out.println("Set supply to " + supplyTargetID + minSupplyRobot.type + " " + minSupplyRobot.location);
         }
     }
     
