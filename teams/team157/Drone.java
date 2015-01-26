@@ -31,9 +31,7 @@ public class Drone extends MovableUnit {
     }
     
     private static void init() throws GameActionException {  
-        if (Clock.getRoundNum() >= roundNumAttack) {
-            droneState = DroneState.KAMIKAZE;
-        } else if (Clock.getRoundNum() > roundNumSupply) {
+        if (Clock.getRoundNum() > roundNumSupply) {
             droneState = DroneState.SUPPLY;
         }
         
@@ -53,10 +51,6 @@ public class Drone extends MovableUnit {
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
-        
-        if (Clock.getRoundNum() > roundNumAttack) {
-            droneState = DroneState.KAMIKAZE;
-        } 
         
         enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);
         numberOfEnemiesInSight = enemiesInSight.length;
@@ -82,24 +76,11 @@ public class Drone extends MovableUnit {
      * @throws GameActionException
      */
     private static void checkForEnemies() throws GameActionException {
-        if (droneState == DroneState.KAMIKAZE){
-            // continually attacks when enemies are in attack range.
-            while (enemies.length > 0) {
-                if (rc.isWeaponReady()) {
-                    // basicAttack(enemies);
-                    priorityAttack(enemies, attackPriorities);
-                }
-                enemies = rc.senseNearbyRobots(attackRange, enemyTeam);
-                rc.yield();
+        if (enemies.length > 0) {
+            if (rc.isWeaponReady()) {
+               priorityAttack(enemies, attackPriorities);
             }
-        } else {
-            if (enemies.length > 0) {
-                if (rc.isWeaponReady()) {
-                    // basicAttack(enemies);
-                    priorityAttack(enemies, attackPriorities);
-                }
-                droneRetreat();
-            }
+            droneRetreat();
         }
     }
     
@@ -133,8 +114,6 @@ public class Drone extends MovableUnit {
             }
             break;
         **/
-        case KAMIKAZE:
-            break;
         case FOLLOW:
             checkForDanger();
             if (numberOfEnemiesInSight == 0 || numberOfEnemiesInSight > 2) {
@@ -203,10 +182,6 @@ public class Drone extends MovableUnit {
             bug(target);
             break;
         **/
-        case KAMIKAZE:
-            checkForEnemies();
-            bug(target);
-            break;
         case FOLLOW:
             checkForEnemies();
             followTarget(enemiesInSight, followPriorities);
@@ -574,7 +549,6 @@ public class Drone extends MovableUnit {
         //SWARM, // aggressive mode for drones in a group
         UNSWARM, // defensive mode for lone drones, stays away from target waits for reinforcements
         FOLLOW, // following enemy
-        KAMIKAZE, // all out attack
         RETREAT, // retreats when enemy is in sight range and then stays still.
         SUPPLY // move back to hq to collect supply and distribute it to other units
     }

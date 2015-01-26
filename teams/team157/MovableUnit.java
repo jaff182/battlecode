@@ -158,11 +158,11 @@ public class MovableUnit extends Common {
             for (RobotInfo info: enemiesInSight) {
                 enemiesInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
             }
-            int minDirScore = 50;
+            int minDirScore = Integer.MAX_VALUE;
             int dirScore = 0;
             int minIndex = 0;
             for (int i = 0; i < 8; i++) {
-                dirScore = enemiesInDir[i] + enemiesInDir[(i+7)%8] + enemiesInDir[(i+1)%8] + enemiesInDir[(i+6)%8] + enemiesInDir[(i+2)%8];
+                dirScore = enemiesInDir[i] + 7*enemiesInDir[(i+7)%8] + 10*enemiesInDir[(i+1)%8] + 7*enemiesInDir[(i+6)%8] + enemiesInDir[(i+2)%8];
                 if (dirScore <= minDirScore && movePossible(directions[i])) {
                         minDirScore = dirScore;
                         minIndex = i;         

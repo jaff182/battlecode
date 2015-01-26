@@ -56,28 +56,20 @@ public class Launcher extends MovableUnit {
         missileCount = 0;
         numberOfEnemyTowers = enemyTowers.length;
         
-        /*
-        if (Clock.getRoundNum() < 800 && rand.nextInt(2) == 0) {
-            // set some launchers to protect hq
-            state = LauncherState.DEFEND;
-            previousState = state;
-        } else 
-        
-        if (myTowers.length > 0) {
-            // gather at nearest tower to enemy hq
-            gatherLocation = getClosestFriendlyTower(enemyHQLocation);
-            state = LauncherState.GATHER;
-            previousState = state;
-        } else {
-            //gather halfway between hqs
-            gatherLocation = HQLocation.add(HQLocation.directionTo(enemyHQLocation), distanceBetweenHQs/2);
-            state = LauncherState.GATHER; 
-            previousState = state;
+        int fate = rand.nextInt(3);
+        if (fate == 0) {
+            int midX = (3*HQLocation.x + enemyHQLocation.x)/4;
+            int midY = (3*HQLocation.y + enemyHQLocation.y)/4;
+            gatherLocation = new MapLocation(midX,midY); 
+        } else if (fate == 1) {
+            int midX = HQLocation.x;
+            int midY = (3*HQLocation.y + enemyHQLocation.y)/4;
+            gatherLocation = new MapLocation(midX,midY);
+        } else if (fate == 2) {
+            int midX = (3*HQLocation.x + enemyHQLocation.x)/4;
+            int midY = HQLocation.y;
+            gatherLocation = new MapLocation(midX,midY);
         }
-        */
-        int midX = (3*HQLocation.x + enemyHQLocation.x)/4;
-        int midY = (3*HQLocation.y + enemyHQLocation.y)/4;
-        gatherLocation = new MapLocation(midX,midY); 
         state = LauncherState.GATHER; 
         previousState = state;
 
@@ -529,31 +521,14 @@ public class Launcher extends MovableUnit {
      * Sets next target for launchers to surround
      */
     private static void setNextSurroundTarget() {
-        /**
-        enemyTowers = rc.senseEnemyTowerLocations();
-        if (enemyTowers.length > 1) {
-            surroundLocation = getFurthestTowerFromEnemyHQ();
-        } else {
-            surroundLocation = enemyHQLocation;
-        }
-        **/
-
-        // set target to two furthest towers from enemy hq
         MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
         if (towerLoc.length > 1) {
-            // fate sends launcher to closest tower if fate = 0 and 
-            // to second closest tower if fate = 1.
-            int fate = rand.nextInt(2);
-            int distanceToFurthestTower = 0;
-            int distanceToSecondFurthestTower = 0;
+            int distanceToClosestTower = Integer.MAX_VALUE;
             for (MapLocation loc: towerLoc) {
-                int towerDist = enemyHQLocation.distanceSquaredTo(loc);
-                if (towerDist > distanceToFurthestTower) {
+                int towerDist = myLocation.distanceSquaredTo(loc);
+                if (towerDist < distanceToClosestTower) {
                     surroundLocation = loc;
-                    distanceToFurthestTower = towerDist;
-                } else if (fate == 1 && towerDist >= distanceToSecondFurthestTower) {
-                    surroundLocation = loc;
-                    distanceToSecondFurthestTower = towerDist;
+                    distanceToClosestTower = towerDist;
                 }
             }
         } else {
