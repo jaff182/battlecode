@@ -129,6 +129,13 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
+        if(Clock.getRoundNum() > 1000 && Clock.getRoundNum()%20 == 0 
+            && rc.getTeamOre() > 500) {
+            int index = BuildOrder.size()-1;
+            if(BuildOrder.isUnclaimedOrExpired(index)) {
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+            }
+        }
         
         
         /**
