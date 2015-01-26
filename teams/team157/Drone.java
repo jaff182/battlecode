@@ -220,19 +220,15 @@ public class Drone extends MovableUnit {
                 retreatTimeout = baseRetreatTimeout;
             }
             distributeSupply(suppliabilityMultiplier_Preattack);
-            break;
+            break; 
         case SUPPLY:
-            rc.setIndicatorString(2, "Supply target: " + supplyTargetID);
             if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
                 checkForEnemies();
                 supplyTarget = HQLocation;
                 moveAndAvoidEnemies(myLocation.directionTo(HQLocation));
-                if (supplyTimeout < 0) {
-                    distributeSupply(suppliabilityMultiplier_Preattack);
-                }
-            } else {
                 // try to avoid enemies while moving to supplytarget
+            } else {
                 try {
                     RobotInfo robot = rc.senseRobot(supplyTargetID);
                     supplyTarget = robot.location;
@@ -241,8 +237,9 @@ public class Drone extends MovableUnit {
                     RobotInfo robot = rc.senseRobot(supplyTargetID);
                     supplyTarget = robot.location;
                 }
+                rc.setIndicatorString(2, "Supply target: " + supplyTargetID + " at " + supplyTarget);
                 moveAndAvoidEnemies(myLocation.directionTo(supplyTarget));
-                if (supplyTargetID != HQID && (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius || supplyTimeout < 0)) {
+                if (supplyTargetID != HQID && (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius)) {
                     distributeSupply(suppliabilityMultiplier_Preattack);
                     supplyTimeout--;
                 }
