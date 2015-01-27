@@ -532,7 +532,7 @@ public class Drone extends MovableUnit {
         7/*4:BARRACKS*/,    8/*5:HELIPAD*/,     5/*6:TRNGFIELD*/,   9/*7:TANKFCTRY*/,
         4/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   10/*10:AEROLAB*/,   13/*11:BEAVER*/,
         2/*12:COMPUTER*/,   16/*13:SOLDIER*/,   15/*14:BASHER*/,    12/*15:MINER*/,
-        14/*16:DRONE*/,     17/*17:TANK*/,      18/*18:COMMANDER*/, 11/*19:LAUNCHER*/,
+        14/*16:DRONE*/,     17/*17:TANK*/,      18/*18:COMMANDER*/, 20/*19:LAUNCHER*/,
         19/*20:MISSILE*/
     };
     
