@@ -39,7 +39,7 @@ public class Missile {
         myLocation = rc.getLocation();
 
         
-        if (roundsLeft == 5) {
+        if (roundsLeft == 4) {
             moveInOptimalDir();
         } else {
             enemiesInAttackRange = rc.senseNearbyRobots(2, enemyTeam);
