@@ -1,8 +1,9 @@
 package team157;
 
 import team157.Utility.*;
-import team157.Utility.Map;
+import DroneBot2.Channels;
 import battlecode.common.*;
+
 import java.util.Arrays;
 
 public class HQ extends Structure {
@@ -75,7 +76,8 @@ public class HQ extends Structure {
         // Clean up robot count data for this round -- do not remove, will break invariants
         RobotCount.reset();
         MinerEffectiveness.reset();
-        
+        rc.broadcast(Channels.DOES_SUPPLY_DRONE_EXIST, 0);
+
         //Update enemy HQ ranges in mob level
         if(Clock.getRoundNum()%10 == 0) {
             enemyTowers = rc.senseEnemyTowerLocations();

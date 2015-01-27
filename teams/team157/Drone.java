@@ -40,9 +40,10 @@ public class Drone extends MovableUnit {
     }
     
     private static void init() throws GameActionException {  
-        if (Clock.getRoundNum() > roundNumSupply) {
-            droneState = DroneState.FOLLOW_WANDER;
-        }
+        if (Clock.getRoundNum() > roundNumSupply && rc.readBroadcast(Channels.DOES_SUPPLY_DRONE_EXIST) == 0) {
+            droneState = DroneState.SUPPLY;
+        } else
+            droneState = DroneState.FOLLOW_RESUPPLY;
         currentWanderDirection = rc.getLocation().directionTo(enemyHQLocation);
         target = enemyHQLocation;
         handedness = Common.rc.getID() %2 == 0;
@@ -248,6 +249,8 @@ public class Drone extends MovableUnit {
             break;
 
         case SUPPLY:
+            rc.broadcast(Channels.DOES_SUPPLY_DRONE_EXIST, 1);
+            System.out.println("Supply drone at " + myLocation);
             if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
                 checkForEnemies();
