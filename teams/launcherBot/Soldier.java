@@ -28,7 +28,6 @@ public class Soldier extends MovableUnit {
     }
     
     private static void init() throws GameActionException {
-        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
         
     }
     

@@ -1,8 +1,8 @@
 package launcherBot.Utility;
 
 import launcherBot.Channels;
-import launcherBot.Miner;
 import launcherBot.Common;
+import launcherBot.Miner;
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotType;

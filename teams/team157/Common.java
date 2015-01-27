@@ -90,7 +90,7 @@ public class Common extends RobotPlayer {
                 case LAUNCHER: Launcher.start(); break;
                 case MINER: Miner.start(); break;
                 case MINERFACTORY: MinerFactory.start(); break;
-                case SOLDIER: Soldier.start(); break;
+                case SOLDIER: AttackingUnit.start(10, 1.3); break;
                 case SUPPLYDEPOT: SupplyDepot.start(); break;
                 case TANK: AttackingUnit.start(10, 1.3); break;
                 case TANKFACTORY: TankFactory.start(); break;

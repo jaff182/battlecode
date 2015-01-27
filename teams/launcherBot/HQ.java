@@ -1,7 +1,10 @@
 package launcherBot;
 
-import launcherBot.Utility.*;
 import battlecode.common.*;
+
+import java.util.Arrays;
+
+import launcherBot.Utility.*;
 
 public class HQ extends Structure {
 
@@ -24,17 +27,9 @@ public class HQ extends Structure {
     }
     
     private static void init() throws GameActionException {
-        rc.setIndicatorString(0,"hello i'm a hq.");
+        //rc.setIndicatorString(0,"hello i'm a hq.");
         // call for tank defense units
         rc.broadcast(tankDefenseChannel, numberOfTanksNeeded);
-
-        //Initiate radio map TODO: towers locations?
-        Map.setMaps(HQLocation.x,HQLocation.y,3);
-        if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
-            //rotational symmetry
-            Map.symmetry = 3;//Map.rotationSymmetry;
-            //rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
-        }
 
         MapLocation soldierLoc = myLocation.add(myLocation.directionTo(enemyHQLocation), 6);
         SoldierGroup.setNextWaypoint(soldierLoc.x, soldierLoc.y, null);
@@ -42,8 +37,12 @@ public class HQ extends Structure {
         launcherBot.Utility.LastAttackedLocationsReport.HQinit();
         launcherBot.Utility.LastAttackedLocationsReport.everyRobotInit();
         
-        // Testing new build system
-        // Add 2 Helipads on round 100, 1 Barracks on round 500
+        //Upload initial enemy tower locations
+        for(int i=0; i<enemyTowers.length; i++) {
+            int channel = Channels.ENEMY_TOWER_LOCATIONS + 2*i;
+            rc.broadcast(channel,enemyTowers[i].x);
+            rc.broadcast(channel+1,enemyTowers[i].y);
+        }
         
         
         //Initial building strategy -------------------------------------------
@@ -51,60 +50,128 @@ public class HQ extends Structure {
         BuildOrder.add(RobotType.MINERFACTORY);
         
         //---------------------------------------------------------------------
-
+        
+        
+        //First spawn before bytecode intensive computation
+        trySpawn(HQLocation.directionTo(enemyHQLocation), RobotType.BEAVER);
+        
+        //Initiate radio map (essential for attack range control system to work)
+        //Super intensive, takes almost 90000 bytecodes (~9 turns)
+        //So spawned above to fit computation within turn cost of next beaver (20 
+        //turns)
+        Map.initRadioMap();
+        
+        //Get map symmetry
+        if(HQLocation.x != enemyHQLocation.x && HQLocation.y != enemyHQLocation.y) {
+            //rotational symmetry
+            Map.symmetry = 3;//Map.rotationSymmetry;
+            rc.broadcast(Channels.MAP_SYMMETRY, Map.symmetry);
+        }
+        
+        //Yield to make sure loop code does not break
+        rc.yield();
     }
     
     private static void loop() throws GameActionException {
         // Clean up robot count data for this round -- do not remove, will break invariants
         RobotCount.reset();
         MinerEffectiveness.reset();
-        numberOfTowers = rc.senseTowerLocations().length;
+        
+        //Update enemy HQ ranges in mob level
+        if(Clock.getRoundNum()%10 == 0) {
+            enemyTowers = rc.senseEnemyTowerLocations();
+            numberOfTowers = enemyTowers.length;
+            if(numberOfTowers < 5 && !Map.isEnemyHQSplashRegionTurnedOff()) {
+                Map.turnOffEnemyHQSplashRegion();
+            }
+            if(numberOfTowers < 2 && !Map.isEnemyHQBuffedRangeTurnedOff()) {
+                Map.turnOffEnemyHQBuffedRange();
+            }
+        }
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
         callForTankReinforcements();
-        updateEnemyInRange(52);//52 includes spashable region
+        updateEnemyInRange(52);//52 includes splashable region
         checkForEnemies();
         
+        int rn = Clock.getRoundNum();
         
-        // For testing launcher bot
-        if(Clock.getRoundNum() == 100) {
+        
+        // Launcher strategy 
+        if(rn == 80) {
             BuildOrder.add(RobotType.HELIPAD); 
+        } else if(rn == 220) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+        } else if (rn == 280) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+        } else if (rn == 350) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+        } else if (rn == 410) {
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        } else if (rn == 500) {
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        } 
+        if (rn > 500 && rn%200==0) {
+            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+        }
+        
+        
+        rc.setIndicatorString(1, "Distance squared between HQs is " + distanceBetweenHQs);
+        
+        
+        
+        
+        if(rn > 1000 && rn%20 == 0 && rc.getTeamOre() > 500) {
+            int index = BuildOrder.size()-1;
+            if(BuildOrder.isUnclaimedOrExpired(index)) {
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+            }
+        }
+        
+        
+        
+        
+        /**
+        //Building strategy ---------------------------------------------------
+        if(Clock.getRoundNum() == 140) {
+            BuildOrder.add(RobotType.TECHNOLOGYINSTITUTE);
+            BuildOrder.add(RobotType.TRAININGFIELD);
         }
         if(Clock.getRoundNum() == 225) {
-            BuildOrder.add(RobotType.AEROSPACELAB);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            
-        }
-        if (Clock.getRoundNum() == 400) {
-            BuildOrder.add(RobotType.AEROSPACELAB);
-            BuildOrder.add(RobotType.AEROSPACELAB);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.BARRACKS);
+            BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
-        if (Clock.getRoundNum() == 1000) {
-            BuildOrder.add(RobotType.AEROSPACELAB);
+        if(Clock.getRoundNum() == 550) {
+            BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.AEROSPACELAB);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
+
         }
-        if (Clock.getRoundNum() == 1200) {
-            BuildOrder.add(RobotType.AEROSPACELAB);
+        if(Clock.getRoundNum() == 800) {
+            BuildOrder.add(RobotType.HELIPAD);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
+
             BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.TANKFACTORY);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
+
+            //BuildOrder.printBuildOrder();
         }
-        
-        
-        
+        //---------------------------------------------------------------------
+        **/
         
         //Spawn beavers
         if (hasFewBeavers()) { 
@@ -115,8 +182,8 @@ public class HQ extends Structure {
         dispenseSupply(suppliabilityMultiplier);
         
         //Debug
-        //if(Clock.getRoundNum() == 1500) Map.debug_printRadioMap();
-        //if(Clock.getRoundNum() == 1500) BuildOrder.printBuildOrder();
+        //if(Clock.getRoundNum() == 700) Map.printRadio();
+        //if(Clock.getRoundNum() == 1500) BuildOrder.print();
 
     }
     
@@ -200,11 +267,10 @@ public class HQ extends Structure {
   
     }
     
+    
     private static boolean hasFewBeavers() throws GameActionException {
-        if (Clock.getRoundNum() < 20) { 
+        if (Clock.getRoundNum() < 150) { 
         //hard code initial miner factory and helipad
-            return RobotCount.read(RobotType.BEAVER)<1;
-        } else if (Clock.getRoundNum() < 250) {
             return RobotCount.read(RobotType.BEAVER)<2;
         }
         return RobotCount.read(RobotType.BEAVER) < 3;
@@ -272,10 +338,11 @@ public class HQ extends Structure {
     private static double[] suppliabilityMultiplier = {
         0/*0:HQ*/,          1/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
         1/*4:BARRACKS*/,    1/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   1/*7:TANKFCTRY*/,
-        1/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,    1/*11:BEAVER*/,
+        1/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   1/*10:AEROLAB*/,    0.01/*11:BEAVER*/,
         0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     1/*15:MINER*/,
-        1/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
+        500/*16:DRONE*/,      1/*17:TANK*/,       1/*18:COMMANDER*/,  1/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };
+    
     
 }

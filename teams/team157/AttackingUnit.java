@@ -116,6 +116,7 @@ public class AttackingUnit extends MovableUnit{
      */
     private static void loop() throws GameActionException {
         RobotController rc = Common.rc; // bring rc into local scope
+        sharedLoopCode();
         
         myLocation = rc.getLocation();
         enemiesInSight = rc.senseNearbyRobots(sightRange, enemyTeam);

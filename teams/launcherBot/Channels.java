@@ -44,12 +44,6 @@ public class Channels {
     public static final int LAST_ATTACKED_COORDINATES = 17070;
     
     /**
-     * Starting channel for beaver build request system
-     * 3 channels needed (17091 to 17093)
-     */
-    public static final int BEAVER_BUILD_REQUEST = 17091;
-    
-    /**
      * Starting channel for effective miner system (counting and announcing proportion)
      * 3 channels needed (17094 to 17096)
      */
@@ -57,13 +51,26 @@ public class Channels {
     
     /**
      * Starting channel for tank defense unit count system
-     * 19 channels needed
+     * 19 channels needed (17097 to 17115)
      */
     public static final int TANK_DEFENSE_COUNT = 17097;
 
     /**
      * Starting channel for missile target
-     * 10 channels needed
+     * 10 channels needed (17120 to 17129)
      */
     public static final int MISSILE_TARGET = 17120;
+    
+    /**
+     * Channel for global mob level signal. Encodes which enemy HQ/tower attack 
+     * regions may be traversed.
+     */
+    public static final int MOB_LEVEL = 17121;
+    
+    /**
+     * Starting channel for storing the coordinates of initially existing enemy towers.
+     * 12 channels needed (17130 to 17141);
+     */
+    public static final int ENEMY_TOWER_LOCATIONS = 17130;
+    
 }

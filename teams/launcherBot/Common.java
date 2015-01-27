@@ -10,11 +10,9 @@ public class Common extends RobotPlayer {
     //Global variables ========================================================
   
     //Unset Variables
-    public static RobotController rc;
     public static MapLocation HQLocation, enemyHQLocation, myLocation; //locations
     public static MapLocation[] myTowers, enemyTowers; //tower location arrays
     public static Team myTeam, enemyTeam;
-    public static RobotType myType;
     public static int sightRange, attackRange; //ranges
     public static Random rand;
     public static int distanceBetweenHQs;
@@ -41,10 +39,8 @@ public class Common extends RobotPlayer {
     public static void commonInit() throws GameActionException {
         
         //Global inits --------------------------------------------------------
-        rc = RobotPlayer.rc; //set robotcontroller
         rand = new Random(rc.getID()); //seed random number generator
         //my properties
-        myType = rc.getType();
         sightRange = myType.sensorRadiusSquared;
         attackRange = myType.attackRadiusSquared;
         
@@ -61,7 +57,7 @@ public class Common extends RobotPlayer {
         enemyTeam = myTeam.opponent();
         
         try {
-          //Internal map
+            //Internal map
             //This year's implementation randomizes offsets to the x,y coordinates
             //Coordinate offsets at map[60][60]
             Map.mapx0 = (HQLocation.x+enemyHQLocation.x)/2;
@@ -84,7 +80,7 @@ public class Common extends RobotPlayer {
                 case BARRACKS: Barracks.start(); break;
                 case BASHER: Basher.start(); break;
                 case BEAVER: Beaver.start(); break;
-                case COMMANDER: Commander.start(); break;
+                case COMMANDER: AttackingUnit.start(10, 2.0); break;
                 case COMPUTER: Computer.start(); break;
                 case DRONE: Drone.start(); break;
                 case HANDWASHSTATION: HandwashStation.start(); break;
@@ -93,7 +89,6 @@ public class Common extends RobotPlayer {
                 case LAUNCHER: Launcher.start(); break;
                 case MINER: Miner.start(); break;
                 case MINERFACTORY: MinerFactory.start(); break;
-                case MISSILE: Missile.start(); break;
                 case SOLDIER: AttackingUnit.start(10, 1.3); break;
                 case SUPPLYDEPOT: SupplyDepot.start(); break;
                 case TANK: AttackingUnit.start(10, 1.3); break;
@@ -109,42 +104,25 @@ public class Common extends RobotPlayer {
     }
     
     
-    //Map methods =============================================================
-    
     /**
-     * Update internal map within sensor radius using values from radio map.
-     * If some locations are unknown, then sense them and update radio map and
-     * internal map.
-     * @param robotLoc location of robot
-     * @throws GameActionException
+     * Code that runs at the start of every loop (shared by every robot).
+     * 
+     * Note that this code runs in buildings too.
+     * 
+     * Does not run in missile and towers.
+     * 
+     * @throws GameActionException 
      */
-    public static void initialSense(MapLocation robotLoc) throws GameActionException {
-        MapLocation[] sensingLoc = MapLocation.getAllMapLocationsWithinRadiusSq(robotLoc, sightRange);
-        for (MapLocation loc: sensingLoc) {
-            senseMap(loc);
-        }
-    }
-    
-    /**
-     * Update internal map at input loc using values from radio map.
-     * If loc is unknown, then sense it and update radio map and
-     * internal map.
-     * @param loc location to sense
-     * @throws GameActionException
-     */
-    public static void senseMap(MapLocation loc) throws GameActionException {
-        int value = Map.getRadioMap(loc.x,loc.y);
-        if (value == 0) {
-            switch (rc.senseTerrainTile(loc)) {
-                case VOID: Map.setMaps(loc.x,loc.y, 4); break;
-                case NORMAL: Map.setMaps(loc.x,loc.y, 1); break;
-                case OFF_MAP: Map.setMaps(loc.x,loc.y, 5); break;
-                case UNKNOWN: break;
-                default: break;
-            }
-        } else {
-            Map.setInternalMap(loc.x,loc.y,value);
-        }
+    public static void sharedLoopCode() throws GameActionException {
+        // Update global counts of robots - do not remove
+        RobotCount.report();
+        
+        //Update Mob level to know which enemy structure ranges can be traversed
+        Map.updateMobLevel();
+        
+        // Report any drops in HP
+        // TODO: I'm not entirely sure whether you can do this without creating an instance
+        LastAttackedLocationsReport.report();
     }
     
     
@@ -279,46 +257,43 @@ public class Common extends RobotPlayer {
     }
     
     
-    /**
-     * Code that runs at the start of every loop (shared by every robot).
-     * 
-     * Note that this code runs in buildings too.
-     * 
-     * Does not run in missile and towers.
-     * 
-     * @throws GameActionException 
-     */
-    public static void sharedLoopCode() throws GameActionException {
-        // Update global counts of robots - do not remove
-        RobotCount.report();
-        
-        // Report any drops in HP
-        // TODO: I'm not entirely sure whether you can do this without creating an instance
-        LastAttackedLocationsReport.report();
-    }
     
+    //Other methods ===========================================================
+    
+    /**
+     * Finds the initial index of the enemy tower at a given location. Returns -1 if 
+     * not the location of an enemy tower.
+     * @param loc Location to query
+     * @return The initial tower index.
+     */
+    public static int getEnemyTowerIndex(MapLocation loc) throws GameActionException {
+        for(int i=0; i<6; i++) {
+            int channel = Channels.ENEMY_TOWER_LOCATIONS + 2*i;
+            if(rc.readBroadcast(channel) == loc.x 
+                && rc.readBroadcast(channel+1) == loc.y) {
+                    return i;
+            }
+        }
+        return -1;
+    }
     
     public static void updateMyLocation() {
         myLocation = rc.getLocation();
     }
 
-    public static void updateFriendlyInRange(int range)
-    {
+    public static void updateFriendlyInRange(int range) {
         friends = rc.senseNearbyRobots(range, myTeam);
     }
 
-    public static void updateFriendlyInSight()
-    {
+    public static void updateFriendlyInSight() {
         updateFriendlyInRange(sightRange);
     }
 
-    public static void updateEnemyInRange(int range)
-    {
+    public static void updateEnemyInRange(int range) {
         enemies = rc.senseNearbyRobots(range, enemyTeam);
     }
 
-    public static void updateEnemyInSight()
-    {
+    public static void updateEnemyInSight() {
         updateEnemyInRange(sightRange);
     }
 

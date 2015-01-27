@@ -2,14 +2,14 @@ package launcherBot;
 
 import java.util.Random;
 
+import launcherBot.Drone.DroneState;
 import launcherBot.Utility.BuildOrder;
 import launcherBot.Utility.RobotCount;
 import battlecode.common.*;
 
 public class Helipad extends Structure {
     
-    private static int maxNumberOfDrones = 30;
-    
+    private static int maxNumberOfDrones = 2;
     //General methods =========================================================
     
     public static void start() throws GameActionException {
@@ -33,16 +33,9 @@ public class Helipad extends Structure {
         claimBuildOrderEntry();
         
         //Spawn
-        if(RobotCount.read(RobotType.DRONE) < maxNumberOfDrones) {
+        if(RobotCount.read(RobotType.DRONE) < maxNumberOfDrones && Clock.getRoundNum() > Drone.roundNumSupply) {
             trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);
         }
-        /*
-        if(RobotCount.read(RobotType.DRONE) < maxNumberOfDrones
-                && RobotCount.read(RobotType.AEROSPACELAB) < 2) {
-            trySpawn(myLocation.directionTo(spawnLocation), RobotType.DRONE);
-        }*/
-        
-        
         
         //Dispense Supply
         dispenseSupply(suppliabilityMultiplier_Preattack);

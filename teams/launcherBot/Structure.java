@@ -32,19 +32,21 @@ public class Structure extends Common {
      * Spawn robot of type rbtype in direction dir0 if allowed, transfers supply
      * @param dir0 Direction to spawn at
      * @param robotType RobotType of robot to spawn
+     * @return true if the robot is spawned, false otherwise
      * @throws GameActionException
      */
-    public static void trySpawn(Direction dir0, RobotType robotType) throws GameActionException {
+    public static boolean trySpawn(Direction dir0, RobotType robotType) throws GameActionException {
         if(rc.isCoreReady() && rc.getTeamOre() >= robotType.oreCost) {
             int dirint0 = dir0.ordinal();
             for(int offset : offsets) {
                 int dirint = (dirint0+offset+8)%8;
                 if(rc.canSpawn(directions[dirint],robotType)) {
                     rc.spawn(directions[dirint],robotType);
-                    break;
+                    return true;
                 }
             }
         }
+        return false;
     }
     
     
@@ -61,30 +63,34 @@ public class Structure extends Common {
             //Sense nearby friendly robots
             RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myTeam);
             int targetidx = -1;
-            double totalsupply = 0, totalcapacity = 0;
-            double targetsupplyratio = 1000, minsupplyratio = targetsupplyratio;
-            //targetsupplyratio arbitrarily set to 500 for now
+            double totalSupply = 0, totalCapacity = 0;
+            double targetSupplyRatio = 1000, minSupplyRatio = targetSupplyRatio;
+            //targetsupplyRatio arbitrarily set to 1000 for now
             
             for(int i=0; i<friends.length; i++) {
                 //Keep track of total values to find mean later
-                totalsupply += friends[i].supplyLevel;
-                totalcapacity += friends[i].health*multiplier[friends[i].type.ordinal()];
+                totalSupply += friends[i].supplyLevel;
+                double friendCapacity = friends[i].health*multiplier[friends[i].type.ordinal()];
+                totalCapacity += friendCapacity;
                 
                 //Find robot with lowest supply per capacity
-                double supplyratio = friends[i].supplyLevel/(friends[i].health*multiplier[friends[i].type.ordinal()]);
-                if(supplyratio < minsupplyratio) {
-                    minsupplyratio = supplyratio;
-                    targetidx = i;
+                if(friendCapacity > 0) {
+                    double supplyRatio = friends[i].supplyLevel/friendCapacity;
+                    if(supplyRatio < minSupplyRatio) {
+                        minSupplyRatio = supplyRatio;
+                        targetidx = i;
+                    }
                 }
                 
+                //Stop checking if insufficient bytecode left
                 if(Clock.getBytecodesLeft() < 600) break;
             }
             
-            //Replenish supply
-            double targetsupply = totalcapacity*targetsupplyratio;
-            if(targetidx != -1 && totalsupply < targetsupply) {
+            //Replenish supply of target
+            double targetTotalSupply = totalCapacity*targetSupplyRatio;
+            if(targetidx != -1 && totalSupply < targetTotalSupply) {
                 MapLocation loc = friends[targetidx].location;
-                rc.transferSupplies((int)(targetsupply-totalsupply),loc);
+                rc.transferSupplies((int)(targetTotalSupply-totalSupply),loc);
             }
         }
     }

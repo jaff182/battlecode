@@ -14,7 +14,7 @@ public class Launcher extends MovableUnit {
     private static MapLocation gatherLocation;
     private static MapLocation surroundLocation;
     private static MapLocation defendLocation = HQLocation;
-    private static int numberInSwarm = 4;
+    private static int numberInSwarm = 3;
     private static LauncherState state;
     private static LauncherState previousState;
     private static int gatherRange = 24;
@@ -345,9 +345,9 @@ public class Launcher extends MovableUnit {
         int[] dangerInDir = new int[8];
         for (RobotInfo info: unitsInSight) {
             if (info.team == myTeam) {
-                dangerInDir[myLocation.directionTo(info.location).ordinal()]-= dangerRating[info.type.ordinal()];
+                dangerInDir[myLocation.directionTo(info.location).ordinal()]-= friendlyDangerRating[info.type.ordinal()];
             } else {
-                dangerInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
+                dangerInDir[myLocation.directionTo(info.location).ordinal()]+= enemyDangerRating[info.type.ordinal()];
             }
             
         }
@@ -357,7 +357,7 @@ public class Launcher extends MovableUnit {
         int maxIndex = 0;
         int secondMaxIndex = 0;
         for (int i = 0; i < 8; i++) {
-            dirScore = dangerInDir[i] + dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8];
+            dirScore = dangerInDir[i] + 2*dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8];
             if (dirScore > secondMaxDirScore) {
                 if (rc.canLaunch(directions[i])) {
                     if (dirScore > maxDirScore) {
@@ -542,8 +542,20 @@ public class Launcher extends MovableUnit {
     /**
      * Danger rating is higher if launcher prioritize attacking it first
      */
-    private static int[] dangerRating = {
-        3/*0:HQ*/,         3/*1:TOWER*/,      1/*2:SUPPLYDPT*/,   1/*3:TECHINST*/,
+    private static int[] enemyDangerRating = {
+        4/*0:HQ*/,         5/*1:TOWER*/,      1/*2:SUPPLYDPT*/,   1/*3:TECHINST*/,
+        3/*4:BARRACKS*/,    2/*5:HELIPAD*/,     2/*6:TRNGFIELD*/,   3/*7:TANKFCTRY*/,
+        2/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   3/*10:AEROLAB*/,   2/*11:BEAVER*/,
+        1/*12:COMPUTER*/,   2/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,
+        3/*16:DRONE*/,     4/*17:TANK*/,      5/*18:COMMANDER*/, 5/*19:LAUNCHER*/,
+        3/*20:MISSILE*/
+    };
+    
+    /**
+     * Danger rating is higher if launcher prioritize launching away from it first
+     */
+    private static int[] friendlyDangerRating = {
+        100/*0:HQ*/,         100/*1:TOWER*/,      1/*2:SUPPLYDPT*/,   1/*3:TECHINST*/,
         3/*4:BARRACKS*/,    2/*5:HELIPAD*/,     2/*6:TRNGFIELD*/,   3/*7:TANKFCTRY*/,
         2/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   3/*10:AEROLAB*/,   2/*11:BEAVER*/,
         1/*12:COMPUTER*/,   2/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,

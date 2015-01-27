@@ -41,7 +41,7 @@ public class Beaver extends MiningUnit {
     }
 
     private static void init() throws GameActionException {
-        robotState = RobotState.WANDER;
+        robotState = RobotState.MINE;
         
         //Set mining parameters
         minMiningRate = GameConstants.BEAVER_MINE_MAX;
@@ -51,24 +51,12 @@ public class Beaver extends MiningUnit {
         //Set building parameters
         CHECKERBOARD_PARITY = (HQLocation.x+HQLocation.y)%2;
         
-        //set locations within attack radius of enemy tower or hq as unpathable
-        initInternalMap();
-        
-        //initialSense(rc.getLocation());
     }
     
     
     private static void loop() throws GameActionException {
         //Update location
         myLocation = rc.getLocation();
-        
-        //Sense map
-        //Must be before movement methods
-        
-        if(previousDirection != Direction.NONE) {
-            senseWhenMove(myLocation, previousDirection);
-            previousDirection = Direction.NONE;
-        }
         
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
@@ -114,7 +102,7 @@ public class Beaver extends MiningUnit {
                 moveTargetLocation = null;
                 robotState = RobotState.BUILD;
             }
-        } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10 
+        } else if (rc.getRoundLimit()-Clock.getRoundNum() < 250 && rc.getHealth() > 10 
             && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
                 //Lategame handwash station attack
                 robotState = RobotState.BUILD;
@@ -123,10 +111,15 @@ public class Beaver extends MiningUnit {
         } else if (rc.isCoreReady()) {
             //Mine
             double ore = rc.senseOre(myLocation);
+         // TODO edited this to make beavers mine instead of wandering too much
+            if (ore >= minOreWorthConsidering) {
+                robotState = RobotState.MINE;
+            }
+            /*
             double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
             if(ore >= minOreWorthMining || rand.nextDouble() <= miningProbability) {
                 robotState = RobotState.MINE;
-            }
+            }*/
         }
     }
 
@@ -142,7 +135,7 @@ public class Beaver extends MiningUnit {
                 moveTargetLocation = null;
                 robotState = RobotState.BUILD;
             }
-        } else if (Clock.getRoundNum() > 1750 && rc.getHealth() > 10 
+        } else if (rc.getRoundLimit()-Clock.getRoundNum() < 250 && rc.getHealth() > 10 
             && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
                 //Lategame handwash station attack
                 robotState = RobotState.BUILD;
@@ -151,10 +144,16 @@ public class Beaver extends MiningUnit {
         } else if (rc.isCoreReady()) {
             //Transition to wandering around if ore level is too low
             double ore = rc.senseOre(myLocation);
+            // TODO edited this to make beavers mine instead of wandering too much
+            if (ore < minOreWorthConsidering) {
+                robotState = RobotState.WANDER;
+            }
+            /*
             double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
             if(ore < minOreWorthMining && rand.nextDouble() > miningProbability) {
                 robotState = RobotState.WANDER;
             }
+            */
         }
     }
 
@@ -177,11 +176,7 @@ public class Beaver extends MiningUnit {
         checkForEnemies();
         
         // wander around near HQ
-        if (myLocation.distanceSquaredTo(HQLocation) > 35) {
-            bug(HQLocation);
-        } else {
-            wander();
-        }
+        explore(HQLocation);
         
         //Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);

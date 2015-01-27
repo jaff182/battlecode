@@ -52,33 +52,24 @@ public class Launcher extends MovableUnit {
     }
     
     private static void init() throws GameActionException {
-        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
         target = enemyHQLocation;
         missileCount = 0;
         numberOfEnemyTowers = enemyTowers.length;
         
-        /*
-        if (Clock.getRoundNum() < 800 && rand.nextInt(2) == 0) {
-            // set some launchers to protect hq
-            state = LauncherState.DEFEND;
-            previousState = state;
-        } else 
-        
-        if (myTowers.length > 0) {
-            // gather at nearest tower to enemy hq
-            gatherLocation = getClosestFriendlyTower(enemyHQLocation);
-            state = LauncherState.GATHER;
-            previousState = state;
-        } else {
-            //gather halfway between hqs
-            gatherLocation = HQLocation.add(HQLocation.directionTo(enemyHQLocation), distanceBetweenHQs/2);
-            state = LauncherState.GATHER; 
-            previousState = state;
+        int fate = rand.nextInt(3);
+        if (fate == 0) {
+            int midX = (3*HQLocation.x + enemyHQLocation.x)/4;
+            int midY = (3*HQLocation.y + enemyHQLocation.y)/4;
+            gatherLocation = new MapLocation(midX,midY); 
+        } else if (fate == 1) {
+            int midX = HQLocation.x;
+            int midY = (3*HQLocation.y + enemyHQLocation.y)/4;
+            gatherLocation = new MapLocation(midX,midY);
+        } else if (fate == 2) {
+            int midX = (3*HQLocation.x + enemyHQLocation.x)/4;
+            int midY = HQLocation.y;
+            gatherLocation = new MapLocation(midX,midY);
         }
-        */
-        int midX = (3*HQLocation.x + enemyHQLocation.x)/4;
-        int midY = (3*HQLocation.y + enemyHQLocation.y)/4;
-        gatherLocation = new MapLocation(midX,midY); 
         state = LauncherState.GATHER; 
         previousState = state;
 
@@ -217,18 +208,16 @@ public class Launcher extends MovableUnit {
                         }
                     }
                     if (!targetIsAlive) {
-                     // set area around tower as pathable
-                        int targetID = Map.getInternalMap(surroundLocation);
-                        for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(surroundLocation, towerAttackRadius)) {          
-                            if (Map.getInternalMap(inSightOfTarget) == targetID) {
-                                Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
-                            }
+                        //Tower is destroyed!
+                        // set area around tower as pathable
+                        int towerIndex = getEnemyTowerIndex(surroundLocation);
+                        if(towerIndex != -1) {
+                            Map.turnOffEnemyTowerRange(towerIndex);
                         }
                         setNextSurroundTarget();
-                        /*
                         state = LauncherState.GATHER;
                         previousState = LauncherState.SURROUND;
-                        gatherLocation = surroundLocation;*/
+                        gatherLocation = surroundLocation;
                     }
                     break;
                 }
@@ -336,6 +325,8 @@ public class Launcher extends MovableUnit {
         default:
             break;
         }
+        
+        distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
 
@@ -392,18 +383,27 @@ public class Launcher extends MovableUnit {
     
     /**
      * Launches three missiles around input direction
+     * Used only for attacking surroundLocation!
      * @param dir
      * @throws GameActionException
      */
     public static void launchInThreeDir(Direction dir) throws GameActionException {
         if (rc.canLaunch(dir)) {
-            rc.launchMissile(dir);
+            if (myLocation.add(dir).distanceSquaredTo(surroundLocation) <= 24) {
+                rc.launchMissile(dir);
+            }  
         }
-        if (rc.canLaunch(dir.rotateLeft())) {
-            rc.launchMissile(dir.rotateLeft());
+        Direction leftDir = dir.rotateLeft();
+        if (rc.canLaunch(leftDir)) {
+            if (myLocation.add(leftDir).distanceSquaredTo(surroundLocation) <= 24) {
+                rc.launchMissile(leftDir);
+            }
         }
-        if (rc.canLaunch(dir.rotateLeft())) {
-            rc.launchMissile(dir.rotateLeft());
+        Direction rightDir = dir.rotateRight();
+        if (rc.canLaunch(rightDir)) {
+            if (myLocation.add(rightDir).distanceSquaredTo(surroundLocation) <= 24) {
+                rc.launchMissile(rightDir);
+            }
         }
     }
     /**
@@ -521,22 +521,12 @@ public class Launcher extends MovableUnit {
      * Sets next target for launchers to surround
      */
     private static void setNextSurroundTarget() {
-        /**
-        enemyTowers = rc.senseEnemyTowerLocations();
-        if (enemyTowers.length > 1) {
-            surroundLocation = getFurthestTowerFromEnemyHQ();
-        } else {
-            surroundLocation = enemyHQLocation;
-        }
-        **/
-        
-        
         MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
-        int distanceToClosestTower = Integer.MAX_VALUE;
         if (towerLoc.length > 1) {
+            int distanceToClosestTower = Integer.MAX_VALUE;
             for (MapLocation loc: towerLoc) {
                 int towerDist = myLocation.distanceSquaredTo(loc);
-                if (towerDist <= distanceToClosestTower) {
+                if (towerDist < distanceToClosestTower) {
                     surroundLocation = loc;
                     distanceToClosestTower = towerDist;
                 }
@@ -559,6 +549,16 @@ public class Launcher extends MovableUnit {
         1/*12:COMPUTER*/,   2/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,
         3/*16:DRONE*/,     4/*17:TANK*/,      5/*18:COMMANDER*/, 5/*19:LAUNCHER*/,
         3/*20:MISSILE*/
+    };
+    
+    
+    private static double[] suppliabilityMultiplier_Preattack = {
+        0/*0:HQ*/,          0/*1:TOWER*/,       0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,    1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,    1/*14:BASHER*/,     1/*15:MINER*/,
+        1/*16:DRONE*/,      3/*17:TANK*/,       2/*18:COMMANDER*/,  5/*19:LAUNCHER*/,
+        0/*20:MISSILE*/
     };
     
 

@@ -32,7 +32,7 @@ public class MinerFactory extends Structure {
         //Spawn and update effective miner proportion
         MinerEffectiveness.update();
         int minerCount = RobotCount.read(RobotType.MINER);
-        if(minerCount < 100 && (minerCount < 5 || MinerEffectiveness.mean > 0.5)) {
+        if(minerCount < 50 && (minerCount < 5 || MinerEffectiveness.mean > 0.5)) {
             trySpawn(myLocation.directionTo(enemyHQLocation),RobotType.MINER);
         }
         

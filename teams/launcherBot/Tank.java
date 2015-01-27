@@ -35,12 +35,8 @@ public class Tank extends MovableUnit {
     }
     
     private static void init() throws GameActionException {
-        if (Clock.getRoundNum() < roundNumAttack) {
-            initInternalMap();//set locations within attack radius of enemy tower or hq as unpathable
-        }
- 
         tankState = TankState.GATHER;
-
+        
     }
     
     private static void loop() throws GameActionException {
@@ -82,7 +78,8 @@ public class Tank extends MovableUnit {
      * @throws GameActionException 
      */
     private static void tankSwitchState() throws GameActionException {
-        //macroScoringAdvantage = AttackingUnit.macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25));
+        // the second parameter should be either 10 or 25
+        macroScoringAdvantage = AttackingUnit.macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25), 25);
         // State transitions
         if (macroScoringAdvantage<2) {
             tankState = TankState.RETREAT;
@@ -312,12 +309,13 @@ public class Tank extends MovableUnit {
         }
     }
     
-    public static void setAreaAroundTargetAsPathable() {
-        // set area around target as pathable
-        int targetID = Map.getInternalMap(target);
-        for (MapLocation inSightOfTarget: MapLocation.getAllMapLocationsWithinRadiusSq(target, targetAttackRadius)) {          
-            if (Map.getInternalMap(inSightOfTarget) == targetID) {
-                Map.setInternalMapWithoutSymmetry(inSightOfTarget, 0);        
+    public static void setAreaAroundTargetAsPathable() throws GameActionException {
+        int value = Map.getRadioMap(target.x,target.y);
+        for(int i=0; i<6; i++) {
+            if(Map.decodeInEnemyTowerRange(value,i) 
+                && !Map.isEnemyTowerRangeTurnedOff(i)) {
+                    Map.turnOffEnemyTowerRange(i);
+                    break;
             }
         }
         keepAwayFromTarget = false;
