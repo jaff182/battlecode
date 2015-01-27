@@ -29,10 +29,9 @@ public class MiningUnit extends MovableUnit {
     
     //Movement ================================================================
     
-    /**
-     * Priority ratings for going towards each direction.
-     */
-    private static int[] directionPriority = new int[8];
+    private static MapLocation lastOreLocation;
+    private static int lastOreHCL = 4;
+    private static int bestOreHCL = -1;
     
     private static int HCL = 0;
     private static boolean noPreferredDirFound = true;
@@ -60,23 +59,11 @@ public class MiningUnit extends MovableUnit {
         if(rc.isCoreReady() || HCL == 0) {
             //Initialize variables
             myLocation = rc.getLocation();
-            if(HCL == 0) {
-                noPreferredDirFound = true;
-                directionPriority = new int[8];
-            }
             
             //Add attractive forces from ore around robot
-            while(noPreferredDirFound && HCL < 4) {
+            while(HCL < lastOreHCL && HCL < 4) {
                 //Add ore contributions
                 countOreInRelativeShell();
-                
-                //Find preferred direction
-                for(int dirInt=0; dirInt<8; dirInt++) {
-                    if(directionPriority[dirInt] > 0) {
-                        noPreferredDirFound = false;
-                        break;
-                    }
-                }
                 
                 //Go to next hill climb level if no direction is preferred
                 HCL++;
@@ -91,8 +78,22 @@ public class MiningUnit extends MovableUnit {
             HCL = 0;
             
             //Still no preferred direction
-            if(noPreferredDirFound) {
+            if(lastOreHCL != 4) {
+                int distance = myLocation.distanceSquaredTo(lastOreLocation);
+                if(distance <= 2) {
+                    //Just go there
+                    explore(lastOreLocation);
+                    lastOreHCL = 4;
+                    bugReset();
+                } else {
+                    //bug there
+                    bug(lastOreLocation);
+                }
+                
+                
+            } else {
                 //Prefer conserving momentum
+                int[] directionPriority = new int[8];
                 int momentum = 1000;
                 directionPriority[oreSearchDirInt] += momentum;
                 directionPriority[(oreSearchDirInt+4)%8] -= momentum;
@@ -124,35 +125,35 @@ public class MiningUnit extends MovableUnit {
                         }
                     }
                 }
-            }
-            
-            //Find most preferred direction
-            int[] bestDirInts = {-1,-1,-1,-1,-1,-1,-1,-1};
-            int maxCount = 0;
-            int bestdirectionPriority = -10000000;
-            for(int dirInt=0; dirInt<8; dirInt++) {
-                if(movePossible(directions[dirInt])) {
-                    if(directionPriority[dirInt] > bestdirectionPriority) {
-                        //Reset list to include new best direction
-                        bestdirectionPriority = directionPriority[dirInt];
-                        bestDirInts[0] = dirInt;
-                        maxCount = 1;
-                    } else if(directionPriority[dirInt] == bestdirectionPriority) {
-                        //Add direction to list
-                        bestDirInts[maxCount] = dirInt;
-                        maxCount++;
+                
+                //Find most preferred direction
+                int[] bestDirInts = {-1,-1,-1,-1,-1,-1,-1,-1};
+                int maxCount = 0;
+                int bestdirectionPriority = -10000000;
+                for(int dirInt=0; dirInt<8; dirInt++) {
+                    if(movePossible(directions[dirInt])) {
+                        if(directionPriority[dirInt] > bestdirectionPriority) {
+                            //Reset list to include new best direction
+                            bestdirectionPriority = directionPriority[dirInt];
+                            bestDirInts[0] = dirInt;
+                            maxCount = 1;
+                        } else if(directionPriority[dirInt] == bestdirectionPriority) {
+                            //Add direction to list
+                            bestDirInts[maxCount] = dirInt;
+                            maxCount++;
+                        }
                     }
                 }
-            }
-            //rc.setIndicatorString(2,"dirpri = "+directionPriority[0]+", "+directionPriority[1]+", "+directionPriority[2]+", "+directionPriority[3]+", "+directionPriority[4]+", "+directionPriority[5]+", "+directionPriority[6]+", "+directionPriority[7]+"; bestDirints = "+bestDirInts[0]+", "+bestDirInts[1]+", "+bestDirInts[2]+", "+bestDirInts[3]+", "+bestDirInts[4]+", "+bestDirInts[5]+", "+bestDirInts[6]+", "+bestDirInts[7]);
-            
-            //Move
-            if(maxCount > 0) {
-                Direction dirToMove = directions[bestDirInts[rand.nextInt(maxCount)]];
-                oreSearchDirInt = dirToMove.ordinal();
-                if(rc.canMove(dirToMove)) {
-                    rc.move(dirToMove);
-                    previousDirection = dirToMove;
+                //rc.setIndicatorString(2,"dirpri = "+directionPriority[0]+", "+directionPriority[1]+", "+directionPriority[2]+", "+directionPriority[3]+", "+directionPriority[4]+", "+directionPriority[5]+", "+directionPriority[6]+", "+directionPriority[7]+"; bestDirints = "+bestDirInts[0]+", "+bestDirInts[1]+", "+bestDirInts[2]+", "+bestDirInts[3]+", "+bestDirInts[4]+", "+bestDirInts[5]+", "+bestDirInts[6]+", "+bestDirInts[7]);
+                
+                //Move
+                if(maxCount > 0) {
+                    Direction dirToMove = directions[bestDirInts[rand.nextInt(maxCount)]];
+                    oreSearchDirInt = dirToMove.ordinal();
+                    if(rc.canMove(dirToMove)) {
+                        rc.move(dirToMove);
+                        previousDirection = dirToMove;
+                    }
                 }
             }
             
@@ -167,11 +168,15 @@ public class MiningUnit extends MovableUnit {
      * @param dy Relative Y coordinate
      */
     private static void countOreInRelativeShell() throws GameActionException {
+        //Initiate
+        double ore, bestOre = minOreWorthMining;
+        int dx, dy;
+        
         //Iterate through each cell in the shell
         for(int i=0; i<shellsX[HCL].length; i++) {
             //Get relative location
-            int dx = shellsX[HCL][i];
-            int dy = shellsY[HCL][i];
+            dx = shellsX[HCL][i];
+            dy = shellsY[HCL][i];
             
             //Skip alternate cells in outer 2 shells to save bytecode
             //Unroll loops to save bytecode
@@ -182,14 +187,14 @@ public class MiningUnit extends MovableUnit {
                 if(rc.isPathable(myType,loc)
                     //The following is checkNotBlocked(loc) with no updates,
                     //abstraction thoroughly broken and inlined to save bytecodes
-                    && (((rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA) & ~7) & ~Map.mobLevel) == 0)) {
-                        //Add ore contribution (10 times ore amount)
-                        double ore = rc.senseOre(loc);
-                        if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);
-                } else if(HCL == 0) {
-                    //block the direction if obstructed
-                    //subtract a value much more than typical ore contribution
-                    directionPriority[dirInt] -= 1000000;
+                    && (((4088 & rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA)) & ~Map.mobLevel) == 0)) {
+                        ore = rc.senseOre(loc);
+                        if(ore >= bestOre) {
+                            lastOreLocation = loc;
+                            lastOreHCL = HCL;
+                            bestOre = ore;
+                            bugReset();
+                        }
                 }
                 
                 loc = myLocation.add(-dy,dx);
@@ -197,14 +202,14 @@ public class MiningUnit extends MovableUnit {
                 if(rc.isPathable(myType,loc)
                     //The following is checkNotBlocked(loc) with no updates,
                     //abstraction thoroughly broken and inlined to save bytecodes
-                    && (((rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA) & ~7) & ~Map.mobLevel) == 0)) {
-                        //Add ore contribution (10 times ore amount)
-                        double ore = rc.senseOre(loc);
-                        if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);
-                } else if(HCL == 0) {
-                    //block the direction if obstructed
-                    //subtract a value much more than typical ore contribution
-                    directionPriority[dirInt] -= 1000000;
+                    && (((4088 & rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA)) & ~Map.mobLevel) == 0)) {
+                        ore = rc.senseOre(loc);
+                        if(ore >= bestOre) {
+                            lastOreLocation = loc;
+                            lastOreHCL = HCL;
+                            bestOre = ore;
+                            bugReset();
+                        }
                 }
                 
                 loc = myLocation.add(-dx,-dy);
@@ -212,14 +217,14 @@ public class MiningUnit extends MovableUnit {
                 if(rc.isPathable(myType,loc)
                     //The following is checkNotBlocked(loc) with no updates,
                     //abstraction thoroughly broken and inlined to save bytecodes
-                    && (((rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA) & ~7) & ~Map.mobLevel) == 0)) {
-                        //Add ore contribution (10 times ore amount)
-                        double ore = rc.senseOre(loc);
-                        if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);
-                } else if(HCL == 0) {
-                    //block the direction if obstructed
-                    //subtract a value much more than typical ore contribution
-                    directionPriority[dirInt] -= 1000000;
+                    && (((4088 & rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA)) & ~Map.mobLevel) == 0)) {
+                        ore = rc.senseOre(loc);
+                        if(ore >= bestOre) {
+                            lastOreLocation = loc;
+                            lastOreHCL = HCL;
+                            bestOre = ore;
+                            bugReset();
+                        }
                 }
                 
                 loc = myLocation.add(dy,-dx);
@@ -227,14 +232,14 @@ public class MiningUnit extends MovableUnit {
                 if(rc.isPathable(myType,loc)
                     //The following is checkNotBlocked(loc) with no updates,
                     //abstraction thoroughly broken and inlined to save bytecodes
-                    && (((rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA) & ~7) & ~Map.mobLevel) == 0)) {
-                        //Add ore contribution (10 times ore amount)
-                        double ore = rc.senseOre(loc);
-                        if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);
-                } else if(HCL == 0) {
-                    //block the direction if obstructed
-                    //subtract a value much more than typical ore contribution
-                    directionPriority[dirInt] -= 1000000;
+                    && (((4088 & rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA)) & ~Map.mobLevel) == 0)) {
+                        ore = rc.senseOre(loc);
+                        if(ore >= bestOre) {
+                            lastOreLocation = loc;
+                            lastOreHCL = HCL;
+                            bestOre = ore;
+                            bugReset();
+                        }
                 }
                 
             }
