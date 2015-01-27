@@ -7,7 +7,7 @@ import battlecode.common.*;
 
 public class TankFactory extends SpawnableStructure {
     
-    private static int maxNumberOfTanks = 50;
+    private static int maxNumberOfTanks = 20;
     
     //General methods =========================================================
     
@@ -31,8 +31,7 @@ public class TankFactory extends SpawnableStructure {
         claimBuildOrderEntry();
         
        //Spawn
-        if(RobotCount.read(RobotType.TANK) < maxNumberOfTanks
-                && RobotCount.read(RobotType.AEROSPACELAB) < 2) {
+        if(RobotCount.read(RobotType.TANK) < maxNumberOfTanks) {
             //System.out.println("Trying to spawn tanks");
             trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.TANK);
         }

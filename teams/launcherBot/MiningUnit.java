@@ -2,6 +2,7 @@ package launcherBot;
 
 import java.util.Random;
 
+import launcherBot.Utility.Map;
 import launcherBot.Utility.RobotCount;
 import battlecode.common.*;
 
@@ -26,13 +27,15 @@ public class MiningUnit extends MovableUnit {
     public static double minOreWorthConsidering;
     
     
-    
     //Movement ================================================================
     
     /**
      * Priority ratings for going towards each direction.
      */
-    private static int[] directionPriority;
+    private static int[] directionPriority = new int[8];
+    
+    private static int HCL = 0;
+    private static boolean noPreferredDirFound = true;
     
     //Coordinates for shells of increasing distance (hill climb levels, or HCL)
     //Inner shells have higher priority in deciding the direction to go to mine.
@@ -54,22 +57,18 @@ public class MiningUnit extends MovableUnit {
      * Hill climb towards more ore.
      */
     public static void goTowardsOre() throws GameActionException {
-        if(rc.isCoreReady()) {
+        if(rc.isCoreReady() || HCL == 0) {
             //Initialize variables
-            int HCL = 0; //hill climb level
-            boolean noPreferredDirFound = true;
-            directionPriority = new int[8];
             myLocation = rc.getLocation();
+            if(HCL == 0) {
+                noPreferredDirFound = true;
+                directionPriority = new int[8];
+            }
             
             //Add attractive forces from ore around robot
             while(noPreferredDirFound && HCL < 4) {
                 //Add ore contributions
-                for(int i=0; i<shellsX[HCL].length; i++) {
-                    countOreInRelativeLocation(shellsX[HCL][i],shellsY[HCL][i]);
-                    countOreInRelativeLocation(-shellsY[HCL][i],shellsX[HCL][i]);
-                    countOreInRelativeLocation(-shellsX[HCL][i],-shellsY[HCL][i]);
-                    countOreInRelativeLocation(shellsY[HCL][i],-shellsX[HCL][i]);
-                }
+                countOreInRelativeShell();
                 
                 //Find preferred direction
                 for(int dirInt=0; dirInt<8; dirInt++) {
@@ -81,7 +80,15 @@ public class MiningUnit extends MovableUnit {
                 
                 //Go to next hill climb level if no direction is preferred
                 HCL++;
+                
+                //Take a break after a few 
+                if(HCL == 3 && rc.getSupplyLevel() == 0) break;
             }
+            //Reset
+            if(!rc.isCoreReady()) {
+                return;
+            }
+            HCL = 0;
             
             //Still no preferred direction
             if(noPreferredDirFound) {
@@ -124,8 +131,7 @@ public class MiningUnit extends MovableUnit {
             int maxCount = 0;
             int bestdirectionPriority = -10000000;
             for(int dirInt=0; dirInt<8; dirInt++) {
-                //Using canMove() here because movePossible seems buggy
-                if(rc.canMove(directions[dirInt])) {
+                if(movePossible(directions[dirInt])) {
                     if(directionPriority[dirInt] > bestdirectionPriority) {
                         //Reset list to include new best direction
                         bestdirectionPriority = directionPriority[dirInt];
@@ -144,7 +150,7 @@ public class MiningUnit extends MovableUnit {
             if(maxCount > 0) {
                 Direction dirToMove = directions[bestDirInts[rand.nextInt(maxCount)]];
                 oreSearchDirInt = dirToMove.ordinal();
-                if (rc.canMove(dirToMove)) {
+                if(rc.canMove(dirToMove)) {
                     rc.move(dirToMove);
                     previousDirection = dirToMove;
                 }
@@ -155,23 +161,85 @@ public class MiningUnit extends MovableUnit {
     
     /**
      * Helper function for goTowardsOre(). Adds the ore contribution to the index of 
-     * the directionPriority array corresponding to the appropriate relative location. The 
-     * location should be within the sensing radius of the robot.
+     * the directionPriority array corresponding to the appropriate relative 
+     * location. The location should be within the sensing radius of the robot.
      * @param dx Relative X coordinate
      * @param dy Relative Y coordinate
      */
-    private static void countOreInRelativeLocation(int dx, int dy) {
-        MapLocation loc = myLocation.add(dx,dy);
-        int dirInt = myLocation.directionTo(loc).ordinal();
-        if(rc.isPathable(myType,loc)) {
-            //Add ore contribution (10 times ore amount)
-            double ore = rc.senseOre(loc);
-            if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);
-        } else if(myLocation.distanceSquaredTo(loc) <= 2) {
-            //block the direction if obstructed
-            //subtract a value much more than typical ore contribution
-            directionPriority[dirInt] -= 1000000;
+    private static void countOreInRelativeShell() throws GameActionException {
+        //Iterate through each cell in the shell
+        for(int i=0; i<shellsX[HCL].length; i++) {
+            //Get relative location
+            int dx = shellsX[HCL][i];
+            int dy = shellsY[HCL][i];
+            
+            //Skip alternate cells in outer 2 shells to save bytecode
+            //Unroll loops to save bytecode
+            if(HCL < 2 || (dx+dy+Clock.getRoundNum()+10)%2 == 0) {
+            
+                MapLocation loc = myLocation.add(dx,dy);
+                int dirInt = myLocation.directionTo(loc).ordinal();
+                if(rc.isPathable(myType,loc)
+                    //The following is checkNotBlocked(loc) with no updates,
+                    //abstraction thoroughly broken and inlined to save bytecodes
+                    && (((rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA) & ~7) & ~Map.mobLevel) == 0)) {
+                        //Add ore contribution (10 times ore amount)
+                        double ore = rc.senseOre(loc);
+                        if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);
+                } else if(HCL == 0) {
+                    //block the direction if obstructed
+                    //subtract a value much more than typical ore contribution
+                    directionPriority[dirInt] -= 1000000;
+                }
+                
+                loc = myLocation.add(-dy,dx);
+                dirInt = (dirInt+2)%8;
+                if(rc.isPathable(myType,loc)
+                    //The following is checkNotBlocked(loc) with no updates,
+                    //abstraction thoroughly broken and inlined to save bytecodes
+                    && (((rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA) & ~7) & ~Map.mobLevel) == 0)) {
+                        //Add ore contribution (10 times ore amount)
+                        double ore = rc.senseOre(loc);
+                        if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);
+                } else if(HCL == 0) {
+                    //block the direction if obstructed
+                    //subtract a value much more than typical ore contribution
+                    directionPriority[dirInt] -= 1000000;
+                }
+                
+                loc = myLocation.add(-dx,-dy);
+                dirInt = (dirInt+2)%8;
+                if(rc.isPathable(myType,loc)
+                    //The following is checkNotBlocked(loc) with no updates,
+                    //abstraction thoroughly broken and inlined to save bytecodes
+                    && (((rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA) & ~7) & ~Map.mobLevel) == 0)) {
+                        //Add ore contribution (10 times ore amount)
+                        double ore = rc.senseOre(loc);
+                        if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);
+                } else if(HCL == 0) {
+                    //block the direction if obstructed
+                    //subtract a value much more than typical ore contribution
+                    directionPriority[dirInt] -= 1000000;
+                }
+                
+                loc = myLocation.add(dy,-dx);
+                dirInt = (dirInt+2)%8;
+                if(rc.isPathable(myType,loc)
+                    //The following is checkNotBlocked(loc) with no updates,
+                    //abstraction thoroughly broken and inlined to save bytecodes
+                    && (((rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA) & ~7) & ~Map.mobLevel) == 0)) {
+                        //Add ore contribution (10 times ore amount)
+                        double ore = rc.senseOre(loc);
+                        if(ore >= minOreWorthMining) directionPriority[dirInt] += (int)(10*ore);
+                } else if(HCL == 0) {
+                    //block the direction if obstructed
+                    //subtract a value much more than typical ore contribution
+                    directionPriority[dirInt] -= 1000000;
+                }
+                
+            }
         }
+        
     }
     
     

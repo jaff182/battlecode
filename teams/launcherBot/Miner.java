@@ -22,10 +22,6 @@ public class Miner extends MiningUnit {
         minOreWorthMining = minMiningRate*GameConstants.MINER_MINE_RATE;
         minOreWorthConsidering = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.MINER_MINE_RATE;
         
-        //set locations within attack radius of enemy tower or hq as unpathable
-        //Commented out because uses too much bytecode.
-        initInternalMap();
-        
     }
     
     private static void loop() throws GameActionException {
@@ -41,12 +37,6 @@ public class Miner extends MiningUnit {
         //Sense nearby units
         updateEnemyInSight();
         
-        //Sense map while exploring
-        //Must be before movement methods
-        if(previousDirection != Direction.NONE) {
-            senseWhenMove(myLocation, previousDirection);
-            previousDirection = Direction.NONE;
-        }
         
         //State machine -------------------------------------------------------
         //Switch state
@@ -67,26 +57,47 @@ public class Miner extends MiningUnit {
             case RETREAT: minerRetreat(); break;
             default: throw new IllegalStateException();
         }
+        //---------------------------------------------------------------------
+        
+        
+        //Sense map while exploring
+        //Low bytecode priority
+        //Leave this at end of round to reduce bytecode usage
+        if(previousPreviousDirection != Direction.NONE) {
+            senseWhenMove(myLocation, previousPreviousDirection);
+        }
+        if(previousDirection != Direction.NONE) {
+            previousPreviousDirection = previousDirection;
+        }
+        previousDirection = Direction.NONE;
     }
     
     //State switching =========================================================
     
     private static void switchStateFromWanderState() throws GameActionException {
         if (rc.isCoreReady()) {
-            double ore = rc.senseOre(myLocation);
-            double miningProbability = 1.0*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
-            if(ore >= minOreWorthMining || rand.nextDouble() <= miningProbability) {
-                robotState = RobotState.MINE;
+            if(enemies.length != 0) {
+                robotState = RobotState.RETREAT;
+            } else {
+                double ore = rc.senseOre(myLocation);
+                double miningProbability = 1.0*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
+                if(ore >= minOreWorthMining || rand.nextDouble() <= miningProbability) {
+                    robotState = RobotState.MINE;
+                }
             }
         }
     }
     
     private static void switchStateFromMineState() throws GameActionException {
         if (rc.isCoreReady()) {
-            double ore = rc.senseOre(myLocation);
-            double miningProbability = 1.0*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
-            if(ore < minOreWorthMining && rand.nextDouble() > miningProbability) {
-                robotState = RobotState.WANDER;
+            if(enemies.length != 0) {
+                robotState = RobotState.RETREAT;
+            } else {
+                double ore = rc.senseOre(myLocation);
+                double miningProbability = 1.0*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
+                if(ore < minOreWorthMining && rand.nextDouble() > miningProbability) {
+                    robotState = RobotState.WANDER;
+                }
             }
         }
     }
@@ -140,6 +151,12 @@ public class Miner extends MiningUnit {
         //Vigilance
         checkForEnemies();
         
+        //Avoid enemies and find friends
+        updateFriendlyInRange(15);
+        clot();
+        
+        //Distribute supply
+        distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
     
@@ -147,14 +164,9 @@ public class Miner extends MiningUnit {
     
     // Vigilance: stops everything and attacks when enemies are in attack range.
     private static void checkForEnemies() throws GameActionException {
-        while (enemies.length > 0) {
-            if (rc.isWeaponReady()) {
-                // basicAttack(enemies);
-                priorityAttack(enemies, attackPriorities);
-            }
-            updateEnemyInRange(attackRange);
-            RobotCount.report();
-            rc.yield();
+        if (rc.isWeaponReady()) {
+            // basicAttack(enemies);
+            priorityAttack(enemies, attackPriorities);
         }
     }
     
@@ -182,6 +194,91 @@ public class Miner extends MiningUnit {
             }
         }
     }
+    
+    
+    /**
+     * Retreat in preference of direction with least enemies, go towards friends
+     * @throws GameActionException
+     */
+    public static void clot() throws GameActionException {
+        if(rc.isCoreReady()) {
+            int[] safety = new int[8];
+            int threat;
+            int myThreat = (int)(1000*rc.getHealth()*myType.attackPower/myType.attackDelay);
+            
+            //*
+            for(RobotInfo enemy: enemies) {
+                RobotType type = enemy.type;
+                if(!type.isBuilding) {
+                    MapLocation loc = enemy.location;
+                    int distance = myLocation.distanceSquaredTo(loc);
+                    int dirInt = loc.directionTo(myLocation).ordinal();
+                    //Temporarily set threat rating to be some heuristic
+                    if(type.attackDelay == 0) {
+                        threat = (int)(1000*enemy.health*type.attackPower);
+                    } else {
+                        threat = (int)(1000*enemy.health*type.attackPower/(type.attackDelay*distance));
+                    }
+                    if(threat > myThreat) {
+                        //Repulsive force follows inverse square law
+                        int force = threat/distance;
+                        //Multiply force if need to get very far or very close
+                        //when enemy attack range is greater
+                        if(type.attackRadiusSquared > attackRange) force *= 100;
+                        //Add force
+                        safety[dirInt] += force;
+                        safety[(dirInt+4)%8] -= force;
+                        force = 707*force/1000;
+                        safety[(dirInt+1)%8] += force;
+                        safety[(dirInt+7)%8] += force;
+                        safety[(dirInt+3)%8] -= force;
+                        safety[(dirInt+5)%8] -= force;
+                    }
+                }
+            }//*/
+            
+            //*
+            for(RobotInfo friend: friends) {
+                RobotType type = friend.type;
+                if((!type.isBuilding && type != RobotType.MISSILE) || type == RobotType.TOWER || type == RobotType.HQ) {
+                    MapLocation loc = friend.location;
+                    int distance = myLocation.distanceSquaredTo(loc);
+                    if(distance < 15 && distance > 2) {
+                        int dirInt = myLocation.directionTo(loc).ordinal();
+                        //Temporarily set force to be some heuristic
+                        int force;
+                        if(type.attackDelay == 0) {
+                            force = (int)(100*friend.health*type.attackPower/distance);
+                        } else {
+                            force = (int)(100*friend.health*type.attackPower/(type.attackDelay*distance));
+                        }
+                        safety[dirInt] += force;
+                        safety[(dirInt+4)%8] -= force;
+                        force = 707*force/1000;
+                        safety[(dirInt+1)%8] += force;
+                        safety[(dirInt+7)%8] += force;
+                        safety[(dirInt+3)%8] -= force;
+                        safety[(dirInt+5)%8] -= force;
+                    }
+                }
+            }//*/
+            
+            //Find safest direction and move to it
+            rc.setIndicatorString(2,safety[0]+", "+safety[1]+", "+safety[2]+", "+safety[3]+", "+safety[4]+", "+safety[5]+", "+safety[6]+", "+safety[7]);
+            int bestDirInt = -1;
+            int bestSafety = -10000000;
+            for(int dirInt=0; dirInt<8; dirInt++) {
+                if(safety[dirInt] > bestSafety && movePossible(directions[dirInt])) {
+                    bestDirInt = dirInt;
+                    bestSafety = safety[dirInt];
+                }
+            }
+            if(bestDirInt != -1) {
+                rc.move(directions[bestDirInt]);
+            }
+        }
+    }
+    
     
     
     //Parameters ==============================================================

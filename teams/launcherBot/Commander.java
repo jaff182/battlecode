@@ -29,7 +29,6 @@ public class Commander extends MovableUnit{
         advanceLocation = Common.enemyHQLocation;
         retreatLocation = Common.HQLocation;
         state = MovableUnitState.ADVANCING;
-        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
     }
 
     /**

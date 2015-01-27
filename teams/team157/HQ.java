@@ -97,20 +97,19 @@ public class HQ extends Structure {
         
         int rn = Clock.getRoundNum();
         
-        // For testing launcher bot
+        
         if(rn == 80) {
-            BuildOrder.add(RobotType.HELIPAD); 
+            BuildOrder.add(RobotType.BARRACKS); 
         } else if(rn == 220) {
-            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.HELIPAD); 
         } else if (rn == 280) {
-            BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.TANKFACTORY);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
         } else if (rn == 350) {
             BuildOrder.add(RobotType.AEROSPACELAB);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
         } else if (rn == 410) {
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-        } else if (rn == 500) {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
@@ -124,7 +123,12 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
-        if(rn > 1000 && rn%20 == 0 && rc.getTeamOre() > 500) {
+        
+        rc.setIndicatorString(1, "Distance squared between HQs is " + distanceBetweenHQs);
+        
+        
+        
+        if(rn > 1000 && rn%100 == 0 && rc.getTeamOre() > 700) {
             int index = BuildOrder.size()-1;
             if(BuildOrder.isUnclaimedOrExpired(index)) {
                 BuildOrder.add(RobotType.SUPPLYDEPOT);
