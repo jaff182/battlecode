@@ -112,6 +112,7 @@ public class Drone extends MovableUnit {
                 RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
                 if (enemiesInLargeArea.length > 0) {
                     RobotInfo target = findMostExpensiveEnemy(enemiesInLargeArea);
+                    Drone.lastSeenTime = Clock.getRoundNum();
                     Drone.lastSeenLocation = target.location;
                     Drone.droneState = DroneState.FOLLOW;
                 } else if (Clock.getRoundNum() % 5 == 0) {
@@ -143,6 +144,14 @@ public class Drone extends MovableUnit {
 
             }
         case FOLLOW:
+            RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
+            // update status info
+            if (enemiesInLargeArea.length > 0) {
+                RobotInfo target = findMostExpensiveEnemy(enemiesInLargeArea);
+                Drone.lastSeenTime = Clock.getRoundNum();
+                Drone.lastSeenLocation = target.location;
+            }
+            
             if (rc.getSupplyLevel() <= lowFollowSupplyLevel) {
                 Drone.droneState = DroneState.FOLLOW_RESUPPLY;
             } else if (Clock.getRoundNum() - Drone.lastSeenTime > Drone.timeOut) {
@@ -194,7 +203,10 @@ public class Drone extends MovableUnit {
             moveAndAvoidEnemies(currentWanderDirection, enemiesInSight);
             break;
         case FOLLOW:
-            moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
+            if (Clock.getRoundNum()%2 == 0)
+                moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
+            else
+                moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateLeft().rotateLeft(), enemiesInSight);
             break;
 
         case SUPPLY:
@@ -316,6 +328,10 @@ public class Drone extends MovableUnit {
             if (enemy.location.distanceSquaredTo(myLocation) <= enemy.type.attackRadiusSquared)
                 currentDamage += enemy.type.attackPower;
         }
+        
+        if (currentDamage == 0 && Drone.enemies.length != 0 && Common.rc.isWeaponReady()) {
+            Common.priorityAttack(Drone.enemies, attackPriorities);
+        }
 
         for (int ordinalOffset : ordinalOffsets) {
             Direction newDirection = Common.directions[(dir.ordinal() + ordinalOffset) % 8];
@@ -330,7 +346,24 @@ public class Drone extends MovableUnit {
                 damageForDirection += currentDamage;
             }
             for (RobotInfo enemy : nearbyEnemies) {
-                if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
+                if (enemy.type == RobotType.MISSILE) {
+                    if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
+                        RobotInfo[] explosionRadiusRobots = Common.rc.senseNearbyRobots(enemy.type.attackRadiusSquared, Common.enemyTeam);
+                        
+                        boolean hasEnemyWorthTakingDown = false;
+                        for (RobotInfo enemyInExplosionRadius: explosionRadiusRobots) {
+                            double coreDecrementAmount = enemyInExplosionRadius.supplyLevel == 0 ? 1.0 : 2.0;
+                            if (enemyInExplosionRadius.type != RobotType.MISSILE && enemyInExplosionRadius.coreDelay >= 1.0+coreDecrementAmount) {
+                                hasEnemyWorthTakingDown = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!hasEnemyWorthTakingDown)
+                            damageForDirection += enemy.type.attackPower; // missile splash will not hit it (maybe)
+                    }
+                }
+                else if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
                     damageForDirection += enemy.type.attackPower;
                 }
             }
