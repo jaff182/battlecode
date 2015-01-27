@@ -28,6 +28,8 @@ public class Launcher extends MovableUnit {
     private static int numberOfEnemyTowers;
     private static MapLocation enemyTarget; //used only in defend state
     private static int defendRadius = distanceBetweenHQs/4;
+
+    private static int lastLaunchInThreeDirNumber;
     
     private static final int sensingRange = 35;
 
@@ -143,6 +145,7 @@ public class Launcher extends MovableUnit {
                 previousState = LauncherState.ADVANCE;
                 attackTimeout = baseAttackTimeout;
             } else if (myLocation.distanceSquaredTo(surroundLocation) < 50) {
+                lastLaunchInThreeDirNumber = 3;
                 state = LauncherState.SURROUND;
                 previousState = LauncherState.ADVANCE;
             }
@@ -307,10 +310,11 @@ public class Launcher extends MovableUnit {
                 if (missileCount > 2 || getNearbyFriendlyLaunchersAroundSurroundLocation() > 1) {
                     if (Clock.getRoundNum()%3 == 1) {
                         //synchronize attacks
-                        launchInThreeDir(myLocation.directionTo(surroundLocation));
+                        lastLaunchInThreeDirNumber = launchInThreeDir(myLocation
+                                .directionTo(surroundLocation));
                     }
                     
-                } else
+                } else if (lastLaunchInThreeDirNumber < 3)
                     bug(surroundLocation);
                 
             } else {
@@ -397,24 +401,30 @@ public class Launcher extends MovableUnit {
      * @param dir
      * @throws GameActionException
      */
-    public static void launchInThreeDir(Direction dir) throws GameActionException {
+    public static int launchInThreeDir(Direction dir) throws GameActionException {
+        int launchCount = 0;
         if (rc.canLaunch(dir)) {
             if (myLocation.add(dir).distanceSquaredTo(surroundLocation) <= 24) {
+                launchCount += 1;
                 rc.launchMissile(dir);
             }  
         }
         Direction leftDir = dir.rotateLeft();
         if (rc.canLaunch(leftDir)) {
             if (myLocation.add(leftDir).distanceSquaredTo(surroundLocation) <= 24) {
+                launchCount += 1;
                 rc.launchMissile(leftDir);
             }
         }
         Direction rightDir = dir.rotateRight();
         if (rc.canLaunch(rightDir)) {
             if (myLocation.add(rightDir).distanceSquaredTo(surroundLocation) <= 24) {
+                launchCount += 1;
                 rc.launchMissile(rightDir);
             }
         }
+        
+        return launchCount;
     }
     /**
      * Launch missile in direction dir0 if allowed, transfers supply
