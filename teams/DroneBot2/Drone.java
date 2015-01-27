@@ -369,11 +369,11 @@ public class Drone extends MovableUnit {
             }
             
             if (newDirection.isDiagonal()) {
-                damageForDirection += 0.6*currentDamage;
+                damageForDirection += 0.3*currentDamage;
             }
             for (RobotInfo enemy : nearbyEnemies) {
                 if (enemy.type == RobotType.MISSILE) {
-                    if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
+                    if (enemy.location.distanceSquaredTo(newLocation) <= 5) {
                         RobotInfo[] explosionRadiusRobots = Common.rc.senseNearbyRobots(enemy.type.attackRadiusSquared, Common.enemyTeam);
                         
                         boolean hasEnemyWorthTakingDown = false;
