@@ -203,7 +203,22 @@ public class Drone extends MovableUnit {
             moveAndAvoidEnemies(currentWanderDirection, enemiesInSight);
             break;
         case FOLLOW:
-            if (Clock.getRoundNum()%2 == 0)
+            double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30), 25);
+            rc.setIndicatorString(2, "MacroScoringAdvantage: "+macroScoringAdvantage);
+            if (macroScoringAdvantage > 3.0 && Drone.enemiesInSight.length != 0) {
+                RobotInfo enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
+                enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
+
+                if (enemyToAttack == null)
+                    moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
+                else if (Common.rc.canAttackLocation(enemyToAttack.location)) {
+                    if (Common.rc.isWeaponReady())
+                        Common.rc.attackLocation(enemyToAttack.location);
+                }
+                else
+                    MovableUnit.bug(enemyToAttack.location);
+            }
+            else if (Clock.getRoundNum()%2 == 0)
                 moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
             else
                 moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateLeft().rotateLeft(), enemiesInSight);
@@ -463,7 +478,71 @@ public class Drone extends MovableUnit {
         }
         return false;
     }
+    /**
+     * Scoring function for advantage in an area.
+     * 
+     * Computes (where all variables are aggregates over robots of one side)<br>
+     * 
+     * (your hp)/(average damage dealt over time by enemy) <br>
+     * --------------------------------------------------- <br>
+     * (enemy hp)/(average damage dealt over time by you)
+     * 
+     * i.e., in an idealized and very rough scenario, how many times your robots
+     * can fight the same battle before giving out.
+     * 
+     * For launchers, special purpose code is used to check if they can launch.<br>
+     * Warning: This function might not be reliable in the presence of missiles.
+     * Write special purpose code to execute retreats.
+     * 
+     * @param robots
+     *            all movable robots in an area (excluding HQ and towers)
+     * @return a positive score if area is safe, negative if dangerous
+     */
+    public static double macroScoringOfAdvantageInArea(RobotInfo[] robots, int macroScoringFriendlyDistanceThreshold) {
+        double yourHP = rc.getHealth();
+        double yourDamageDealtPerUnitTime = myType.attackPower/myType.attackDelay;
 
+        double enemyHP = 0;
+        double enemyDamageDealtPerUnitTime = 0;
+        
+        for (int i = 0; i < robots.length; ++i) {
+            final RobotInfo robot = robots[i];
+            if (!robot.type.isBuilding && robot.type != RobotType.LAUNCHER && robot.type != RobotType.MISSILE) {
+                if (robot.team == Common.myTeam && myLocation.distanceSquaredTo(robot.location) < macroScoringFriendlyDistanceThreshold) {
+                    yourHP += robot.health;
+                    yourDamageDealtPerUnitTime += robot.type.attackPower
+                            / robot.type.attackDelay;
+                } else if (robot.team != Common.myTeam) {
+                    enemyHP += robot.health;
+                    enemyDamageDealtPerUnitTime += robot.type.attackPower
+                            / robot.type.attackDelay;
+                }
+            } else if (robot.type == RobotType.LAUNCHER) {
+                // Special code for LAUNCHER, since it's attack power is technically 0
+                // Roughly perform attack computation over next 3 missile launches (based on missile quantities) and average that
+                // TODO: rationalizing choice of 3 (possibly engagement length?)
+                double robotDamageDealtPerUnitTime = Math.min(robot.missileCount, 3)*RobotType.MISSILE.attackPower;
+                if (robot.missileCount<3) {
+                    // (Missile damage)/(Time taken to produce next missile)
+                    robotDamageDealtPerUnitTime += RobotType.MISSILE.attackPower/robot.weaponDelay;
+                }
+                if (robot.team == Common.myTeam && myLocation.distanceSquaredTo(robot.location) < macroScoringFriendlyDistanceThreshold) {
+                    yourHP += robot.health;
+                    yourDamageDealtPerUnitTime += robotDamageDealtPerUnitTime;
+                } else if (robot.team != Common.myTeam) {
+                    enemyHP += robot.health;
+                    enemyDamageDealtPerUnitTime += robotDamageDealtPerUnitTime;
+                }
+            } else if (robot.type == RobotType.MISSILE){
+                return 0;
+            }
+        }
+
+        if (enemyHP != 0 && enemyDamageDealtPerUnitTime !=0)
+            return ((yourHP/enemyDamageDealtPerUnitTime) / (enemyHP/yourDamageDealtPerUnitTime));
+        else 
+            return Double.POSITIVE_INFINITY;
+    }
     //Parameters ==============================================================
     
     /**

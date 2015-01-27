@@ -40,7 +40,7 @@ public class Drone extends MovableUnit {
     
     private static void init() throws GameActionException {  
         if (Clock.getRoundNum() > roundNumSupply) {
-            droneState = DroneState.FOLLOW_WANDER;
+            droneState = DroneState.SUPPLY;
         }
         currentWanderDirection = rc.getLocation().directionTo(enemyHQLocation);
         target = enemyHQLocation;
@@ -203,7 +203,18 @@ public class Drone extends MovableUnit {
             moveAndAvoidEnemies(currentWanderDirection, enemiesInSight);
             break;
         case FOLLOW:
-            if (Clock.getRoundNum()%2 == 0)
+            double macroScoringAdvantage = AttackingUnit.macroScoringOfAdvantageInArea(enemiesInSight, 10);
+            
+            if (false && macroScoringAdvantage > 5.0 && Drone.enemiesInSight.length != 0) {
+                RobotInfo enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
+                if (Common.rc.canAttackLocation(enemyToAttack.location)) {
+                    if (Common.rc.isWeaponReady())
+                        Common.rc.attackLocation(enemyToAttack.location);
+                }
+                else
+                    MovableUnit.bug(enemyToAttack.location);
+            }
+            else if (Clock.getRoundNum()%2 == 0)
                 moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
             else
                 moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateLeft().rotateLeft(), enemiesInSight);
