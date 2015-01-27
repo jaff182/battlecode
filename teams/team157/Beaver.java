@@ -29,6 +29,12 @@ public class Beaver extends MiningUnit {
      */
     private static int buildingID = 0;
     
+    /**
+     * Stores the direction to spiral around HQ when wandering, 1 if anti-clockwise, 
+     * -1 if clockwise.
+     */
+    private static int wanderDirection = 1;
+    
     
     // General methods =========================================================
     
@@ -178,20 +184,29 @@ public class Beaver extends MiningUnit {
         
         //Count buildings next to beaver, if none then go back towards HQ
         updateFriendlyInRange(2);
-        int buildingCount = 0;
+        boolean nearBuildings = false;
         for(int i=0; i<friends.length; i++) {
             if(friends[i].type.isBuilding && friends[i].type != RobotType.TOWER) {
                 //Beaver is next to a non-tower building
-                buildingCount++;
+                nearBuildings = true;
             }
         }
         
-        if(buildingCount == 0) {
-            //Don't wander too far from HQ unnecessarily
-            explore(myLocation.directionTo(HQLocation).rotateRight());
-        } else {
+        //Try to move in a circle around HQ
+        int dirInt = myLocation.directionTo(HQLocation).ordinal();
+        if(nearBuildings) {
             //Go in an expanding circle
-            explore(myLocation.directionTo(HQLocation).rotateRight().rotateRight());
+            explore(directions[(dirInt+wanderDirection+8)%8]);
+        } else {
+            //Don't wander too far from HQ unnecessarily
+            explore(directions[(dirInt+2*wanderDirection+8)%8]);
+        }
+        if(rc.isCoreReady()) {
+            //Cannot move in this spiral direction, so try the reversed direction
+            wanderDirection *= -1;
+            dirInt = myLocation.directionTo(HQLocation).ordinal();
+            if(nearBuildings) explore(directions[(dirInt+wanderDirection+8)%8]);
+            else explore(directions[(dirInt+2*wanderDirection+8)%8]);
         }
         
         //Distribute supply
@@ -391,9 +406,10 @@ public class Beaver extends MiningUnit {
      * @throws GameActionException
      */
     private static void tryBuild(RobotType robotType) throws GameActionException {
-        if(rc.isCoreReady() && rc.hasBuildRequirements(robotType)) {
+        if(rc.isCoreReady()) {
             Direction dir = findBuildDirection();
-            if(dir != null && dir.ordinal() < 8 && rc.canBuild(dir,robotType)) {
+            if(dir != null && dir.ordinal() < 8 
+                && rc.canBuild(dir,robotType) && rc.hasBuildRequirements(robotType)) {
                 //Build!
                 rc.build(dir,robotType);
             } else {

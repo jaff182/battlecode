@@ -31,7 +31,7 @@ public class BuildOrder {
     /**
      * Maximum length of build order
      */
-    private static final int MAX_LENGTH = 99;
+    private static final int MAX_LENGTH = 199;
     
     /**
      * The number of rounds after which a timestamp expires and the building is 

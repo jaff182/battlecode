@@ -127,6 +127,7 @@ public class MovableUnit extends Common {
     /**
      * Primitive pathing in specified direction
      * @param dir Preferred direction
+     * @return True if successfully moved.
      * @throws GameActionException
      */
     public static void explore(Direction dir) throws GameActionException {
