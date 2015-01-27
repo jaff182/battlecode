@@ -3,16 +3,12 @@ package team157;
 import team157.Utility.*;
 import team157.Channels;
 import battlecode.common.*;
-
 import java.util.Arrays;
 
 public class HQ extends Structure {
 
     //Global variables ========================================================
-    
-    private static final int tankDefenseChannel = Channels.TANK_DEFENSE_COUNT;
-    private static int baseNumberOfTanksNeeded = 0;
-    private static int numberOfTanksNeeded = baseNumberOfTanksNeeded;
+
     private static int numberOfTowers = rc.senseTowerLocations().length;
 
     //General methods =========================================================
@@ -27,10 +23,6 @@ public class HQ extends Structure {
     }
     
     private static void init() throws GameActionException {
-        //rc.setIndicatorString(0,"hello i'm a hq.");
-        // call for tank defense units
-        rc.broadcast(tankDefenseChannel, numberOfTanksNeeded);
-
         MapLocation soldierLoc = myLocation.add(myLocation.directionTo(enemyHQLocation), 6);
         SoldierGroup.setNextWaypoint(soldierLoc.x, soldierLoc.y, null);
         // Init LastAttackedLocations
@@ -93,7 +85,6 @@ public class HQ extends Structure {
         // Code that runs in every robot (including buildings, excepting missiles)
         sharedLoopCode();
         
-        callForTankReinforcements();
         updateEnemyInRange(52);//52 includes splashable region
         checkForEnemies();
         
@@ -283,20 +274,6 @@ public class HQ extends Structure {
         }
     }
     
-    
-    private static void callForTankReinforcements() {
-        if (rc.senseNearbyRobots(81, enemyTeam).length > 10) {
-            numberOfTanksNeeded += 2;
-        } else {
-            numberOfTanksNeeded = baseNumberOfTanksNeeded;
-        }
-    }
-
-    private static void fireMissiles(int numMissile, MapLocation target) throws GameActionException {
-        rc.broadcast(Channels.MISSILE_TARGET, numMissile);
-        rc.broadcast(Channels.MISSILE_TARGET + 1, target.x);
-        rc.broadcast(Channels.MISSILE_TARGET + 2, target.y);
-    }
     
     
     //Debug methods ===========================================================

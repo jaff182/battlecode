@@ -48,12 +48,6 @@ public class Channels {
      * 3 channels needed (17194 to 17196)
      */
     public static final int MINER_EFFECTIVENESS = 17194;
-    
-    /**
-     * Starting channel for tank defense unit count system
-     * 19 channels needed (17197 to 17215)
-     */
-    public static final int TANK_DEFENSE_COUNT = 17197;
 
     /**
      * Starting channel for missile target
