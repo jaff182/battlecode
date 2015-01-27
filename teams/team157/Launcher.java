@@ -1,5 +1,6 @@
 package team157;
 
+import team157.AttackingGroupUnit.AttackingGroupState;
 import team157.Utility.Map;
 import battlecode.common.*;
 
@@ -56,23 +57,29 @@ public class Launcher extends MovableUnit {
         missileCount = 0;
         numberOfEnemyTowers = enemyTowers.length;
         
-        int fate = rand.nextInt(3);
-        if (fate == 0) {
-            int midX = (3*HQLocation.x + enemyHQLocation.x)/4;
-            int midY = (3*HQLocation.y + enemyHQLocation.y)/4;
-            gatherLocation = new MapLocation(midX,midY); 
-        } else if (fate == 1) {
-            int midX = HQLocation.x;
-            int midY = (3*HQLocation.y + enemyHQLocation.y)/4;
-            gatherLocation = new MapLocation(midX,midY);
-        } else if (fate == 2) {
-            int midX = (3*HQLocation.x + enemyHQLocation.x)/4;
-            int midY = HQLocation.y;
-            gatherLocation = new MapLocation(midX,midY);
+        if (numberOfEnemyTowers == 0 && distanceBetweenHQs < 1000) {
+            state = LauncherState.SURROUND;
+            surroundLocation = enemyHQLocation;
+            previousState = state;
+            return;
+        } else {
+            int fate = rand.nextInt(3);
+            if (fate == 0) {
+                int midX = (3*HQLocation.x + enemyHQLocation.x)/4;
+                int midY = (3*HQLocation.y + enemyHQLocation.y)/4;
+                gatherLocation = new MapLocation(midX,midY); 
+            } else if (fate == 1) {
+                int midX = HQLocation.x;
+                int midY = (3*HQLocation.y + enemyHQLocation.y)/4;
+                gatherLocation = new MapLocation(midX,midY);
+            } else if (fate == 2) {
+                int midX = (3*HQLocation.x + enemyHQLocation.x)/4;
+                int midY = HQLocation.y;
+                gatherLocation = new MapLocation(midX,midY);
+            }
+            state = LauncherState.GATHER; 
+            previousState = state;
         }
-        state = LauncherState.GATHER; 
-        previousState = state;
-
     }
     
     
@@ -522,7 +529,7 @@ public class Launcher extends MovableUnit {
      */
     private static void setNextSurroundTarget() {
         MapLocation[] towerLoc = rc.senseEnemyTowerLocations();
-        if (towerLoc.length > 1) {
+        if ((towerLoc.length > 1 && Clock.getRoundNum() > 300) || towerLoc.length > 0) {
             int distanceToClosestTower = Integer.MAX_VALUE;
             for (MapLocation loc: towerLoc) {
                 int towerDist = myLocation.distanceSquaredTo(loc);
@@ -572,6 +579,22 @@ public class Launcher extends MovableUnit {
         1/*16:DRONE*/,      3/*17:TANK*/,       2/*18:COMMANDER*/,  5/*19:LAUNCHER*/,
         0/*20:MISSILE*/
     };
+    
+    /**
+     * Danger rating is 3 if one should retreat from it.
+     * Danger rating is 2 if one can attack it if it has low hp.
+     * Danger rating is 1 if one should follow and attack it.
+     * Danger rating is 0 if one should ignore it.
+     */
+    private static int[] retreatRating = {
+        5/*0:HQ*/,         5/*1:TOWER*/,      0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,   1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,
+        3/*16:DRONE*/,     5/*17:TANK*/,      5/*18:COMMANDER*/, 5/*19:LAUNCHER*/,
+        5/*20:MISSILE*/
+    };
+
     
 
 }

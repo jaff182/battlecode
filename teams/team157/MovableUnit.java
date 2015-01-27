@@ -28,8 +28,6 @@ public class MovableUnit extends Common {
     public static boolean keepAwayFromTarget = false; // true if target is tower or hq, false otherwise
     public static RobotInfo attackTarget; // current attack target
     
- 
-
     // Robot overall state ====================================================
     // Only modify these variables before and after loop(), at clearly specified locations
     /**
@@ -156,7 +154,10 @@ public class MovableUnit extends Common {
         if (rc.isCoreReady() && enemiesInSight != null && enemiesInSight.length != 0) {
             int[] enemiesInDir = new int[8];
             for (RobotInfo info: enemiesInSight) {
-                enemiesInDir[myLocation.directionTo(info.location).ordinal()]+= dangerRating[info.type.ordinal()];
+                enemiesInDir[myLocation.directionTo(info.location).ordinal()]+= retreatRating[info.type.ordinal()];
+            }
+            for (RobotInfo info: rc.senseNearbyRobots(sightRange, myTeam)) {
+                enemiesInDir[myLocation.directionTo(info.location).ordinal()] -= friendlyRetreatRating[info.type.ordinal()];
             }
             int minDirScore = Integer.MAX_VALUE;
             int dirScore = 0;
@@ -184,7 +185,44 @@ public class MovableUnit extends Common {
         return false;
     }
     
+    public static void setRetreatRating(int[] rating, int[] friendlyRating) {
+        retreatRating = rating;
+        friendlyRetreatRating = friendlyRating;
+    }
     
+    
+    /**
+     * Danger rating is 3 if one should retreat from it.
+     * Danger rating is 2 if one can attack it if it has low hp.
+     * Danger rating is 1 if one should follow and attack it.
+     * Danger rating is 0 if one should ignore it.
+     */
+    private static int[] retreatRating = {
+        5/*0:HQ*/,         5/*1:TOWER*/,      0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,   1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,
+        3/*16:DRONE*/,     5/*17:TANK*/,      5/*18:COMMANDER*/, 5/*19:LAUNCHER*/,
+        5/*20:MISSILE*/
+    };
+    
+    /**
+     * Danger rating is 3 if one should retreat from it.
+     * Danger rating is 2 if one can attack it if it has low hp.
+     * Danger rating is 1 if one should follow and attack it.
+     * Danger rating is 0 if one should ignore it.
+     */
+    private static int[] friendlyRetreatRating = {
+        5/*0:HQ*/,         5/*1:TOWER*/,      0/*2:SUPPLYDPT*/,   0/*3:TECHINST*/,
+        0/*4:BARRACKS*/,    0/*5:HELIPAD*/,     0/*6:TRNGFIELD*/,   0/*7:TANKFCTRY*/,
+        0/*8:MINERFCTRY*/,  0/*9:HNDWSHSTN*/,   0/*10:AEROLAB*/,   1/*11:BEAVER*/,
+        0/*12:COMPUTER*/,   1/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,
+        3/*16:DRONE*/,     5/*17:TANK*/,      5/*18:COMMANDER*/, 5/*19:LAUNCHER*/,
+        -5/*20:MISSILE*/
+    };
+
+    
+
     
     // Bugging ==================================================================
     
@@ -416,6 +454,8 @@ public class MovableUnit extends Common {
     }
 
     
+    
+    
 
     
     // Following =============================================================
@@ -518,7 +558,6 @@ public class MovableUnit extends Common {
         }
         return true;
     }
-    
 
     /**
      * Danger rating is 3 if one should retreat from it.

@@ -27,8 +27,14 @@ public class Barracks extends SpawnableStructure {
         claimBuildOrderEntry();
 
         //Spawn
-        if (RobotCount.read(RobotType.SOLDIER) < 20) {
-            trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.SOLDIER);
+        if (RobotCount.read(RobotType.AEROSPACELAB) < 2) {
+            if (RobotCount.read(RobotType.SOLDIER) < 40) {
+                trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.SOLDIER);
+            }
+        } else {
+            if (RobotCount.read(RobotType.SOLDIER) < 10) {
+                trySpawn(myLocation.directionTo(enemyHQLocation), RobotType.SOLDIER);
+            }
         }
 
         //Dispense Supply

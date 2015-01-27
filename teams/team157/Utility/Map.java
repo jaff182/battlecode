@@ -545,6 +545,9 @@ public class Map {
     //Local methods -----------------------------------------------------------
     //These affect only the internal mob level
     
+    public static void letMeInEnemyHQAttackRegion() throws GameActionException {
+        mobLevel |= enemyHQBaseRangeBitMask | enemyHQBuffedRangeBitMask | enemyHQSplashRegionBitMask;
+    }
     /**
      * Sets the internal mob level to make the base attack range of the enemy HQ 
      * traversable.

@@ -7,9 +7,7 @@ import team157.Utility.*;
 
 public class Tower extends Structure {
     
-    private static int tankDefenseChannel;
-    private static int baseNumberOfTanksNeeded = 0;
-    private static int numberOfTanksNeeded = baseNumberOfTanksNeeded;
+
     
     //General methods =========================================================
     
@@ -22,15 +20,10 @@ public class Tower extends Structure {
     }
     
     private static void init() throws GameActionException {
-        initTankDefenseChannel();
         //initialSense(rc.getLocation());
     }
     
     private static void loop() throws GameActionException {
-        // Call for tank defense units every 10 rounds
-        if (Clock.getRoundNum()%10 == 0) {
-            TankDefenseCount.reset(tankDefenseChannel, numberOfTanksNeeded);
-        }
         
         // Even though bytecode limited, report any attacks on this structure too.
         LastAttackedLocationsReport.report();
@@ -38,7 +31,6 @@ public class Tower extends Structure {
         //Vigilance
         //Stops everything and attacks when enemies are in attack range.
         updateEnemyInRange(attackRange);
-        callForTankReinforcements();
         
         while(enemies.length > 0) {
             if(rc.isWeaponReady()) {
@@ -57,31 +49,6 @@ public class Tower extends Structure {
     
     //Specific methods =========================================================
     
-    /**
-     * Initialize tank defense channels with number of tanks needed
-     * and location of tower. Called only in init.
-     * @throws GameActionException
-     */
-    private static void initTankDefenseChannel() throws GameActionException {
-        for (int i=0; i<16; i+=3) {
-            // call for tank defense units
-            if (rc.readBroadcast(TankDefenseCount.TOWER_BASE_CHANNEL + i) == 0) {
-                tankDefenseChannel = TankDefenseCount.TOWER_BASE_CHANNEL + i;
-                rc.broadcast(tankDefenseChannel, numberOfTanksNeeded);
-                rc.broadcast(tankDefenseChannel + 1, myLocation.x);
-                rc.broadcast(tankDefenseChannel + 2, myLocation.y);
-                return;
-            }
-        }
-    }
-    
-    private static void callForTankReinforcements() {
-        if (rc.senseNearbyRobots(81, enemyTeam).length > 10) {
-            numberOfTanksNeeded += 2;
-        } else {
-            numberOfTanksNeeded = baseNumberOfTanksNeeded;
-        }
-    }
     
     /**
      * The importance rating that enemy units of each RobotType should be attacked 
