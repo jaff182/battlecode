@@ -15,6 +15,11 @@ public class Supply {
      */
     private static final int MIN_ROUNDS_TO_KEEP = 10;
     
+    /**
+     * The number of rounds worth of supply that is considered low.
+     */
+    private static final int MAX_ROUNDS_LOW_SUPPLY = 30;
+    
     
     //Supply transferring methods =============================================
     
@@ -246,7 +251,7 @@ public class Supply {
             int myPriority = supplyPriorities[Common.myType.ordinal()];
             if(myPriority > 0) {
                 double mySupply = RobotPlayer.rc.getSupplyLevel();
-                if(mySupply < MIN_ROUNDS_TO_KEEP*Common.myType.supplyUpkeep) {
+                if(mySupply < MAX_ROUNDS_LOW_SUPPLY*Common.myType.supplyUpkeep) {
                     for(int i=0; i<CHANNELS.length; i++) {
                         //Decode request information
                         int value = getRequestInfo(i);
@@ -255,13 +260,24 @@ public class Supply {
                         if((myPriority > maxPriority) 
                             || (myPriority == maxPriority && mySupply < minSupplyLevel)) {
                                 //Have higher priority than previous requester
-                                //Shift later channels down
-                                for(int j=CHANNELS.length-2; j>=i; j--) {
-                                    value = getRequestInfo(j);
-                                    RobotPlayer.rc.broadcast(CHANNELS[j+1],value);
+                                //Check that it is not too close
+                                int id = decodeRequestID(value);
+                                RobotInfo robotInfo = null;
+                                try {
+                                    robotInfo = RobotPlayer.rc.senseRobot(id);
+                                } catch(Exception e) {
+                                    
                                 }
-                                request(i);
-                                return;
+                                if(robotInfo == null 
+                                    || RobotPlayer.rc.getLocation().distanceSquaredTo(robotInfo.location) > GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED) {
+                                        //Shift later channels down
+                                        for(int j=CHANNELS.length-2; j>=i; j--) {
+                                            value = getRequestInfo(j);
+                                            RobotPlayer.rc.broadcast(CHANNELS[j+1],value);
+                                        }
+                                        request(i);
+                                        return;
+                                }
                         }
                     }
                 }
