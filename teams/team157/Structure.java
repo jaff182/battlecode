@@ -10,6 +10,7 @@ public class Structure extends Common {
     
     protected static MapLocation spawnLocation;
     
+    protected static int buildOrderIndex;
     
     //Building methods ========================================================
     
@@ -18,9 +19,11 @@ public class Structure extends Common {
      * build order entry.
      */
     protected static void claimBuildOrderEntry() throws GameActionException {
-        int buildOrderIndex = BuildOrder.AmIOnBuildOrder(rc.getID());
         if(buildOrderIndex != -1) {
-            BuildOrder.IAmTheBuilding(buildOrderIndex);
+            buildOrderIndex = BuildOrder.AmIOnBuildOrder(rc.getID());
+            if(buildOrderIndex != -1) {
+                BuildOrder.IAmTheBuilding(buildOrderIndex);
+            }
         }
     }
     

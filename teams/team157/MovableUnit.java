@@ -123,6 +123,26 @@ public class MovableUnit extends Common {
     }
     
     /**
+     * Primitive pathing in specified direction
+     * @param dir Preferred direction
+     * @throws GameActionException
+     */
+    public static void explore(Direction dir) throws GameActionException {
+        if(rc.isCoreReady()) {
+            int dirInt = dir.ordinal();
+            int offsetIndex = 0;
+            while (offsetIndex < 5 && !movePossible(directions[(dirInt+offsets[offsetIndex]+8)%8])) {
+                offsetIndex++;
+            }
+            if (offsetIndex < 5) {
+                Direction dirToMove = directions[(dirInt+offsets[offsetIndex]+8)%8];
+                rc.move(dirToMove);
+                previousDirection = dirToMove;
+            }
+        }
+    }
+    
+    /**
      * Move around randomly.
      * @throws GameActionException
      */
@@ -817,7 +837,7 @@ public class MovableUnit extends Common {
             if(friends.length > 0) {
                 //Initiate
                 int targetidx = -1;
-                double myCapacity = rc.getHealth()*multiplier[rc.getType().ordinal()];
+                double myCapacity = rc.getHealth()*myType.supplyUpkeep*multiplier[rc.getType().ordinal()];
                 double totalSupply = rc.getSupplyLevel(), totalCapacity = myCapacity;
                 double minSupplyRatio = Integer.MAX_VALUE; //some big number
                 
@@ -825,7 +845,7 @@ public class MovableUnit extends Common {
                 for(int i=0; i<friends.length; i++) {
                     //Keep track of total values to find mean later
                     totalSupply += friends[i].supplyLevel;
-                    double friendCapacity = friends[i].health*multiplier[friends[i].type.ordinal()];
+                    double friendCapacity = friends[i].health*friends[i].type.supplyUpkeep*multiplier[friends[i].type.ordinal()];
                     totalCapacity += friendCapacity;
                     
                     //Find robot with lowest supply per capacity and positive capacity

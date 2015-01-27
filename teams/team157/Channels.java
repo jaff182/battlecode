@@ -68,5 +68,5 @@ public class Channels {
      */
     public static final int ENEMY_TOWER_LOCATIONS = 17130;
     
-    
+    public static final int DOES_SUPPLY_DRONE_EXIST = 17145;
 }

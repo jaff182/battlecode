@@ -11,7 +11,7 @@ public class Beaver extends MiningUnit {
      * Stores the checkerboard parity of the HQ, structures must be built on tiles 
      * with the same parity.
      */
-    private static int CHECKERBOARD_PARITY;
+    private static int checkerboardParity;
     
     /**
      * The building to be built at moveTargetLocation. Null if we aren't looking to 
@@ -41,15 +41,15 @@ public class Beaver extends MiningUnit {
     }
 
     private static void init() throws GameActionException {
-        robotState = RobotState.MINE;
+        robotState = RobotState.WANDER;
         
         //Set mining parameters
-        minMiningRate = GameConstants.BEAVER_MINE_MAX;
-        minOreWorthMining = minMiningRate*GameConstants.BEAVER_MINE_RATE;
-        minOreWorthConsidering = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.BEAVER_MINE_RATE;
+        //minMiningRate = GameConstants.BEAVER_MINE_MAX;
+        //minOreWorthMining = minMiningRate*GameConstants.BEAVER_MINE_RATE;
+        //minOreWorthConsidering = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.BEAVER_MINE_RATE;
         
         //Set building parameters
-        CHECKERBOARD_PARITY = (HQLocation.x+HQLocation.y)%2;
+        checkerboardParity = (Math.abs(HQLocation.x)+Math.abs(HQLocation.y))%2;
         
     }
     
@@ -91,9 +91,11 @@ public class Beaver extends MiningUnit {
     //State switching =========================================================
     
     private static void switchStateFromWanderState() throws GameActionException {
-      //check if need to build stuff
+        //check if need to build stuff
         buildOrderIndex = BuildOrder.doIHaveToBuildABuilding();
         if (buildOrderIndex != -1) {
+            //There is an unclaimed build order
+            //get the build order information
             int value = BuildOrder.get(buildOrderIndex);
             buildingType = robotTypes[BuildOrder.decodeTypeOrdinal(value)];
             if(rc.getTeamOre() >= buildingType.oreCost) {
@@ -102,24 +104,23 @@ public class Beaver extends MiningUnit {
                 moveTargetLocation = null;
                 robotState = RobotState.BUILD;
             }
-        } else if (rc.getRoundLimit()-Clock.getRoundNum() < 250 && rc.getHealth() > 10 
-            && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
-                //Lategame handwash station attack
-                robotState = RobotState.BUILD;
-                moveTargetLocation = null;
-                buildingType = RobotType.HANDWASHSTATION;
-        } else if (rc.isCoreReady()) {
-            //Mine
-            double ore = rc.senseOre(myLocation);
-         // TODO edited this to make beavers mine instead of wandering too much
-            if (ore >= minOreWorthConsidering) {
-                robotState = RobotState.MINE;
+        }
+        
+        if(robotState != RobotState.BUILD) {
+            //Did no accept build order
+            if (rc.getRoundLimit()-Clock.getRoundNum() < 250 && rc.getHealth() > 10 
+                && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
+                    //Lategame handwash station attack
+                    robotState = RobotState.BUILD;
+                    moveTargetLocation = null;
+                    buildingType = RobotType.HANDWASHSTATION;
+            } else if (rc.isCoreReady()) {
+                //Mine
+                double ore = rc.senseOre(myLocation);
+                if (ore >= GameConstants.MINIMUM_MINE_AMOUNT) {
+                    robotState = RobotState.MINE;
+                }
             }
-            /*
-            double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
-            if(ore >= minOreWorthMining || rand.nextDouble() <= miningProbability) {
-                robotState = RobotState.MINE;
-            }*/
         }
     }
 
@@ -127,6 +128,8 @@ public class Beaver extends MiningUnit {
         //check if need to build stuff
         buildOrderIndex = BuildOrder.doIHaveToBuildABuilding();
         if (buildOrderIndex != -1) {
+            //There is an unclaimed build order
+            //get the build order information
             int value = BuildOrder.get(buildOrderIndex);
             buildingType = robotTypes[BuildOrder.decodeTypeOrdinal(value)];
             if(rc.getTeamOre() >= buildingType.oreCost) {
@@ -135,25 +138,23 @@ public class Beaver extends MiningUnit {
                 moveTargetLocation = null;
                 robotState = RobotState.BUILD;
             }
-        } else if (rc.getRoundLimit()-Clock.getRoundNum() < 250 && rc.getHealth() > 10 
-            && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
-                //Lategame handwash station attack
-                robotState = RobotState.BUILD;
-                moveTargetLocation = null;
-                buildingType = RobotType.HANDWASHSTATION;
-        } else if (rc.isCoreReady()) {
-            //Transition to wandering around if ore level is too low
-            double ore = rc.senseOre(myLocation);
-            // TODO edited this to make beavers mine instead of wandering too much
-            if (ore < minOreWorthConsidering) {
-                robotState = RobotState.WANDER;
+        }
+        
+        if(robotState != RobotState.BUILD) {
+            //Did no accept build order
+            if (rc.getRoundLimit()-Clock.getRoundNum() < 250 && rc.getHealth() > 10 
+                && RobotCount.read(RobotType.HANDWASHSTATION) < 10) {
+                    //Lategame handwash station attack
+                    robotState = RobotState.BUILD;
+                    moveTargetLocation = null;
+                    buildingType = RobotType.HANDWASHSTATION;
+            } else if (rc.isCoreReady()) {
+                //Transition to wandering around if ore level is too low
+                double ore = rc.senseOre(myLocation);
+                if (ore < GameConstants.MINIMUM_MINE_AMOUNT) {
+                    robotState = RobotState.WANDER;
+                }
             }
-            /*
-            double miningProbability = 0.5*(ore-minOreWorthConsidering)/(minOreWorthMining-minOreWorthConsidering);
-            if(ore < minOreWorthMining && rand.nextDouble() > miningProbability) {
-                robotState = RobotState.WANDER;
-            }
-            */
         }
     }
 
@@ -175,20 +176,34 @@ public class Beaver extends MiningUnit {
         //Vigilance
         checkForEnemies();
         
-        // wander around near HQ
-        explore(HQLocation);
+        //Count buildings next to beaver, if none then go back towards HQ
+        updateFriendlyInRange(2);
+        int buildingCount = 0;
+        for(int i=0; i<friends.length; i++) {
+            if(friends[i].type.isBuilding && friends[i].type != RobotType.TOWER) {
+                //Beaver is next to a non-tower building
+                buildingCount++;
+            }
+        }
+        
+        if(buildingCount == 0) {
+            //Don't wander too far from HQ unnecessarily
+            explore(myLocation.directionTo(HQLocation).rotateRight());
+        } else {
+            //Go in an expanding circle
+            explore(myLocation.directionTo(HQLocation).rotateRight().rotateRight());
+        }
         
         //Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
     }
     
-    // TODO: this is identical to miner's mine
     private static void beaverMine() throws GameActionException {
         //Vigilance
         checkForEnemies();
-
+        
         //Mine
-        if (rc.getCoreDelay()< 1) rc.mine();
+        if (rc.isCoreReady()) rc.mine();
 
         //Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);
@@ -259,12 +274,12 @@ public class Beaver extends MiningUnit {
                 if(moveTargetLocation == null) {
                     //No specified build location, so build anywhere consistent with 
                     //checkerboard
-                    tryBuild(myLocation.directionTo(enemyHQLocation),buildingType);
+                    tryBuild(buildingType);
                 } else {
                     // Go closer to build location.
                     // When the beaver is there, we can start building immediately
                     int distance = myLocation.distanceSquaredTo(moveTargetLocation);
-                    if(distance == 0) bug(HQLocation); //move next to build spot
+                    if(distance == 0) wander(); //move next to build spot
                     else if(distance > 2) bug(moveTargetLocation); //travel to build spot
                     else {
                         Direction dirToBuild = myLocation.directionTo(moveTargetLocation);
@@ -333,34 +348,52 @@ public class Beaver extends MiningUnit {
     
     /**
      * Finds a direction to build.
-     * @param dir0 Preferred Direction
+     * @return The optimal direction to build. Direction.NONE if current location is 
+     *         the best direction, or null if no direction to build.
      * @throws GameActionException
      */
-    private static Direction findBuildDirection(Direction dir0) throws GameActionException {
+    private static Direction findBuildDirection() throws GameActionException {
         myLocation = rc.getLocation();
-        int relativeParity = (myLocation.x+myLocation.y-CHECKERBOARD_PARITY+2)%2;
-        int dirInt0 = dir0.ordinal();
+        int relativeParity = (Math.abs(myLocation.x)+Math.abs(myLocation.y)+checkerboardParity)%2;
+        int dirInt0 = myLocation.directionTo(HQLocation).ordinal();
+        double minOre;
+        int bestDirInt;
+        if(relativeParity == 0) {
+            //Current location is also viable for building
+            minOre = rc.senseOre(myLocation);
+            bestDirInt = 8;
+        } else {
+            minOre = Integer.MAX_VALUE;
+            bestDirInt = -1;
+        }
+        //Find location closest to HQ with minimum ore
         for(int offset : offsets) {
             int dirInt = (dirInt0+offset+8)%8;
-            if((dirInt+relativeParity)%2 == 1 
-                && rc.canMove(directions[dirInt])) {
-                    return directions[dirInt];
+            if((dirInt+relativeParity)%2 == 1) {
+                MapLocation loc = myLocation.add(directions[dirInt]);
+                if(movePossible(loc)) {
+                    double ore = rc.senseOre(loc);
+                    if(ore < minOre) {
+                        minOre = ore;
+                        bestDirInt = dirInt;
+                    }
+                }
             }
         }
-        return Direction.NONE;
+        if(bestDirInt == 8) return Direction.NONE;
+        else if(bestDirInt >= 0) return directions[bestDirInt];
+        else return null;
     }
     
-    
     /**
-     * Build robot of type rbtype in direction dir0 if allowed
-     * @param dir0 Direction to build at
+     * Build robot of type robotType, or move elsewhere if not possible
      * @param robotType RobotType of building to build
      * @throws GameActionException
      */
-    private static void tryBuild(Direction dir0, RobotType robotType) throws GameActionException {
+    private static void tryBuild(RobotType robotType) throws GameActionException {
         if(rc.isCoreReady() && rc.hasBuildRequirements(robotType)) {
-            Direction dir = findBuildDirection(dir0);
-            if(dir.ordinal() < 8 && rc.canBuild(dir,robotType)) {
+            Direction dir = findBuildDirection();
+            if(dir != null && dir.ordinal() < 8 && rc.canBuild(dir,robotType)) {
                 //Build!
                 rc.build(dir,robotType);
             } else {

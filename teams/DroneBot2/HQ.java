@@ -75,7 +75,7 @@ public class HQ extends Structure {
         // Clean up robot count data for this round -- do not remove, will break invariants
         RobotCount.reset();
         MinerEffectiveness.reset();
-        
+        rc.broadcast(Channels.DOES_SUPPLY_DRONE_EXIST, 1); // fake it
         //Update enemy HQ ranges in mob level
         if(Clock.getRoundNum()%10 == 0) {
             enemyTowers = rc.senseEnemyTowerLocations();
@@ -102,6 +102,7 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.HELIPAD); 
         } else if(rn == 220) {
             BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
         } else if (rn == 280) {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         } else if (rn == 350) {
@@ -110,12 +111,41 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
-        } else if (rn == 500) {
             BuildOrder.add(RobotType.HELIPAD);
+        } else if (rn == 500) {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
         } 
         if (rn > 500 && rn%200==0) {
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+
+            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);            
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.HELIPAD);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
@@ -123,6 +153,7 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
         }
         if(rn > 1000 && rn%20 == 0 && rc.getTeamOre() > 500) {
             int index = BuildOrder.size()-1;

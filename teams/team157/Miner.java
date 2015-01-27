@@ -129,7 +129,7 @@ public class Miner extends MiningUnit {
         checkForEnemies();
         
         //Mine
-        if (rc.getCoreDelay()< 1) rc.mine();
+        if (rc.isCoreReady()) rc.mine();
         
         //Distribute supply
         distributeSupply(suppliabilityMultiplier_Preattack);

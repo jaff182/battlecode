@@ -24,7 +24,7 @@ public class Drone extends MovableUnit {
     
     // Parameters for follow
     private final static double lowFollowSupplyLevel = myType.supplyUpkeep*10; //min supply level before returning to hq to resupply
-    private final static double highFollowSupplyLevel = myType.supplyUpkeep*Common.distanceBetweenHQs*2; //min supply level before leaving hq to fight
+    private final static double highFollowSupplyLevel = 4000; //min supply level before leaving hq to fight
     private static MapLocation lastSeenLocation = HQLocation; // Last seen location of follow target
     private static int lastSeenTime = -1; //Clock number enemy was last seen
     private final static int timeOut = 3; // Timeout at which FOLLOW changes back into FOLLOW_WANDER
@@ -40,12 +40,13 @@ public class Drone extends MovableUnit {
     }
     
     private static void init() throws GameActionException {  
-        if (Clock.getRoundNum() > roundNumSupply) {
-            droneState = DroneState.FOLLOW_WANDER;
-        }
+        if (Clock.getRoundNum() > roundNumSupply && rc.readBroadcast(Channels.DOES_SUPPLY_DRONE_EXIST) == 0) {
+            droneState = DroneState.SUPPLY;
+        } else
+            droneState = DroneState.FOLLOW_RESUPPLY;
         currentWanderDirection = rc.getLocation().directionTo(enemyHQLocation);
         target = enemyHQLocation;
-        handedness = Clock.getRoundNum() %2 == 0;
+        handedness = Common.rc.getID() %2 == 0;
         // TODO waypoint system has a bug, drones try to move to offmap location at the start
         //Waypoints.refreshLocalCache();
         //target = Waypoints.waypoints[0];
@@ -107,6 +108,7 @@ public class Drone extends MovableUnit {
             if (rc.getSupplyLevel() > Drone.highFollowSupplyLevel) {
                 Drone.droneState = DroneState.FOLLOW_WANDER;
             }
+            break;
         case FOLLOW_WANDER:
             if (rc.getSupplyLevel() <= Drone.lowFollowSupplyLevel) {
                 droneState = DroneState.FOLLOW_RESUPPLY;
@@ -145,6 +147,7 @@ public class Drone extends MovableUnit {
                 }
 
             }
+            break;
         case FOLLOW:
             RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
             // update status info
@@ -159,7 +162,7 @@ public class Drone extends MovableUnit {
             } else if (Clock.getRoundNum() - Drone.lastSeenTime > Drone.timeOut) {
                 Drone.droneState = DroneState.FOLLOW_WANDER;
             }
-            
+            break;
         // Supply state for supply drones    
         case SUPPLY:
             if (supplyTargetID == HQID) {
@@ -205,9 +208,9 @@ public class Drone extends MovableUnit {
             moveAndAvoidEnemies(currentWanderDirection, enemiesInSight);
             break;
         case FOLLOW:
-            double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30), 25);
+            double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25), 10);
             rc.setIndicatorString(2, "MacroScoringAdvantage: "+macroScoringAdvantage);
-            if (macroScoringAdvantage > 3.0 && Drone.enemiesInSight.length != 0) {
+            if (macroScoringAdvantage > 2.0 && Drone.enemiesInSight.length != 0) {
                 //No missiles! (macroScoringAdvantage strips it)
                 RobotInfo enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
                 enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
@@ -218,8 +221,22 @@ public class Drone extends MovableUnit {
                     if (Common.rc.isWeaponReady())
                         Common.rc.attackLocation(enemyToAttack.location);
                 }
-                else
-                    MovableUnit.bug(enemyToAttack.location);
+                else {
+                    if (rc.isCoreReady()) {
+                    Direction toMove = myLocation.directionTo(enemyToAttack.location);
+                    if (rc.canMove(toMove))
+                        rc.move(toMove);
+                    else if (handedness && rc.canMove(toMove.rotateLeft()))
+                        rc.move(toMove.rotateLeft());
+                    else if (!handedness && rc.canMove(toMove.rotateRight()))
+                        rc.move(toMove.rotateRight());
+                    else if (handedness && rc.canMove(toMove.rotateLeft().rotateLeft()))
+                        rc.move(toMove.rotateLeft());
+                    else if (!handedness && rc.canMove(toMove.rotateRight().rotateRight()))
+                        rc.move(toMove.rotateRight());
+
+                    }
+                }
             }
             else if (Clock.getRoundNum()%2 == 0)
                 moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
@@ -232,6 +249,8 @@ public class Drone extends MovableUnit {
             break;
 
         case SUPPLY:
+            rc.broadcast(Channels.DOES_SUPPLY_DRONE_EXIST, 1);
+//            System.out.println("Supply drone at " + myLocation);
             if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
                 checkForEnemies();
@@ -346,12 +365,23 @@ public class Drone extends MovableUnit {
         double minDamage = Double.MAX_VALUE;
         Direction bestDirection = null;
         double currentDamage = 0;
+        double currentDamageIfWeAttack = 0;
         for (RobotInfo enemy : nearbyEnemies) {
-            if (enemy.location.distanceSquaredTo(myLocation) <= enemy.type.attackRadiusSquared)
+            int distanceToEnemy = enemy.location.distanceSquaredTo(myLocation);
+            if (enemy.type != RobotType.MISSILE
+                    && distanceToEnemy <= enemy.type.attackRadiusSquared) {
                 currentDamage += enemy.type.attackPower;
+                currentDamageIfWeAttack += enemy.type.attackPower;
+            } else {
+                if (distanceToEnemy <= 4) {
+                    currentDamage += enemy.type.attackPower;
+                    currentDamageIfWeAttack += enemy.type.attackPower;
+                } else if (distanceToEnemy <= 5)
+                    currentDamageIfWeAttack += enemy.type.attackPower;
+            }
         }
         
-        if (currentDamage == 0 && Drone.enemies.length != 0 && Common.rc.isWeaponReady()) {
+        if (currentDamageIfWeAttack == 0 && Drone.enemies.length != 0 && Common.rc.isWeaponReady()) {
             Common.priorityAttack(Drone.enemies, attackPriorities);
         }
 
@@ -367,9 +397,14 @@ public class Drone extends MovableUnit {
             if (rc.senseTerrainTile(newLocation) == TerrainTile.VOID) {
                 damageForDirection += currentDamage;
             }
+            
+            if (newDirection.isDiagonal()) {
+                damageForDirection += 0.3*currentDamage;
+            }
             for (RobotInfo enemy : nearbyEnemies) {
                 if (enemy.type == RobotType.MISSILE) {
-                    if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
+                    int distanceSquaredToMissile = enemy.location.distanceSquaredTo(newLocation);
+                    if (distanceSquaredToMissile <= 2) {
                         RobotInfo[] explosionRadiusRobots = Common.rc.senseNearbyRobots(enemy.type.attackRadiusSquared, Common.enemyTeam);
                         
                         boolean hasEnemyWorthTakingDown = false;
@@ -383,6 +418,8 @@ public class Drone extends MovableUnit {
                         
                         if (!hasEnemyWorthTakingDown)
                             damageForDirection += enemy.type.attackPower; // missile splash will not hit it (maybe)
+                    } else if (distanceSquaredToMissile <= 5) {
+                        damageForDirection += enemy.type.attackPower;
                     }
                 }
                 else if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
@@ -390,6 +427,10 @@ public class Drone extends MovableUnit {
                 }
             }
 
+            if (Clock.getRoundNum() == 432 && rc.getID() == 2137) {
+                System.out.println("Direction: " + newDirection + " damage for direction: " + damageForDirection);
+            }
+            
             if (damageForDirection == 0) {
                 if (rc.isCoreReady() && movePossible(newDirection)) {
                     rc.move(newDirection);
