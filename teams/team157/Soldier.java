@@ -2,6 +2,7 @@ package team157;
 
 import team157.Utility.SoldierGroup;
 import battlecode.common.*;
+import team157.Utility.Supply;
 
 public class Soldier extends MovableUnit {
     
@@ -83,6 +84,8 @@ public class Soldier extends MovableUnit {
                                          // cooldown)
             break;
         }
+        
+        Supply.callForSupply();
     }
     
     /**

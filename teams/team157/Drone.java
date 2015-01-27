@@ -16,6 +16,7 @@ public class Drone extends MovableUnit {
     private static double minSupplyLevelOfSupplyDrone = 4000; //min supply level before moving to supply target
     private static double lowSupplyLevel = 400; //min supply level before returning to hq to resupply
     public static int roundNumSupply = 0; // round number after which all newly spawned drones are supply drones
+    private static int supplyDroneIndex;
     private static int baseSupplyTimeout = 5;
     private static int supplyTimeout = baseSupplyTimeout; // number of rounds after staying near supply target before returning to hq
     private static int supplyStartTime; //the round number that the drone left the HQ to supply
@@ -42,12 +43,12 @@ public class Drone extends MovableUnit {
     
     private static void init() throws GameActionException {  
         droneState = DroneState.SUPPLY;
-        /*
-        if (Clock.getRoundNum() > roundNumSupply && rc.readBroadcast(Channels.DOES_SUPPLY_DRONE_EXIST) < Clock.getRoundNum()-5) {
+        //Check if there is a need for another supply drone
+        supplyDroneIndex = Supply.droneExists();
+        if (Clock.getRoundNum() > roundNumSupply && supplyDroneIndex != -1) {
             droneState = DroneState.SUPPLY;
         } else
             droneState = DroneState.FOLLOW_RESUPPLY;
-        */
         currentWanderDirection = rc.getLocation().directionTo(enemyHQLocation);
         target = enemyHQLocation;
         handedness = Common.rc.getID() %2 == 0;
@@ -103,12 +104,11 @@ public class Drone extends MovableUnit {
     /**
      * Switches drone state based on number of enemies in sight
      */
-    private static void droneSwitchState() {
+    private static void droneSwitchState() throws GameActionException {
         
         
         switch (droneState) {
         // Follow states for follow drones
-        /*
         case FOLLOW_RESUPPLY:
             if (rc.getSupplyLevel() > Drone.highFollowSupplyLevel) {
                 Drone.droneState = DroneState.FOLLOW_WANDER;
@@ -168,13 +168,12 @@ public class Drone extends MovableUnit {
                 Drone.droneState = DroneState.FOLLOW_WANDER;
             }
             break;
-        */
         // Supply state for supply drones    
         case SUPPLY:
             if (supplyTargetID == HQID) {
                 if (rc.getSupplyLevel() > minSupplyLevelOfSupplyDrone) {
 //                  System.out.println("Choosing supply target..");
-                    chooseSupplyTarget2();
+                    chooseSupplyTarget3();
                     supplyTimeout = baseSupplyTimeout;
                     supplyStartTime= Clock.getRoundNum();
                 }
@@ -207,7 +206,6 @@ public class Drone extends MovableUnit {
     private static void droneMove(MapLocation target) throws GameActionException{
         // first check for enemies and attacks if there are
         switch(droneState) {
-        /*
         case FOLLOW_RESUPPLY:
             if (myLocation.distanceSquaredTo(HQLocation) > GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED)
                 moveAndAvoidEnemies(myLocation.directionTo(HQLocation), enemiesInSight);
@@ -255,9 +253,8 @@ public class Drone extends MovableUnit {
                     moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateRight().rotateRight(), enemiesInSight);
             }
             break;
-        */
         case SUPPLY:
-            rc.broadcast(Channels.DOES_SUPPLY_DRONE_EXIST, Clock.getRoundNum());
+            rc.broadcast(Supply.DRONE_CHANNELS[supplyDroneIndex], Clock.getRoundNum());
 //            System.out.println("Supply drone at " + myLocation);
             if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
@@ -266,13 +263,15 @@ public class Drone extends MovableUnit {
                 moveAndAvoidEnemies(myLocation.directionTo(HQLocation), enemiesInSight);
                 // try to avoid enemies while moving to supplytarget
             } else {
-                try {
-                    RobotInfo robot = rc.senseRobot(supplyTargetID);
-                    supplyTarget = robot.location;
-                } catch (GameActionException e) {
-                    chooseSupplyTarget2();
-                    RobotInfo robot = rc.senseRobot(supplyTargetID);
-                    supplyTarget = robot.location;
+                boolean success = false;
+                while(!success) {
+                    try {
+                        RobotInfo robot = rc.senseRobot(supplyTargetID);
+                        supplyTarget = robot.location;
+                        success = true;
+                    } catch (GameActionException e) {
+                        chooseSupplyTarget3();
+                    }
                 }
                 rc.setIndicatorString(2, "Supply target: " + supplyTargetID + " at " + supplyTarget);
                 moveAndAvoidEnemies(myLocation.directionTo(supplyTarget), enemiesInSight);
@@ -361,6 +360,16 @@ public class Drone extends MovableUnit {
         if (minSupplyRobot != null) {
             supplyTargetID = minSupplyRobot.ID;
 //            System.out.println("Set supply to " + supplyTargetID + minSupplyRobot.type + " " + minSupplyRobot.location);
+        }
+    }
+    
+    private static void chooseSupplyTarget3() throws GameActionException {
+        int value = Supply.getRequestInfo(supplyDroneIndex);
+        int id = Supply.decodeRequestID(value);
+        if(id != 0) {
+            supplyTargetID = id;
+            Supply.resetRequestInfo(supplyDroneIndex);
+            return;
         }
     }
     
@@ -706,12 +715,12 @@ public class Drone extends MovableUnit {
 
 
     public static enum DroneState {
-        //SWARM, // aggressive mode for drones in a group
+        SWARM, // aggressive mode for drones in a group
         UNSWARM, // defensive mode for lone drones, stays away from target waits for reinforcements
         FOLLOW, // following enemy
         RETREAT, // retreats when enemy is in sight range and then stays still.
         SUPPLY, // move back to hq to collect supply and distribute it to other units
-        //FOLLOW_RESUPPLY, 
-        //FOLLOW_WANDER
+        FOLLOW_RESUPPLY, 
+        FOLLOW_WANDER
     }
 }

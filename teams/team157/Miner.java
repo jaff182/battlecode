@@ -59,6 +59,9 @@ public class Miner extends MiningUnit {
         }
         //---------------------------------------------------------------------
         
+        //Supply methodss
+        Supply.callForSupply();
+        Supply.distribute(suppliabilityMultiplier_Preattack);
         
         //Sense map while exploring
         //Low bytecode priority
@@ -117,8 +120,6 @@ public class Miner extends MiningUnit {
         // Go to Enemy HQ
         bug(enemyHQLocation);
         
-        //Distribute supply
-        Supply.distribute(suppliabilityMultiplier_Preattack);
     }
 
     private static void minerMine() throws GameActionException {
@@ -131,8 +132,6 @@ public class Miner extends MiningUnit {
         //Mine
         if (rc.isCoreReady()) rc.mine();
         
-        //Distribute supply
-        Supply.distribute(suppliabilityMultiplier_Preattack);
     }
     
     private static void minerWander() throws GameActionException {
@@ -142,9 +141,7 @@ public class Miner extends MiningUnit {
         //Hill climb ore distribution while being repelled from other units
         updateFriendlyInRange(15);
         goTowardsOre();
-
-        //Distribute supply
-        Supply.distribute(suppliabilityMultiplier_Preattack);
+        
     }
     
     private static void minerRetreat() throws GameActionException {
@@ -155,8 +152,6 @@ public class Miner extends MiningUnit {
         updateFriendlyInRange(15);
         clot();
         
-        //Distribute supply
-        Supply.distribute(suppliabilityMultiplier_Preattack);
     }
     
     

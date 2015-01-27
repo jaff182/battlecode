@@ -334,6 +334,7 @@ public class Launcher extends MovableUnit {
             break;
         }
         
+        Supply.callForSupply();
         Supply.distribute(suppliabilityMultiplier_Preattack);
     }
     

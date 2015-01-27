@@ -184,7 +184,8 @@ public class Tank extends MovableUnit {
             break;
         
         }
-
+        
+        Supply.callForSupply();
         Supply.distribute(suppliabilityMultiplier_Preattack);
     }
     

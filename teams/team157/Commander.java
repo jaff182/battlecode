@@ -1,5 +1,6 @@
 package team157;
 import battlecode.common.*;
+import team157.Utility.Supply;
 
 public class Commander extends MovableUnit{
     ;
@@ -82,6 +83,8 @@ public class Commander extends MovableUnit{
             break;
         }
         
+        //Supply
+        Supply.callForSupply();
     }
     
     /**

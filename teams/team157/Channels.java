@@ -67,5 +67,9 @@ public class Channels {
      */
     public static final int ENEMY_TOWER_LOCATIONS = 17230;
     
-    public static final int DOES_SUPPLY_DRONE_EXIST = 17245;
+    /**
+     * Starting channel for supply request and supply drone system.
+     * 4 channels needed (17250 to 17253)
+     */
+    public static final int SUPPLY_REQUESTS = 17250;
 }
