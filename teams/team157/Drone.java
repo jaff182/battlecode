@@ -108,6 +108,7 @@ public class Drone extends MovableUnit {
             if (rc.getSupplyLevel() > Drone.highFollowSupplyLevel) {
                 Drone.droneState = DroneState.FOLLOW_WANDER;
             }
+            break;
         case FOLLOW_WANDER:
             if (rc.getSupplyLevel() <= Drone.lowFollowSupplyLevel) {
                 droneState = DroneState.FOLLOW_RESUPPLY;
@@ -146,6 +147,7 @@ public class Drone extends MovableUnit {
                 }
 
             }
+            break;
         case FOLLOW:
             RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
             // update status info
@@ -160,7 +162,7 @@ public class Drone extends MovableUnit {
             } else if (Clock.getRoundNum() - Drone.lastSeenTime > Drone.timeOut) {
                 Drone.droneState = DroneState.FOLLOW_WANDER;
             }
-            
+            break;
         // Supply state for supply drones    
         case SUPPLY:
             if (supplyTargetID == HQID) {
@@ -392,7 +394,8 @@ public class Drone extends MovableUnit {
             }
             for (RobotInfo enemy : nearbyEnemies) {
                 if (enemy.type == RobotType.MISSILE) {
-                    if (enemy.location.distanceSquaredTo(newLocation) <= 5) {
+                    int distanceSquaredToMissile = enemy.location.distanceSquaredTo(newLocation);
+                    if (distanceSquaredToMissile <= 2) {
                         RobotInfo[] explosionRadiusRobots = Common.rc.senseNearbyRobots(enemy.type.attackRadiusSquared, Common.enemyTeam);
                         
                         boolean hasEnemyWorthTakingDown = false;
@@ -406,6 +409,8 @@ public class Drone extends MovableUnit {
                         
                         if (!hasEnemyWorthTakingDown)
                             damageForDirection += 0.8*enemy.type.attackPower; // missile splash will not hit it (maybe)
+                    } else if (distanceSquaredToMissile <= 5) {
+                        damageForDirection += enemy.type.attackPower;
                     }
                 }
                 else if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
