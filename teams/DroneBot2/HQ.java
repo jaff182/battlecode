@@ -102,6 +102,7 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.HELIPAD); 
         } else if(rn == 220) {
             BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
         } else if (rn == 280) {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         } else if (rn == 350) {
@@ -109,20 +110,31 @@ public class HQ extends Structure {
         } else if (rn == 410) {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
-            BuildOrder.add(RobotType.SUPPLYDEPOT);
-        } else if (rn == 500) {
             BuildOrder.add(RobotType.HELIPAD);
+        } else if (rn == 500) {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
         } 
         if (rn > 500 && rn%200==0) {
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.HELIPAD);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.SUPPLYDEPOT);
+            BuildOrder.add(RobotType.HELIPAD);
         }
         if(rn > 1000 && rn%20 == 0 && rc.getTeamOre() > 500) {
             int index = BuildOrder.size()-1;

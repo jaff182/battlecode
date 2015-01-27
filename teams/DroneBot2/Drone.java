@@ -111,7 +111,7 @@ public class Drone extends MovableUnit {
             if (rc.getSupplyLevel() <= Drone.lowFollowSupplyLevel) {
                 droneState = DroneState.FOLLOW_RESUPPLY;
             } else {
-                RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
+                RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(30, enemyTeam);
                 if (enemiesInLargeArea.length > 0) {
                     RobotInfo target = findMostExpensiveEnemy(enemiesInLargeArea);
                     Drone.lastSeenTime = Clock.getRoundNum();
@@ -146,7 +146,7 @@ public class Drone extends MovableUnit {
 
             }
         case FOLLOW:
-            RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
+            RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(30, enemyTeam);
             // update status info
             if (enemiesInLargeArea.length > 0) {
                 RobotInfo target = findMostExpensiveEnemy(enemiesInLargeArea);
@@ -203,11 +203,12 @@ public class Drone extends MovableUnit {
             break;
         case FOLLOW_WANDER:
             moveAndAvoidEnemies(currentWanderDirection, enemiesInSight);
+            distributeSupply(suppliabilityMultiplier_Preattack);
             break;
         case FOLLOW:
-            double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30), 25);
+            double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25), 25);
             rc.setIndicatorString(2, "MacroScoringAdvantage: "+macroScoringAdvantage);
-            if (macroScoringAdvantage > 2.0 && Drone.enemiesInSight.length != 0) {
+            if (macroScoringAdvantage > 1.5 && Drone.enemiesInSight.length != 0) {
                 //No missiles! (macroScoringAdvantage strips it)
                 RobotInfo enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
                 enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
@@ -218,8 +219,22 @@ public class Drone extends MovableUnit {
                     if (Common.rc.isWeaponReady())
                         Common.rc.attackLocation(enemyToAttack.location);
                 }
-                else
-                    MovableUnit.bug(enemyToAttack.location);
+                else {
+                    if (rc.isCoreReady()) {
+                    Direction toMove = myLocation.directionTo(enemyToAttack.location);
+                    if (rc.canMove(toMove))
+                        rc.move(toMove);
+                    else if (handedness && rc.canMove(toMove.rotateLeft()))
+                        rc.move(toMove.rotateLeft());
+                    else if (!handedness && rc.canMove(toMove.rotateRight()))
+                        rc.move(toMove.rotateRight());
+                    else if (handedness && rc.canMove(toMove.rotateLeft().rotateLeft()))
+                        rc.move(toMove.rotateLeft());
+                    else if (!handedness && rc.canMove(toMove.rotateRight().rotateRight()))
+                        rc.move(toMove.rotateRight());
+
+                    }
+                }
             }
             else if (Clock.getRoundNum()%2 == 0)
                 moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
@@ -229,6 +244,7 @@ public class Drone extends MovableUnit {
                 else
                     moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateRight().rotateRight(), enemiesInSight);
             }
+            distributeSupply(suppliabilityMultiplier_Preattack);
             break;
 
         case SUPPLY:
@@ -386,7 +402,7 @@ public class Drone extends MovableUnit {
                         }
                         
                         if (!hasEnemyWorthTakingDown)
-                            damageForDirection += enemy.type.attackPower; // missile splash will not hit it (maybe)
+                            damageForDirection += 0.8*enemy.type.attackPower; // missile splash will not hit it (maybe)
                     }
                 }
                 else if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {

@@ -24,11 +24,12 @@ public class Drone extends MovableUnit {
     
     // Parameters for follow
     private final static double lowFollowSupplyLevel = myType.supplyUpkeep*10; //min supply level before returning to hq to resupply
-    private final static double highFollowSupplyLevel = myType.supplyUpkeep*Common.distanceBetweenHQs*2; //min supply level before leaving hq to fight
+    private final static double highFollowSupplyLevel = 4000; //min supply level before leaving hq to fight
     private static MapLocation lastSeenLocation = HQLocation; // Last seen location of follow target
     private static int lastSeenTime = -1; //Clock number enemy was last seen
     private final static int timeOut = 3; // Timeout at which FOLLOW changes back into FOLLOW_WANDER
     private static Direction currentWanderDirection;
+    private static boolean handedness;
     
     public static void start() throws GameActionException {
         init();
@@ -40,10 +41,11 @@ public class Drone extends MovableUnit {
     
     private static void init() throws GameActionException {  
         if (Clock.getRoundNum() > roundNumSupply) {
-            droneState = DroneState.SUPPLY;
+            droneState = DroneState.FOLLOW_WANDER;
         }
         currentWanderDirection = rc.getLocation().directionTo(enemyHQLocation);
         target = enemyHQLocation;
+        handedness = Common.rc.getID() %2 == 0;
         // TODO waypoint system has a bug, drones try to move to offmap location at the start
         //Waypoints.refreshLocalCache();
         //target = Waypoints.waypoints[0];
@@ -109,7 +111,7 @@ public class Drone extends MovableUnit {
             if (rc.getSupplyLevel() <= Drone.lowFollowSupplyLevel) {
                 droneState = DroneState.FOLLOW_RESUPPLY;
             } else {
-                RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
+                RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(30, enemyTeam);
                 if (enemiesInLargeArea.length > 0) {
                     RobotInfo target = findMostExpensiveEnemy(enemiesInLargeArea);
                     Drone.lastSeenTime = Clock.getRoundNum();
@@ -144,7 +146,7 @@ public class Drone extends MovableUnit {
 
             }
         case FOLLOW:
-            RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
+            RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(30, enemyTeam);
             // update status info
             if (enemiesInLargeArea.length > 0) {
                 RobotInfo target = findMostExpensiveEnemy(enemiesInLargeArea);
@@ -201,23 +203,48 @@ public class Drone extends MovableUnit {
             break;
         case FOLLOW_WANDER:
             moveAndAvoidEnemies(currentWanderDirection, enemiesInSight);
+            distributeSupply(suppliabilityMultiplier_Preattack);
             break;
         case FOLLOW:
-            double macroScoringAdvantage = AttackingUnit.macroScoringOfAdvantageInArea(enemiesInSight, 10);
-            
-            if (false && macroScoringAdvantage > 5.0 && Drone.enemiesInSight.length != 0) {
+            double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25), 25);
+            rc.setIndicatorString(2, "MacroScoringAdvantage: "+macroScoringAdvantage);
+            if (macroScoringAdvantage > 2.0 && Drone.enemiesInSight.length != 0) {
+                //No missiles! (macroScoringAdvantage strips it)
                 RobotInfo enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
-                if (Common.rc.canAttackLocation(enemyToAttack.location)) {
+                enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
+
+                if (enemyToAttack == null)
+                    moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
+                else if (Common.rc.canAttackLocation(enemyToAttack.location)) {
                     if (Common.rc.isWeaponReady())
                         Common.rc.attackLocation(enemyToAttack.location);
                 }
-                else
-                    MovableUnit.bug(enemyToAttack.location);
+                else {
+                    if (rc.isCoreReady()) {
+                    Direction toMove = myLocation.directionTo(enemyToAttack.location);
+                    if (rc.canMove(toMove))
+                        rc.move(toMove);
+                    else if (handedness && rc.canMove(toMove.rotateLeft()))
+                        rc.move(toMove.rotateLeft());
+                    else if (!handedness && rc.canMove(toMove.rotateRight()))
+                        rc.move(toMove.rotateRight());
+                    else if (handedness && rc.canMove(toMove.rotateLeft().rotateLeft()))
+                        rc.move(toMove.rotateLeft());
+                    else if (!handedness && rc.canMove(toMove.rotateRight().rotateRight()))
+                        rc.move(toMove.rotateRight());
+
+                    }
+                }
             }
             else if (Clock.getRoundNum()%2 == 0)
                 moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
-            else
-                moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateLeft().rotateLeft(), enemiesInSight);
+            else {
+                if (handedness)
+                    moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateLeft().rotateLeft(), enemiesInSight);
+                else
+                    moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateRight().rotateRight(), enemiesInSight);
+            }
+            distributeSupply(suppliabilityMultiplier_Preattack);
             break;
 
         case SUPPLY:
@@ -356,9 +383,13 @@ public class Drone extends MovableUnit {
             if (rc.senseTerrainTile(newLocation) == TerrainTile.VOID) {
                 damageForDirection += currentDamage;
             }
+            
+            if (newDirection.isDiagonal()) {
+                damageForDirection += 0.3*currentDamage;
+            }
             for (RobotInfo enemy : nearbyEnemies) {
                 if (enemy.type == RobotType.MISSILE) {
-                    if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
+                    if (enemy.location.distanceSquaredTo(newLocation) <= 5) {
                         RobotInfo[] explosionRadiusRobots = Common.rc.senseNearbyRobots(enemy.type.attackRadiusSquared, Common.enemyTeam);
                         
                         boolean hasEnemyWorthTakingDown = false;
@@ -371,7 +402,7 @@ public class Drone extends MovableUnit {
                         }
                         
                         if (!hasEnemyWorthTakingDown)
-                            damageForDirection += enemy.type.attackPower; // missile splash will not hit it (maybe)
+                            damageForDirection += 0.8*enemy.type.attackPower; // missile splash will not hit it (maybe)
                     }
                 }
                 else if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
@@ -474,7 +505,71 @@ public class Drone extends MovableUnit {
         }
         return false;
     }
+    /**
+     * Scoring function for advantage in an area.
+     * 
+     * Computes (where all variables are aggregates over robots of one side)<br>
+     * 
+     * (your hp)/(average damage dealt over time by enemy) <br>
+     * --------------------------------------------------- <br>
+     * (enemy hp)/(average damage dealt over time by you)
+     * 
+     * i.e., in an idealized and very rough scenario, how many times your robots
+     * can fight the same battle before giving out.
+     * 
+     * For launchers, special purpose code is used to check if they can launch.<br>
+     * Warning: This function might not be reliable in the presence of missiles.
+     * Write special purpose code to execute retreats.
+     * 
+     * @param robots
+     *            all movable robots in an area (excluding HQ and towers)
+     * @return a positive score if area is safe, negative if dangerous
+     */
+    public static double macroScoringOfAdvantageInArea(RobotInfo[] robots, int macroScoringFriendlyDistanceThreshold) {
+        double yourHP = rc.getHealth();
+        double yourDamageDealtPerUnitTime = myType.attackPower/myType.attackDelay;
 
+        double enemyHP = 0;
+        double enemyDamageDealtPerUnitTime = 0;
+        
+        for (int i = 0; i < robots.length; ++i) {
+            final RobotInfo robot = robots[i];
+            if (!robot.type.isBuilding && robot.type != RobotType.LAUNCHER && robot.type != RobotType.MISSILE) {
+                if (robot.team == Common.myTeam && myLocation.distanceSquaredTo(robot.location) < macroScoringFriendlyDistanceThreshold) {
+                    yourHP += robot.health;
+                    yourDamageDealtPerUnitTime += robot.type.attackPower
+                            / robot.type.attackDelay;
+                } else if (robot.team != Common.myTeam) {
+                    enemyHP += robot.health;
+                    enemyDamageDealtPerUnitTime += robot.type.attackPower
+                            / robot.type.attackDelay;
+                }
+            } else if (robot.type == RobotType.LAUNCHER) {
+                // Special code for LAUNCHER, since it's attack power is technically 0
+                // Roughly perform attack computation over next 3 missile launches (based on missile quantities) and average that
+                // TODO: rationalizing choice of 3 (possibly engagement length?)
+                double robotDamageDealtPerUnitTime = Math.min(robot.missileCount, 3)*RobotType.MISSILE.attackPower;
+                if (robot.missileCount<3) {
+                    // (Missile damage)/(Time taken to produce next missile)
+                    robotDamageDealtPerUnitTime += RobotType.MISSILE.attackPower/robot.weaponDelay;
+                }
+                if (robot.team == Common.myTeam && myLocation.distanceSquaredTo(robot.location) < macroScoringFriendlyDistanceThreshold) {
+                    yourHP += robot.health;
+                    yourDamageDealtPerUnitTime += robotDamageDealtPerUnitTime;
+                } else if (robot.team != Common.myTeam) {
+                    enemyHP += robot.health;
+                    enemyDamageDealtPerUnitTime += robotDamageDealtPerUnitTime;
+                }
+            } else if (robot.type == RobotType.MISSILE){
+                return 0;
+            }
+        }
+
+        if (enemyHP != 0 && enemyDamageDealtPerUnitTime !=0)
+            return ((yourHP/enemyDamageDealtPerUnitTime) / (enemyHP/yourDamageDealtPerUnitTime));
+        else 
+            return Double.POSITIVE_INFINITY;
+    }
     //Parameters ==============================================================
     
     /**
