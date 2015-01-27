@@ -363,7 +363,7 @@ public class Launcher extends MovableUnit {
         
         int[] dirScores = new int[8];
         for (int i = 0; i < 8; i++) {
-            int dirScore = dangerInDir[i] + 2*dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8];
+            int dirScore = 2*dangerInDir[i] + dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8];
             if (dirScore != 0 && rc.canLaunch(directions[i])) {
                 dirScores[i] = dirScore;
             } 
