@@ -360,30 +360,30 @@ public class Launcher extends MovableUnit {
             }
             
         }
-        int maxDirScore = (-1)*Integer.MAX_VALUE;
-        int secondMaxDirScore = (-1)*Integer.MAX_VALUE;
-        int dirScore = 0;
-        int maxIndex = 0;
-        int secondMaxIndex = 0;
+        
+        int[] dirScores = new int[8];
         for (int i = 0; i < 8; i++) {
-            dirScore = dangerInDir[i] + 2*dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8];
-            if (dirScore > secondMaxDirScore) {
-                if (rc.canLaunch(directions[i])) {
-                    if (dirScore > maxDirScore) {
-                        maxDirScore = dirScore;
-                        maxIndex = i;
-                    } else {
-                        secondMaxDirScore = dirScore;
-                        secondMaxIndex = i;
-                    }
-                } 
-            }
+            int dirScore = dangerInDir[i] + 2*dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8];
+            if (dirScore != 0 && rc.canLaunch(directions[i])) {
+                dirScores[i] = dirScore;
+            } 
         }
-        if (maxDirScore > 0) {
-            tryLaunch(directions[maxIndex]);
-            if (secondMaxDirScore > 0) {
-                tryLaunch(directions[secondMaxIndex]);
+        
+        for (int i=0; i < 3; i++) {
+            int maxDir = 0;
+            int maxScore = 0;
+            for (int dirToLaunch=0; dirToLaunch<8;dirToLaunch++) {
+                if (dirScores[dirToLaunch] > maxScore) {
+                    maxScore = dirScores[dirToLaunch];
+                    maxDir = dirToLaunch;
+                }
             }
+            
+            if (maxScore > 0) {
+                tryLaunch(directions[maxDir]);
+                dirScores[maxDir] = 0;
+            } else
+                break;
         }
         
         

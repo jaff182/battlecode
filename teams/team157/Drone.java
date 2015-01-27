@@ -436,6 +436,8 @@ public class Drone extends MovableUnit {
                         
                         if (!hasEnemyWorthTakingDown)
                             damageForDirection += enemy.type.attackPower; // missile splash will not hit it (maybe)
+                        else
+                            damageForDirection += 0.5*enemy.type.attackPower;
                     } else if (distanceSquaredToMissile <= 4) {
                         damageForDirection += enemy.type.attackPower;
                     }
