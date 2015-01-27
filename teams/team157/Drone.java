@@ -247,7 +247,6 @@ public class Drone extends MovableUnit {
                 else
                     moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateRight().rotateRight(), enemiesInSight);
             }
-            distributeSupply(suppliabilityMultiplier_Preattack);
             break;
 
         case SUPPLY:
