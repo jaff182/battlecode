@@ -20,7 +20,7 @@ public class Miner extends MiningUnit {
         //Set mining parameters
         minMiningRate = GameConstants.MINER_MINE_MAX;
         minOreWorthMining = minMiningRate*GameConstants.MINER_MINE_RATE;
-        minOreWorthConsidering = GameConstants.MINIMUM_MINE_AMOUNT*GameConstants.MINER_MINE_RATE;
+        minOreWorthConsidering = GameConstants.MINIMUM_MINE_AMOUNT;
         
     }
     
@@ -173,20 +173,11 @@ public class Miner extends MiningUnit {
      */
     private static void adjustMiningRate() throws GameActionException {
         if(Clock.getRoundNum()%MinerEffectiveness.MEASUREMENT_PERIOD == 1) {
-            double score = 0.01*rc.readBroadcast(Channels.MINER_EFFECTIVENESS);
-            if(score != 0) {
-                if(minMiningRate > GameConstants.MINIMUM_MINE_AMOUNT && score < 0.3) {
-                        //Lower mining threshhold
-                        minMiningRate = Math.max(minMiningRate*0.9,GameConstants.MINIMUM_MINE_AMOUNT);
-                } else if(minMiningRate < GameConstants.MINER_MINE_MAX 
-                    && score > 0.8) {
-                        //Raise mining threshhold
-                        minMiningRate = Math.min(minMiningRate*1.1,GameConstants.MINER_MINE_MAX);
-                }
-                //Update ore threshhold
-                minOreWorthMining = minMiningRate*GameConstants.MINER_MINE_RATE;
-                //rc.setIndicatorString(0,"minOre = "+minOreWorthMining);
-            }
+            //Update minimum mining rate
+            minMiningRate = 0.001*rc.readBroadcast(MinerEffectiveness.SCORE_CHANNEL);
+            //Update ore threshhold
+            minOreWorthMining = minMiningRate*GameConstants.MINER_MINE_RATE;
+            //rc.setIndicatorString(0,"minOre = "+minOreWorthMining);
         }
     }
     

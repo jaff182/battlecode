@@ -49,7 +49,7 @@ public class BuildOrder {
      * @return Value to be stored in radio.
      */
     public static int encode(int buildingTypeOrdinal, int id) {
-        return buildingTypeOrdinal + 21*(Clock.getRoundNum() + 2001*id);
+        return buildingTypeOrdinal + 11*(Clock.getRoundNum() + 3350*id);
     }
     
     /**
@@ -58,7 +58,7 @@ public class BuildOrder {
      * @return The ordinal of the building type to be built.
      */
     public static int decodeTypeOrdinal(int value) {
-        return value%21;
+        return value%11;
     }
     
     /**
@@ -67,7 +67,7 @@ public class BuildOrder {
      * @return The round number that the value was updated.
      */
     public static int decodeTimeStamp(int value) {
-        return (value/21)%2001;
+        return (value/11)%3350;
     }
     
     /**
@@ -76,7 +76,7 @@ public class BuildOrder {
      * @return The ID of the robot.
      */
     public static int decodeID(int value) {
-        return value/42021;
+        return value/36850;
     }
     
     

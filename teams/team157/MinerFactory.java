@@ -17,8 +17,10 @@ public class MinerFactory extends Structure {
     }
     
     private static void init() throws GameActionException {
-        rc.setIndicatorString(0,"hello i'm a minerfactory.");
+        //rc.setIndicatorString(0,"hello i'm a minerfactory.");
         
+        //Set minimum mining rate
+        rc.broadcast(MinerEffectiveness.SCORE_CHANNEL,(int)(1000*GameConstants.MINER_MINE_MAX));
     }
     
     private static void loop() throws GameActionException {

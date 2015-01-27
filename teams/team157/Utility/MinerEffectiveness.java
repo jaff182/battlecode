@@ -1,8 +1,7 @@
 package team157.Utility;
 
-import battlecode.common.Clock;
-import battlecode.common.GameActionException;
-import battlecode.common.RobotType;
+import battlecode.common.*;
+import team157.RobotPlayer;
 import team157.Miner;
 import team157.Channels;
 import team157.Common;
@@ -120,7 +119,21 @@ public class MinerEffectiveness {
             //Update mean effectiveness and broadcast value, reset sum
             mean = sum/MEASUREMENT_PERIOD;
             Common.rc.setIndicatorString(1,"Effectiveness is "+mean);
-            Common.rc.broadcast(SCORE_CHANNEL,(int)(100*mean));
+            //Common.rc.broadcast(SCORE_CHANNEL,(int)(100*mean));
+            
+            //Determine new min mining rate
+            double minMiningRate = 0.001*RobotPlayer.rc.readBroadcast(SCORE_CHANNEL);
+            if(minMiningRate > GameConstants.MINIMUM_MINE_AMOUNT && mean < 0.75) {
+                    //Lower mining threshhold
+                    minMiningRate = Math.max(minMiningRate*0.9,GameConstants.MINIMUM_MINE_AMOUNT);
+            } else if(minMiningRate < GameConstants.MINER_MINE_MAX 
+                && mean > 0.95) {
+                    //Raise mining threshhold
+                    minMiningRate = Math.min(minMiningRate*1.1,GameConstants.MINER_MINE_MAX);
+            }
+            RobotPlayer.rc.broadcast(MinerEffectiveness.SCORE_CHANNEL,(int)(1000*minMiningRate));
+            
+            //Reset sum
             sum = 0;
         }
     }

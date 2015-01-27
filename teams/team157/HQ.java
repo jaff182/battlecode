@@ -68,7 +68,6 @@ public class HQ extends Structure {
         // Clean up robot count data for this round -- do not remove, will break invariants
         RobotCount.reset();
         MinerEffectiveness.reset();
-        rc.broadcast(Channels.DOES_SUPPLY_DRONE_EXIST, 0);
 
         //Update enemy HQ ranges in mob level
         if(Clock.getRoundNum()%10 == 0) {
@@ -127,7 +126,6 @@ public class HQ extends Structure {
                 BuildOrder.add(RobotType.SUPPLYDEPOT);
             }
         }
-        
         
         
         
