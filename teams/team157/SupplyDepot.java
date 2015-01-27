@@ -1,6 +1,8 @@
 package team157;
 
 import java.util.Random;
+
+import team157.Utility.Supply;
 import battlecode.common.*;
 
 public class SupplyDepot extends Structure {
@@ -28,7 +30,7 @@ public class SupplyDepot extends Structure {
         claimBuildOrderEntry();
         
         //Dispense supply
-        dispenseSupply(suppliabilityMultiplier_Preattack);
+        Supply.dispense(suppliabilityMultiplier_Preattack);
     }
     
     //Specific methods =========================================================

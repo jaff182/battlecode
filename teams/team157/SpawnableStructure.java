@@ -1,5 +1,6 @@
 package team157;
 
+import team157.Utility.Supply;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotType;
@@ -44,6 +45,6 @@ public class SpawnableStructure extends Structure {
         trySpawn(myLocation.directionTo(spawnLocation), spawnUnit);
 
         //Dispense Supply
-        dispenseSupply(suppliabilityMultiplier_Preattack);
+        Supply.dispense(suppliabilityMultiplier_Preattack);
     }
 }

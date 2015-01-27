@@ -2,6 +2,7 @@ package team157;
 
 import team157.AttackingUnit.MovableUnitState;
 import team157.Utility.Map;
+import team157.Utility.Supply;
 import battlecode.common.*;
 
 public class AttackingGroupUnit extends MovableUnit {
@@ -319,7 +320,7 @@ public class AttackingGroupUnit extends MovableUnit {
             break;
         }
         
-        distributeSupply(suppliabilityMultiplier_Preattack);
+        Supply.distribute(suppliabilityMultiplier_Preattack);
     }
     
     

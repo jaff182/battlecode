@@ -3,6 +3,7 @@ package team157;
 import java.util.Random;
 
 import team157.Utility.RobotCount;
+import team157.Utility.Supply;
 import battlecode.common.*;
 
 public class TechnologyInstitute extends SpawnableStructure {
@@ -29,6 +30,6 @@ public class TechnologyInstitute extends SpawnableStructure {
         claimBuildOrderEntry();
 
         //Dispense Supply
-        dispenseSupply(suppliabilityMultiplier_Preattack);
+        Supply.dispense(suppliabilityMultiplier_Preattack);
     }
 }

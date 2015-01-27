@@ -175,7 +175,7 @@ public class Beaver extends MiningUnit {
         bug(enemyHQLocation);
 
         //Distribute supply
-        distributeSupply(suppliabilityMultiplier_Preattack);
+        Supply.distribute(suppliabilityMultiplier_Preattack);
     }
     
     private static void beaverWander() throws GameActionException {
@@ -210,7 +210,7 @@ public class Beaver extends MiningUnit {
         }
         
         //Distribute supply
-        distributeSupply(suppliabilityMultiplier_Preattack);
+        Supply.distribute(suppliabilityMultiplier_Preattack);
     }
     
     private static void beaverMine() throws GameActionException {
@@ -221,7 +221,7 @@ public class Beaver extends MiningUnit {
         if (rc.isCoreReady()) rc.mine();
 
         //Distribute supply
-        distributeSupply(suppliabilityMultiplier_Preattack);
+        Supply.distribute(suppliabilityMultiplier_Preattack);
     }
 
 
@@ -309,7 +309,7 @@ public class Beaver extends MiningUnit {
         }
         
         //Distribute supply
-        distributeSupply(suppliabilityMultiplier_Preattack);
+        Supply.distribute(suppliabilityMultiplier_Preattack);
     }
     
 
@@ -437,7 +437,7 @@ public class Beaver extends MiningUnit {
 
     /**
      * Multipliers for the effective supply capacity for friendly unit robotTypes, by
-     * which the dispenseSupply() and distributeSupply() methods allocate supply (so
+     * which the Supply.dispense() and Supply.distribute() methods allocate supply (so
      * higher means give more supply to units of that type).
      */
     private static double[] suppliabilityMultiplier_Conservative = {

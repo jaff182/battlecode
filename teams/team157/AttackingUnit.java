@@ -187,7 +187,7 @@ public class AttackingUnit extends MovableUnit{
         }
         
         //distribute supply
-        distributeSupply(suppliabilityMultiplier_Preattack);
+        Supply.distribute(suppliabilityMultiplier_Preattack);
     }
 
     /**

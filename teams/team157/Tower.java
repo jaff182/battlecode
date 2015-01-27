@@ -43,7 +43,7 @@ public class Tower extends Structure {
         }
         
         //Dispense supply
-        dispenseSupply(suppliabilityMultiplier_Preattack);
+        Supply.dispense(suppliabilityMultiplier_Preattack);
         
     }
     
@@ -66,7 +66,7 @@ public class Tower extends Structure {
     
     /**
      * Multipliers for the effective supply capacity for friendly unit robotTypes, by 
-     * which the dispenseSupply() and distributeSupply() methods allocate supply (so 
+     * which the Supply.dispense() and Supply.distribute() methods allocate supply (so 
      * higher means give more supply to units of that type).
      */
     private static double[] suppliabilityMultiplier_Conservative = {

@@ -821,58 +821,6 @@ public class MovableUnit extends Common {
     }
     
     
-    
-    
-    //Distribute Supply =======================================================
-    
-    /**
-     * Distribute supply among neighboring units, according to health/supplyUpkeep. 
-     * Primarily used by a temporary holder of supply, eg beaver/soldier.
-     * @param multiplier Double array of multipliers to supply capacity per unit health of each RobotType.
-     * @throws GameActionException
-     */
-    public static void distributeSupply(double[] multiplier) throws GameActionException {
-        if(Clock.getBytecodesLeft() > 1000) {
-            //Sense nearby friendly robots
-            RobotInfo[] friends = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,myTeam);
-            if(friends.length > 0) {
-                //Initiate
-                int targetidx = -1;
-                double myCapacity = rc.getHealth()*myType.supplyUpkeep*multiplier[rc.getType().ordinal()];
-                double totalSupply = rc.getSupplyLevel(), totalCapacity = myCapacity;
-                double minSupplyRatio = Integer.MAX_VALUE; //some big number
-                
-                //Iterate through friends for as long as bytecodes allow
-                for(int i=0; i<friends.length; i++) {
-                    //Keep track of total values to find mean later
-                    totalSupply += friends[i].supplyLevel;
-                    double friendCapacity = friends[i].health*friends[i].type.supplyUpkeep*multiplier[friends[i].type.ordinal()];
-                    totalCapacity += friendCapacity;
-                    
-                    //Find robot with lowest supply per capacity and positive capacity
-                    if(friendCapacity > 0) {
-                        double supplyRatio = friends[i].supplyLevel/friendCapacity;
-                        if(supplyRatio < minSupplyRatio) {
-                            minSupplyRatio = supplyRatio;
-                            targetidx = i;
-                        }
-                    }
-                    
-                    //Stop checking if insufficient bytecode left
-                    if(Clock.getBytecodesLeft() < 600) break;
-                }
-                
-                //Transfer any excess supply
-                double myMeanSupply = totalSupply/totalCapacity*myCapacity;
-                if(targetidx != -1 && rc.getSupplyLevel() > myMeanSupply) {
-                    MapLocation loc = friends[targetidx].location;
-                    //Transfer all supply above my mean level amount
-                    double transferAmount = (rc.getSupplyLevel()-myMeanSupply);
-                    rc.transferSupplies((int)transferAmount,loc);
-                }
-            }
-        }
-    }
 
     /**
      * AF:<br>
