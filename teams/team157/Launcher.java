@@ -29,7 +29,7 @@ public class Launcher extends MovableUnit {
     private static MapLocation enemyTarget; //used only in defend state
     private static int defendRadius = distanceBetweenHQs/4;
     
-    private static int sensingRange = 35;
+    private static final int sensingRange = 35;
 
     
     
@@ -194,7 +194,7 @@ public class Launcher extends MovableUnit {
             }
             break;
         case SURROUND:
-            if (numberOfEnemiesInSight > 0) {
+            if (numberOfEnemiesInSight > 1) { // lone tower
                 if (missileCount == 0 ) {
                     state = LauncherState.RETREAT;
                     previousState = LauncherState.SURROUND;
@@ -310,7 +310,8 @@ public class Launcher extends MovableUnit {
                         launchInThreeDir(myLocation.directionTo(surroundLocation));
                     }
                     
-                }
+                } else
+                    bug(surroundLocation);
                 
             } else {
                 bug(surroundLocation);
