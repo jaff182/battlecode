@@ -19,8 +19,16 @@ public class Drone extends MovableUnit {
     private static int baseSupplyTimeout = 15;
     private static int supplyTimeout = baseSupplyTimeout; // number of rounds after staying near supply target before returning to hq
     private static int supplyDistributeRadius = 255;
-    private static int[] ordinalOffsets = {0, 7, 1, 6, 2, 5, 3, 4};
+    private static final int[] ordinalOffsets = {0, 7, 1, 6, 2, 5, 3, 4};
 
+    
+    // Parameters for follow
+    private final static double lowFollowSupplyLevel = myType.supplyUpkeep*10; //min supply level before returning to hq to resupply
+    private final static double highFollowSupplyLevel = myType.supplyUpkeep*Common.distanceBetweenHQs*2; //min supply level before leaving hq to fight
+    private static MapLocation lastSeenLocation = HQLocation; // Last seen location of follow target
+    private static int lastSeenTime = -1; //Clock number enemy was last seen
+    private final static int timeOut = 3; // Timeout at which FOLLOW changes back into FOLLOW_WANDER
+    private static Direction currentWanderDirection;
     
     public static void start() throws GameActionException {
         init();
@@ -34,7 +42,7 @@ public class Drone extends MovableUnit {
         if (Clock.getRoundNum() > roundNumSupply) {
             droneState = DroneState.SUPPLY;
         }
-        
+        currentWanderDirection = rc.getLocation().directionTo(enemyHQLocation);
         target = enemyHQLocation;
         // TODO waypoint system has a bug, drones try to move to offmap location at the start
         //Waypoints.refreshLocalCache();
@@ -92,48 +100,65 @@ public class Drone extends MovableUnit {
         
         
         switch (droneState) {
-        case UNSWARM:
-            checkForDanger();
-            /**
-            if (rc.senseNearbyRobots(sightRange, Common.myTeam).length >= numberInSwarm) {
-                // Switches to swarm state when >4 friendly units within sensing radius.
-                droneState = DroneState.SWARM;
-            } else 
-            **/
-            if (numberOfEnemiesInSight > 2) {
-             // goes into retreat state if there are enemies in sight range
-                droneState = DroneState.RETREAT;
-                retreatTimeout = baseRetreatTimeout;
+        // Follow states for follow drones
+        case FOLLOW_RESUPPLY:
+            if (rc.getSupplyLevel() > Drone.highFollowSupplyLevel) {
+                Drone.droneState = DroneState.FOLLOW_WANDER;
             }
-            break;
-        /**
-        case SWARM:
-            if (rc.senseNearbyRobots(sightRange, Common.myTeam).length < numberInSwarm) {
-                // switch to unswarm state when <5 friendly units within sensing radius.
-                droneState = DroneState.UNSWARM;
+        case FOLLOW_WANDER:
+            if (rc.getSupplyLevel() <= Drone.lowFollowSupplyLevel) {
+                droneState = DroneState.FOLLOW_RESUPPLY;
+            } else {
+                RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
+                if (enemiesInLargeArea.length > 0) {
+                    RobotInfo target = findMostExpensiveEnemy(enemiesInLargeArea);
+                    Drone.lastSeenTime = Clock.getRoundNum();
+                    Drone.lastSeenLocation = target.location;
+                    Drone.droneState = DroneState.FOLLOW;
+                } else if (Clock.getRoundNum() % 5 == 0) {
+                    if (myLocation.distanceSquaredTo(enemyHQLocation) < Common.distanceBetweenHQs / 9) // less
+                                                                                                       // than
+                                                                                                       // 1/3
+                                                                                                       // the
+                                                                                                       // distance
+                        // Random direction to move
+                        currentWanderDirection = Common.directions[Common.rand
+                                .nextInt(8)];
+                    else {
+                        // Always move in direction towards enemyHQ, up to -90
+                        // 90 exlusive
+                        int ordinalOffset = Common.rand.nextInt(3) - 1; // range
+                                                                        // from
+                                                                        // [-1,
+                                                                        // 1]
+                                                                        // inclusive
+
+                        if (ordinalOffset < 0)
+                            currentWanderDirection = Common.directions[(8 + myLocation
+                                    .directionTo(enemyHQLocation).ordinal() + ordinalOffset) % 8];
+                        else
+                            currentWanderDirection = Common.directions[(myLocation
+                                    .directionTo(enemyHQLocation).ordinal() + ordinalOffset) % 8];
+                    }
+                }
+
             }
-            break;
-        **/
         case FOLLOW:
-            checkForDanger();
-            if (numberOfEnemiesInSight == 0 || numberOfEnemiesInSight > 2) {
-                // lost sight of follow target or too many enemies
-                droneState = DroneState.UNSWARM;
+            RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
+            // update status info
+            if (enemiesInLargeArea.length > 0) {
+                RobotInfo target = findMostExpensiveEnemy(enemiesInLargeArea);
+                Drone.lastSeenTime = Clock.getRoundNum();
+                Drone.lastSeenLocation = target.location;
             }
-            break;
-        case RETREAT:
-            checkForDanger();
-            /**
-            if (rc.senseNearbyRobots(sightRange, Common.myTeam).length >= numberInSwarm) {
-                // switch to swarm state when enough friendly units in range
-                droneState = DroneState.SWARM;
-            } else 
-            **/
-            if (retreatTimeout < 0) {
-                // switch to unswarm state when in stationary retreat for enough turns without encountering any enemy
-                droneState = DroneState.UNSWARM;
+            
+            if (rc.getSupplyLevel() <= lowFollowSupplyLevel) {
+                Drone.droneState = DroneState.FOLLOW_RESUPPLY;
+            } else if (Clock.getRoundNum() - Drone.lastSeenTime > Drone.timeOut) {
+                Drone.droneState = DroneState.FOLLOW_WANDER;
             }
-            break;
+            
+        // Supply state for supply drones    
         case SUPPLY:
             if (supplyTargetID == HQID) {
                 if (rc.getSupplyLevel() > minSupplyLevelOfSupplyDrone) {
@@ -151,6 +176,17 @@ public class Drone extends MovableUnit {
         }
     }
 
+    private static RobotInfo findMostExpensiveEnemy(RobotInfo[] enemiesInSight) {
+        RobotInfo mostExpensiveEnemy = enemiesInSight[0];
+        for (RobotInfo enemy: enemiesInSight) {
+            if (enemy.type.oreCost >= mostExpensiveEnemy.type.oreCost
+                    && enemy.missileCount >= mostExpensiveEnemy.missileCount
+                    && enemy.health > mostExpensiveEnemy.health)
+                mostExpensiveEnemy = enemy;
+        }
+        return mostExpensiveEnemy;
+    }
+
     /**
      * Attacks or move to target based on drone state.
      * @param target target to move to.
@@ -159,49 +195,37 @@ public class Drone extends MovableUnit {
     private static void droneMove(MapLocation target) throws GameActionException{
         // first check for enemies and attacks if there are
         switch(droneState) {
-        case UNSWARM:
-            // defensive state for lone drones, stays away from target and waits for reinforcements.
-            /*
-            if (keepAwayFromTarget) {
-                // target is tower or hq
-                if(myLocation.distanceSquaredTo(target) < 35) {
-                    return;
-                }
-            } else {
-                if(myLocation.distanceSquaredTo(target) < 25) {
-                    return;
-                }
-            }*/
-            checkForEnemies();
-            bug(target);
-            distributeSupply(suppliabilityMultiplier_Preattack);
+        case FOLLOW_RESUPPLY:
+            if (myLocation.distanceSquaredTo(HQLocation) > GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED)
+                moveAndAvoidEnemies(myLocation.directionTo(HQLocation), enemiesInSight);
             break;
-        /**
-        case SWARM:
-            // aggressive state, bugs toward target
-            bug(target);
+        case FOLLOW_WANDER:
+            moveAndAvoidEnemies(currentWanderDirection, enemiesInSight);
             break;
-        **/
         case FOLLOW:
-            checkForEnemies();
-            followTarget(enemiesInSight, followPriorities);
-            distributeSupply(suppliabilityMultiplier_Preattack);
-            break;
-        case RETREAT:
-            if (numberOfEnemiesInSight == 0) {
-                retreatTimeout--;
-            } else {
-                droneRetreat();
-                retreatTimeout = baseRetreatTimeout;
+            double macroScoringAdvantage = AttackingUnit.macroScoringOfAdvantageInArea(enemiesInSight, 10);
+            
+            if (false && macroScoringAdvantage > 5.0 && Drone.enemiesInSight.length != 0) {
+                RobotInfo enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
+                if (Common.rc.canAttackLocation(enemyToAttack.location)) {
+                    if (Common.rc.isWeaponReady())
+                        Common.rc.attackLocation(enemyToAttack.location);
+                }
+                else
+                    MovableUnit.bug(enemyToAttack.location);
             }
-            distributeSupply(suppliabilityMultiplier_Preattack);
-            break; 
+            else if (Clock.getRoundNum()%2 == 0)
+                moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
+            else
+                moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateLeft().rotateLeft(), enemiesInSight);
+            break;
+
         case SUPPLY:
             if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
                 checkForEnemies();
                 supplyTarget = HQLocation;
-                moveAndAvoidEnemies(myLocation.directionTo(HQLocation));
+                moveAndAvoidEnemies(myLocation.directionTo(HQLocation), enemiesInSight);
                 // try to avoid enemies while moving to supplytarget
             } else {
                 try {
@@ -213,7 +237,7 @@ public class Drone extends MovableUnit {
                     supplyTarget = robot.location;
                 }
                 rc.setIndicatorString(2, "Supply target: " + supplyTargetID + " at " + supplyTarget);
-                moveAndAvoidEnemies(myLocation.directionTo(supplyTarget));
+                moveAndAvoidEnemies(myLocation.directionTo(supplyTarget), enemiesInSight);
                 if (supplyTargetID != HQID && (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius)) {
                     distributeSupply(suppliabilityMultiplier_Preattack);
                     supplyTimeout--;
@@ -306,56 +330,71 @@ public class Drone extends MovableUnit {
      * @param dir favored direction
      * @throws GameActionException 
      */
-    private static void moveAndAvoidEnemies(Direction dir) throws GameActionException {
-        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(myType.sensorRadiusSquared, enemyTeam);
-        
+    private static void moveAndAvoidEnemies(Direction dir,
+            RobotInfo[] nearbyEnemies) throws GameActionException {
         double minDamage = Double.MAX_VALUE;
         Direction bestDirection = null;
-        if (nearbyEnemies.length != 0) {
-            double currentDamage = 0;
-            for (RobotInfo enemy: nearbyEnemies) {
-                if (enemy.location.distanceSquaredTo(myLocation) <= enemy.type.attackRadiusSquared)
-                    currentDamage += enemy.type.attackPower;
-            }
-            
-            for (int ordinalOffset: ordinalOffsets) {
-                Direction newDirection = Common.directions[(dir.ordinal()+ordinalOffset)%8];
-                MapLocation newLocation = myLocation.add(newDirection);
-                
-                double damageForDirection = 0;
-
-                if (!rc.isPathable(myType, newLocation)) {
-                    damageForDirection += Double.MAX_VALUE;
-                }
-                if (rc.senseTerrainTile(newLocation) == TerrainTile.VOID) {
-                    damageForDirection += currentDamage;
-                }
-                for (RobotInfo enemy: nearbyEnemies) {
-                    if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
-                        damageForDirection += enemy.type.attackPower;
-                    } 
-                }
-                
-                if (damageForDirection == 0) {
-                    if (rc.isCoreReady() && movePossible(newDirection)) {
-                        rc.move(newDirection);
-                    }
-                    return;
-                } else if (damageForDirection < minDamage){
-                    bestDirection = newDirection;
-                    minDamage = damageForDirection;
-                }
-                        
-            }
-            if (minDamage != Double.MAX_VALUE)
-                if (rc.isCoreReady() && movePossible(bestDirection)) {
-                    rc.move(bestDirection);
-                }
-            return;
-        } else {
-            bug(supplyTarget);
+        double currentDamage = 0;
+        for (RobotInfo enemy : nearbyEnemies) {
+            if (enemy.location.distanceSquaredTo(myLocation) <= enemy.type.attackRadiusSquared)
+                currentDamage += enemy.type.attackPower;
         }
         
+        if (currentDamage == 0 && Drone.enemies.length != 0 && Common.rc.isWeaponReady()) {
+            Common.priorityAttack(Drone.enemies, attackPriorities);
+        }
+
+        for (int ordinalOffset : ordinalOffsets) {
+            Direction newDirection = Common.directions[(dir.ordinal() + ordinalOffset) % 8];
+            MapLocation newLocation = myLocation.add(newDirection);
+
+            double damageForDirection = 0;
+
+            if (!rc.isPathable(myType, newLocation) || !movePossible(newDirection)) {
+                damageForDirection += Double.MAX_VALUE;
+            }
+            if (rc.senseTerrainTile(newLocation) == TerrainTile.VOID) {
+                damageForDirection += currentDamage;
+            }
+            for (RobotInfo enemy : nearbyEnemies) {
+                if (enemy.type == RobotType.MISSILE) {
+                    if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
+                        RobotInfo[] explosionRadiusRobots = Common.rc.senseNearbyRobots(enemy.type.attackRadiusSquared, Common.enemyTeam);
+                        
+                        boolean hasEnemyWorthTakingDown = false;
+                        for (RobotInfo enemyInExplosionRadius: explosionRadiusRobots) {
+                            double coreDecrementAmount = enemyInExplosionRadius.supplyLevel == 0 ? 1.0 : 2.0;
+                            if (enemyInExplosionRadius.type != RobotType.MISSILE && enemyInExplosionRadius.coreDelay >= 1.0+coreDecrementAmount) {
+                                hasEnemyWorthTakingDown = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!hasEnemyWorthTakingDown)
+                            damageForDirection += enemy.type.attackPower; // missile splash will not hit it (maybe)
+                    }
+                }
+                else if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
+                    damageForDirection += enemy.type.attackPower;
+                }
+            }
+
+            if (damageForDirection == 0) {
+                if (rc.isCoreReady() && movePossible(newDirection)) {
+                    rc.move(newDirection);
+                }
+                return;
+            } else if (damageForDirection < minDamage) {
+                bestDirection = newDirection;
+                minDamage = damageForDirection;
+            }
+
+        }
+        if (minDamage != Double.MAX_VALUE)
+            if (rc.isCoreReady() && movePossible(bestDirection)) {
+                rc.move(bestDirection);
+            }
+        return;
     }
     
     
@@ -504,7 +543,7 @@ public class Drone extends MovableUnit {
         7/*4:BARRACKS*/,    8/*5:HELIPAD*/,     5/*6:TRNGFIELD*/,   9/*7:TANKFCTRY*/,
         4/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   10/*10:AEROLAB*/,   13/*11:BEAVER*/,
         2/*12:COMPUTER*/,   16/*13:SOLDIER*/,   15/*14:BASHER*/,    12/*15:MINER*/,
-        14/*16:DRONE*/,     17/*17:TANK*/,      18/*18:COMMANDER*/, 11/*19:LAUNCHER*/,
+        14/*16:DRONE*/,     17/*17:TANK*/,      18/*18:COMMANDER*/, 20/*19:LAUNCHER*/,
         19/*20:MISSILE*/
     };
     
@@ -551,5 +590,6 @@ public class Drone extends MovableUnit {
         FOLLOW, // following enemy
         RETREAT, // retreats when enemy is in sight range and then stays still.
         SUPPLY // move back to hq to collect supply and distribute it to other units
+, FOLLOW_RESUPPLY, FOLLOW_WANDER
     }
 }
