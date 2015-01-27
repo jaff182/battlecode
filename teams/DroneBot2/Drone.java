@@ -29,6 +29,7 @@ public class Drone extends MovableUnit {
     private static int lastSeenTime = -1; //Clock number enemy was last seen
     private final static int timeOut = 3; // Timeout at which FOLLOW changes back into FOLLOW_WANDER
     private static Direction currentWanderDirection;
+    private static boolean handedness;
     
     public static void start() throws GameActionException {
         init();
@@ -44,6 +45,7 @@ public class Drone extends MovableUnit {
         }
         currentWanderDirection = rc.getLocation().directionTo(enemyHQLocation);
         target = enemyHQLocation;
+        handedness = Clock.getRoundNum() %2 == 0;
         // TODO waypoint system has a bug, drones try to move to offmap location at the start
         //Waypoints.refreshLocalCache();
         //target = Waypoints.waypoints[0];
@@ -206,6 +208,7 @@ public class Drone extends MovableUnit {
             double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30), 25);
             rc.setIndicatorString(2, "MacroScoringAdvantage: "+macroScoringAdvantage);
             if (macroScoringAdvantage > 3.0 && Drone.enemiesInSight.length != 0) {
+                //No missiles! (macroScoringAdvantage strips it)
                 RobotInfo enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
                 enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
 
@@ -220,8 +223,12 @@ public class Drone extends MovableUnit {
             }
             else if (Clock.getRoundNum()%2 == 0)
                 moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
-            else
-                moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateLeft().rotateLeft(), enemiesInSight);
+            else {
+                if (handedness)
+                    moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateLeft().rotateLeft(), enemiesInSight);
+                else
+                    moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateRight().rotateRight(), enemiesInSight);
+            }
             break;
 
         case SUPPLY:
