@@ -51,7 +51,7 @@ public class AttackingUnit2 extends MovableUnit{
         advanceLocation = Common.enemyHQLocation;
         retreatLocation = Common.HQLocation;
         state = MovableUnitState.ADVANCING;
-        initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
+  //      initInternalMap(); //set locations within attack radius of enemy tower or hq as unpathable
     }
     
     /**
