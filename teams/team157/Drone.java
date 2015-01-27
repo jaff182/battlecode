@@ -19,7 +19,7 @@ public class Drone extends MovableUnit {
     private static int baseSupplyTimeout = 15;
     private static int supplyTimeout = baseSupplyTimeout; // number of rounds after staying near supply target before returning to hq
     private static int supplyDistributeRadius = 255;
-    private static int[] ordinalOffsets = {0, 7, 1, 6, 2, 5, 3, 4};
+    private static final int[] ordinalOffsets = {0, 7, 1, 6, 2, 5, 3, 4};
 
     
     // Parameters for follow
@@ -187,12 +187,15 @@ public class Drone extends MovableUnit {
         // first check for enemies and attacks if there are
         switch(droneState) {
         case FOLLOW_RESUPPLY:
-            if (myLocation.distanceSquaredTo(HQLocation) <= GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED)
+            if (myLocation.distanceSquaredTo(HQLocation) > GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED)
                 moveAndAvoidEnemies(myLocation.directionTo(HQLocation), enemiesInSight);
+            break;
         case FOLLOW_WANDER:
             moveAndAvoidEnemies(currentWanderDirection, enemiesInSight);
+            break;
         case FOLLOW:
             moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation), enemiesInSight);
+            break;
 
         case SUPPLY:
             if (supplyTargetID == HQID) {
@@ -320,7 +323,7 @@ public class Drone extends MovableUnit {
 
             double damageForDirection = 0;
 
-            if (!rc.isPathable(myType, newLocation)) {
+            if (!rc.isPathable(myType, newLocation) || !movePossible(newDirection)) {
                 damageForDirection += Double.MAX_VALUE;
             }
             if (rc.senseTerrainTile(newLocation) == TerrainTile.VOID) {
