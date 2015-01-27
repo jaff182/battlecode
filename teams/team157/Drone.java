@@ -112,7 +112,7 @@ public class Drone extends MovableUnit {
             if (rc.getSupplyLevel() <= Drone.lowFollowSupplyLevel) {
                 droneState = DroneState.FOLLOW_RESUPPLY;
             } else {
-                RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(30, enemyTeam);
+                RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
                 if (enemiesInLargeArea.length > 0) {
                     RobotInfo target = findMostExpensiveEnemy(enemiesInLargeArea);
                     Drone.lastSeenTime = Clock.getRoundNum();
@@ -147,7 +147,7 @@ public class Drone extends MovableUnit {
 
             }
         case FOLLOW:
-            RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(30, enemyTeam);
+            RobotInfo[] enemiesInLargeArea = rc.senseNearbyRobots(70, enemyTeam);
             // update status info
             if (enemiesInLargeArea.length > 0) {
                 RobotInfo target = findMostExpensiveEnemy(enemiesInLargeArea);
@@ -250,7 +250,7 @@ public class Drone extends MovableUnit {
 
         case SUPPLY:
             rc.broadcast(Channels.DOES_SUPPLY_DRONE_EXIST, 1);
-            System.out.println("Supply drone at " + myLocation);
+//            System.out.println("Supply drone at " + myLocation);
             if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
                 checkForEnemies();
