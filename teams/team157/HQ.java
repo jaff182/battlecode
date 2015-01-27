@@ -1,7 +1,7 @@
 package team157;
 
 import team157.Utility.*;
-import DroneBot2.Channels;
+import team157.Channels;
 import battlecode.common.*;
 
 import java.util.Arrays;
