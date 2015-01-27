@@ -3,6 +3,7 @@ package team157;
 import team157.Utility.*;
 import team157.Channels;
 import battlecode.common.*;
+
 import java.util.Arrays;
 
 public class HQ extends Structure {
@@ -89,6 +90,45 @@ public class HQ extends Structure {
         
         int rn = Clock.getRoundNum();
         
+        if (Common.distanceBetweenHQs > Common.SMALL_MAP_SIZE) {
+
+            // Launcher strategy 
+            if(rn == 80) {
+                BuildOrder.add(RobotType.HELIPAD); 
+            } else if(rn == 220) {
+                BuildOrder.add(RobotType.AEROSPACELAB);
+            } else if (rn == 280) {
+                BuildOrder.add(RobotType.AEROSPACELAB);
+            } else if (rn == 350) {
+                BuildOrder.add(RobotType.AEROSPACELAB);
+            } else if (rn == 410) {
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+            } else if (rn == 500) {
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+            } 
+            if (rn > 500 && rn%200==0) {
+                BuildOrder.add(RobotType.AEROSPACELAB);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+                BuildOrder.add(RobotType.SUPPLYDEPOT);
+            }
+            
+        } else {
         
         if(rn == 80) {
             BuildOrder.add(RobotType.BARRACKS); 
@@ -115,7 +155,7 @@ public class HQ extends Structure {
             BuildOrder.add(RobotType.SUPPLYDEPOT);
             BuildOrder.add(RobotType.SUPPLYDEPOT);
         }
-        
+        }
         rc.setIndicatorString(1, "Distance squared between HQs is " + distanceBetweenHQs);
         
         

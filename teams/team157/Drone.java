@@ -436,9 +436,14 @@ public class Drone extends MovableUnit {
                         
                         if (!hasEnemyWorthTakingDown)
                             damageForDirection += enemy.type.attackPower; // missile splash will not hit it (maybe)
+                        else
+                            damageForDirection += 0.5*enemy.type.attackPower;
                     } else if (distanceSquaredToMissile <= 4) {
                         damageForDirection += enemy.type.attackPower;
                     }
+                } 
+                else if (enemy.type == RobotType.LAUNCHER && enemy.missileCount != 0 && enemy.location.distanceSquaredTo(newLocation) <=8 + ((Common.rc.getCoreDelay() >0.4) ? 1 : 0)) {
+                    damageForDirection += RobotType.MISSILE.attackPower;
                 }
                 else if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
                     damageForDirection += enemy.type.attackPower;
