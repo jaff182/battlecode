@@ -72,5 +72,7 @@ public class Channels {
      * 12 channels needed (17130 to 17141);
      */
     public static final int ENEMY_TOWER_LOCATIONS = 17130;
+
+    public static final int DOES_SUPPLY_DRONE_EXIST = 17150;
     
 }

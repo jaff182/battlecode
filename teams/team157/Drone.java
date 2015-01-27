@@ -1,6 +1,6 @@
 package team157;
 
-import team157.Utility.*;
+import DroneBot2.Utility.*;
 import battlecode.common.*;
 
 public class Drone extends MovableUnit {
@@ -206,10 +206,9 @@ public class Drone extends MovableUnit {
             break;
         case FOLLOW_WANDER:
             moveAndAvoidEnemies(currentWanderDirection, enemiesInSight);
-            distributeSupply(suppliabilityMultiplier_Preattack);
             break;
         case FOLLOW:
-            double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25), 25);
+            double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(25), 10);
             rc.setIndicatorString(2, "MacroScoringAdvantage: "+macroScoringAdvantage);
             if (macroScoringAdvantage > 2.0 && Drone.enemiesInSight.length != 0) {
                 //No missiles! (macroScoringAdvantage strips it)
@@ -366,12 +365,23 @@ public class Drone extends MovableUnit {
         double minDamage = Double.MAX_VALUE;
         Direction bestDirection = null;
         double currentDamage = 0;
+        double currentDamageIfWeAttack = 0;
         for (RobotInfo enemy : nearbyEnemies) {
-            if (enemy.location.distanceSquaredTo(myLocation) <= enemy.type.attackRadiusSquared)
+            int distanceToEnemy = enemy.location.distanceSquaredTo(myLocation);
+            if (enemy.type != RobotType.MISSILE
+                    && distanceToEnemy <= enemy.type.attackRadiusSquared) {
                 currentDamage += enemy.type.attackPower;
+                currentDamageIfWeAttack += enemy.type.attackPower;
+            } else {
+                if (distanceToEnemy <= 4) {
+                    currentDamage += enemy.type.attackPower;
+                    currentDamageIfWeAttack += enemy.type.attackPower;
+                } else if (distanceToEnemy <= 5)
+                    currentDamageIfWeAttack += enemy.type.attackPower;
+            }
         }
         
-        if (currentDamage == 0 && Drone.enemies.length != 0 && Common.rc.isWeaponReady()) {
+        if (currentDamageIfWeAttack == 0 && Drone.enemies.length != 0 && Common.rc.isWeaponReady()) {
             Common.priorityAttack(Drone.enemies, attackPriorities);
         }
 
@@ -407,8 +417,8 @@ public class Drone extends MovableUnit {
                         }
                         
                         if (!hasEnemyWorthTakingDown)
-                            damageForDirection += 0.8*enemy.type.attackPower; // missile splash will not hit it (maybe)
-                    } else if (distanceSquaredToMissile <= 5) {
+                            damageForDirection += enemy.type.attackPower; // missile splash will not hit it (maybe)
+                    } else if (distanceSquaredToMissile <= 4) {
                         damageForDirection += enemy.type.attackPower;
                     }
                 }
