@@ -17,7 +17,7 @@ public class Missile {
     private static RobotInfo[] unitsInSight;
     private static MapLocation myLocation;
     private static RobotController rc = RobotPlayer.rc;
-    private static Random rand = new Random(rc.getID()); //seed random number generator
+//    private static Random rand = new Random(rc.getID()); //seed random number generator
     
 
     private static Team enemyTeam = rc.getTeam().opponent();
@@ -27,7 +27,7 @@ public class Missile {
 
 
     public static void start() throws GameActionException {
-        roundsLeft = 4;
+        roundsLeft = 5;
         while(true) {
             loop();
             rc.yield(); //Yield the round
@@ -54,7 +54,7 @@ public class Missile {
             } else if (numberOfEnemiesInAttackRange > 0 && (roundsLeft < 1 && rc.getHealth() == 1)) {
                 // explode if too little rounds left to move and can attack enemies
                 rc.explode();
-            } else if (numberOfEnemiesInAttackRange == 0 && roundsLeft < 1) {
+            } else if (numberOfEnemiesInAttackRange == 0 && roundsLeft < 1 && rc.senseNearbyRobots(2, rc.getTeam()).length != 0) {
                 rc.disintegrate();
             } else {
                 moveInOptimalDir();
@@ -75,7 +75,7 @@ public class Missile {
         unitsInSight = rc.senseNearbyRobots((roundsLeft+2)*(roundsLeft+2), enemyTeam);
         int numberOfUnitsInSight = unitsInSight.length;
         if (numberOfUnitsInSight != 0) {
-            Direction dir = myLocation.directionTo(unitsInSight[rand.nextInt(numberOfUnitsInSight)].location);
+            Direction dir = myLocation.directionTo(unitsInSight[0].location);
             if (rc.isCoreReady()) {
                 if (rc.canMove(dir)) {
                     rc.move(dir);

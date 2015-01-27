@@ -363,7 +363,7 @@ public class Launcher extends MovableUnit {
         
         int[] dirScores = new int[8];
         for (int i = 0; i < 8; i++) {
-            int dirScore = dangerInDir[i] + 2*dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8];
+            int dirScore = 2*dangerInDir[i] + dangerInDir[(i+7)%8] + dangerInDir[(i+1)%8];
             if (dirScore != 0 && rc.canLaunch(directions[i])) {
                 dirScores[i] = dirScore;
             } 
@@ -569,7 +569,7 @@ public class Launcher extends MovableUnit {
         2/*8:MINERFCTRY*/,  1/*9:HNDWSHSTN*/,   3/*10:AEROLAB*/,   2/*11:BEAVER*/,
         1/*12:COMPUTER*/,   2/*13:SOLDIER*/,   2/*14:BASHER*/,    1/*15:MINER*/,
         3/*16:DRONE*/,     4/*17:TANK*/,      5/*18:COMMANDER*/, 5/*19:LAUNCHER*/,
-        3/*20:MISSILE*/
+        2/*20:MISSILE*/
     };
     
     
