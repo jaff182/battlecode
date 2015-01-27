@@ -28,7 +28,7 @@ public class SupplyDepot extends Structure {
         claimBuildOrderEntry();
         
         //Dispense supply
-        dispenseSupply(suppliabilityMultiplier_Preattack);
+        Supply.dispense(suppliabilityMultiplier_Preattack);
     }
     
     //Specific methods =========================================================

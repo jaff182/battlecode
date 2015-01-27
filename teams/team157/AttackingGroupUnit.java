@@ -310,7 +310,7 @@ public class AttackingGroupUnit extends MovableUnit {
             break;
         }
         
-        distributeSupply(suppliabilityMultiplier_Preattack);
+        Supply.distribute(suppliabilityMultiplier_Preattack);
     }
     
     

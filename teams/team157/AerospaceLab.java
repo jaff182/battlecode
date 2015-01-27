@@ -32,7 +32,7 @@ public class AerospaceLab extends SpawnableStructure {
         //}
 
         //Dispense Supply
-        dispenseSupply(suppliabilityMultiplier_Preattack);
+        Supply.dispense(suppliabilityMultiplier_Preattack);
     }
     
 }

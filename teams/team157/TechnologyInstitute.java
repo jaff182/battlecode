@@ -29,6 +29,6 @@ public class TechnologyInstitute extends SpawnableStructure {
         claimBuildOrderEntry();
 
         //Dispense Supply
-        dispenseSupply(suppliabilityMultiplier_Preattack);
+        Supply.dispense(suppliabilityMultiplier_Preattack);
     }
 }

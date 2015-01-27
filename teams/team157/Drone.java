@@ -16,9 +16,10 @@ public class Drone extends MovableUnit {
     private static double minSupplyLevelOfSupplyDrone = 4000; //min supply level before moving to supply target
     private static double lowSupplyLevel = 400; //min supply level before returning to hq to resupply
     public static int roundNumSupply = 0; // round number after which all newly spawned drones are supply drones
-    private static int baseSupplyTimeout = 15;
+    private static int baseSupplyTimeout = 5;
     private static int supplyTimeout = baseSupplyTimeout; // number of rounds after staying near supply target before returning to hq
-    private static int supplyDistributeRadius = 255;
+    private static int supplyStartTime; //the round number that the drone left the HQ to supply
+    private static int supplyDistributeRadius = GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED;
     private static final int[] ordinalOffsets = {0, 7, 1, 6, 2, 5, 3, 4};
 
     
@@ -40,7 +41,7 @@ public class Drone extends MovableUnit {
     }
     
     private static void init() throws GameActionException {  
-        if (Clock.getRoundNum() > roundNumSupply && rc.readBroadcast(Channels.DOES_SUPPLY_DRONE_EXIST) == 0) {
+        if (Clock.getRoundNum() > roundNumSupply && rc.readBroadcast(Channels.DOES_SUPPLY_DRONE_EXIST) < Clock.getRoundNum()-5) {
             droneState = DroneState.SUPPLY;
         } else
             droneState = DroneState.FOLLOW_RESUPPLY;
@@ -167,9 +168,10 @@ public class Drone extends MovableUnit {
         case SUPPLY:
             if (supplyTargetID == HQID) {
                 if (rc.getSupplyLevel() > minSupplyLevelOfSupplyDrone) {
-//                System.out.println("Choosing supply target..");
-                chooseSupplyTarget2();
-                supplyTimeout = baseSupplyTimeout;
+//                  System.out.println("Choosing supply target..");
+                    chooseSupplyTarget2();
+                    supplyTimeout = baseSupplyTimeout;
+                    supplyStartTime= Clock.getRoundNum();
                 }
             } else if (rc.getSupplyLevel() < lowSupplyLevel || supplyTimeout < 0) {
                 supplyTargetID = HQID;
@@ -249,7 +251,7 @@ public class Drone extends MovableUnit {
             break;
 
         case SUPPLY:
-            rc.broadcast(Channels.DOES_SUPPLY_DRONE_EXIST, 1);
+            rc.broadcast(Channels.DOES_SUPPLY_DRONE_EXIST, Clock.getRoundNum());
 //            System.out.println("Supply drone at " + myLocation);
             if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
@@ -269,7 +271,8 @@ public class Drone extends MovableUnit {
                 rc.setIndicatorString(2, "Supply target: " + supplyTargetID + " at " + supplyTarget);
                 moveAndAvoidEnemies(myLocation.directionTo(supplyTarget), enemiesInSight);
                 if (supplyTargetID != HQID && (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius)) {
-                    distributeSupply(suppliabilityMultiplier_Preattack);
+                    Supply.dump(supplyTarget,Clock.getRoundNum()-supplyStartTime);
+                    //Supply.dispense(suppliabilityMultiplier_Preattack);
                     supplyTimeout--;
                 }
             }
@@ -661,7 +664,7 @@ public class Drone extends MovableUnit {
     
     /**
      * Multipliers for the effective supply capacity for friendly unit robotTypes, by 
-     * which the dispenseSupply() and distributeSupply() methods allocate supply (so 
+     * which the Supply.dispense() and Supply.distribute() methods allocate supply (so 
      * higher means give more supply to units of that type).
      */
     private static double[] suppliabilityMultiplier_Conservative = {

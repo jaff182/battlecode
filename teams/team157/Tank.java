@@ -184,7 +184,7 @@ public class Tank extends MovableUnit {
         
         }
 
-        distributeSupply(suppliabilityMultiplier_Preattack);
+        Supply.distribute(suppliabilityMultiplier_Preattack);
     }
     
     
@@ -340,7 +340,7 @@ public class Tank extends MovableUnit {
     
     /**
      * Multipliers for the effective supply capacity for friendly unit robotTypes, by 
-     * which the dispenseSupply() and distributeSupply() methods allocate supply (so 
+     * which the Supply.dispense() and Supply.distribute() methods allocate supply (so 
      * higher means give more supply to units of that type).
      */
     private static double[] suppliabilityMultiplier_Conservative = {

@@ -44,6 +44,6 @@ public class SpawnableStructure extends Structure {
         trySpawn(myLocation.directionTo(spawnLocation), spawnUnit);
 
         //Dispense Supply
-        dispenseSupply(suppliabilityMultiplier_Preattack);
+        Supply.dispense(suppliabilityMultiplier_Preattack);
     }
 }
