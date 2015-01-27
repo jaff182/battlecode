@@ -50,16 +50,18 @@ public class Map {
     
     //Encoding and Decoding methods ===========================================
     
-    //0...000000000111 in binary
+    //0...0000000000111 in binary
     private static final int pathStateBitMask = 7;
-    //0...000000001000 in binary
+    //0...0000000001000 in binary
     private static final int enemyHQBaseRangeBitMask = 8;
-    //0...000000010000 in binary
+    //0...0000000010000 in binary
     private static final int enemyHQBuffedRangeBitMask = 16;
-    //0...000000100000 in binary
+    //0...0000000100000 in binary
     private static final int enemyHQSplashRegionBitMask = 32;
-    //0...000001000000 in binary
+    //0...0000001000000 in binary
     private static final int enemyTowerBaseBitMask = 64;
+    //0...0111111111000 in binary
+    private static final int enemyAttackRegionsBitMask = 4088;
     
     
     /**
@@ -671,7 +673,7 @@ public class Map {
                     return false;
                 }
             }//*/
-            if(((value & ~pathStateBitMask) & ~mobLevel) != 0) {
+            if(((value & enemyAttackRegionsBitMask) & ~mobLevel) != 0) {
                 return false;
             }
         }
@@ -689,7 +691,7 @@ public class Map {
                 setInternalMap(loc.x,loc.y,value);
                 //Can check if in enemy attack region again
                 //The following check is the same as the comment earlier
-                if(((value & ~pathStateBitMask) & ~mobLevel) != 0) {
+                if(((value & enemyAttackRegionsBitMask) & ~mobLevel) != 0) {
                     return false;
                 }
             } else {
@@ -740,7 +742,7 @@ public class Map {
                     }
                     //The following is
                     //"value = encodePathState(value,pathStateOrdinal);"
-                    value = (value & ~pathStateBitMask) | pathStateOrdinal;
+                    value = (~pathStateBitMask & value) | pathStateOrdinal;
                     
                     //radio is more up to date so just copy into internal map as well
                     setMaps(loc.x,loc.y,value);
