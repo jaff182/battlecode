@@ -45,7 +45,7 @@ public class Drone extends MovableUnit {
         }
         currentWanderDirection = rc.getLocation().directionTo(enemyHQLocation);
         target = enemyHQLocation;
-        handedness = Clock.getRoundNum() %2 == 0;
+        handedness = Common.rc.getID() %2 == 0;
         // TODO waypoint system has a bug, drones try to move to offmap location at the start
         //Waypoints.refreshLocalCache();
         //target = Waypoints.waypoints[0];
@@ -207,7 +207,7 @@ public class Drone extends MovableUnit {
         case FOLLOW:
             double macroScoringAdvantage = macroScoringOfAdvantageInArea(rc.senseNearbyRobots(30), 25);
             rc.setIndicatorString(2, "MacroScoringAdvantage: "+macroScoringAdvantage);
-            if (macroScoringAdvantage > 3.0 && Drone.enemiesInSight.length != 0) {
+            if (macroScoringAdvantage > 2.0 && Drone.enemiesInSight.length != 0) {
                 //No missiles! (macroScoringAdvantage strips it)
                 RobotInfo enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
                 enemyToAttack = choosePriorityAttackTarget(Drone.enemiesInSight, attackPriorities);
@@ -366,6 +366,10 @@ public class Drone extends MovableUnit {
             }
             if (rc.senseTerrainTile(newLocation) == TerrainTile.VOID) {
                 damageForDirection += currentDamage;
+            }
+            
+            if (newDirection.isDiagonal()) {
+                damageForDirection += 0.6*currentDamage;
             }
             for (RobotInfo enemy : nearbyEnemies) {
                 if (enemy.type == RobotType.MISSILE) {
