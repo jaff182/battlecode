@@ -40,10 +40,13 @@ public class Drone extends MovableUnit {
     }
     
     private static void init() throws GameActionException {  
+        droneState = DroneState.SUPPLY;
+        /*
         if (Clock.getRoundNum() > roundNumSupply && rc.readBroadcast(Channels.DOES_SUPPLY_DRONE_EXIST) == 0) {
             droneState = DroneState.SUPPLY;
         } else
             droneState = DroneState.FOLLOW_RESUPPLY;
+        */
         currentWanderDirection = rc.getLocation().directionTo(enemyHQLocation);
         target = enemyHQLocation;
         handedness = Common.rc.getID() %2 == 0;
@@ -104,6 +107,7 @@ public class Drone extends MovableUnit {
         
         switch (droneState) {
         // Follow states for follow drones
+        /*
         case FOLLOW_RESUPPLY:
             if (rc.getSupplyLevel() > Drone.highFollowSupplyLevel) {
                 Drone.droneState = DroneState.FOLLOW_WANDER;
@@ -163,6 +167,7 @@ public class Drone extends MovableUnit {
                 Drone.droneState = DroneState.FOLLOW_WANDER;
             }
             break;
+        */
         // Supply state for supply drones    
         case SUPPLY:
             if (supplyTargetID == HQID) {
@@ -200,6 +205,7 @@ public class Drone extends MovableUnit {
     private static void droneMove(MapLocation target) throws GameActionException{
         // first check for enemies and attacks if there are
         switch(droneState) {
+        /*
         case FOLLOW_RESUPPLY:
             if (myLocation.distanceSquaredTo(HQLocation) > GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED)
                 moveAndAvoidEnemies(myLocation.directionTo(HQLocation), enemiesInSight);
@@ -247,7 +253,7 @@ public class Drone extends MovableUnit {
                     moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateRight().rotateRight(), enemiesInSight);
             }
             break;
-
+        */
         case SUPPLY:
             rc.broadcast(Channels.DOES_SUPPLY_DRONE_EXIST, 1);
 //            System.out.println("Supply drone at " + myLocation);
@@ -701,7 +707,8 @@ public class Drone extends MovableUnit {
         UNSWARM, // defensive mode for lone drones, stays away from target waits for reinforcements
         FOLLOW, // following enemy
         RETREAT, // retreats when enemy is in sight range and then stays still.
-        SUPPLY // move back to hq to collect supply and distribute it to other units
-, FOLLOW_RESUPPLY, FOLLOW_WANDER
+        SUPPLY, // move back to hq to collect supply and distribute it to other units
+        //FOLLOW_RESUPPLY, 
+        //FOLLOW_WANDER
     }
 }

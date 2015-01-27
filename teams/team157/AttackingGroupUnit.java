@@ -11,8 +11,7 @@ public class AttackingGroupUnit extends MovableUnit {
 
     private static MapLocation gatherLocation;
     private static MapLocation surroundLocation;
-    private static MapLocation defendLocation = HQLocation;
-    private static int numberInSwarm = 30;
+    private static int numberInSwarm = 10;
     private static AttackingGroupState state;
     private static AttackingGroupState previousState; // cannot be attack or retreat state
     private static int gatherRange = 24;
@@ -20,7 +19,6 @@ public class AttackingGroupUnit extends MovableUnit {
     private static MapLocation enemyTarget; //used only in defend state
     private static int defendRadius = distanceBetweenHQs/4;
     
-    private static int sensingRange = 35;
     private static final int baseSurroundTimeout = 20;
     private static int surroundTimeout = baseSurroundTimeout;
    
@@ -28,6 +26,7 @@ public class AttackingGroupUnit extends MovableUnit {
     private static RobotInfo attackTarget;
     private static MapLocation advanceLocation;
     private static MapLocation retreatLocation;
+    private static boolean surroundAttack = true;
     
     // Constants to tweak ========================================
     static int macroScoringFriendlyLocationThreshold;
@@ -138,6 +137,7 @@ public class AttackingGroupUnit extends MovableUnit {
                     state = previousState;
                     if (state == AttackingGroupState.SURROUND){
                         surroundTimeout = baseSurroundTimeout;
+                        surroundAttack = false;
                     }
                 }   
             }
@@ -152,11 +152,12 @@ public class AttackingGroupUnit extends MovableUnit {
                     setAttackTargetToNearestEnemy(nearbyEnemies);
                     state = AttackingGroupState.ATTACK;
                     previousState = AttackingGroupState.ADVANCE;
-                } else if (myLocation.distanceSquaredTo(surroundLocation) < 50) {
+                } else if (myLocation.distanceSquaredTo(surroundLocation) < 81) {
                     state = AttackingGroupState.SURROUND;
                     previousState = AttackingGroupState.ADVANCE;
                     surroundTimeout = baseSurroundTimeout;
-                } else if (getNearbyFriendlyAttackers() < numberInSwarm/3) {
+                    surroundAttack = false;
+                } else if (rc.senseNearbyRobots(myLocation, 36, myTeam).length == 0) {
                     state = AttackingGroupState.GATHER;
                     previousState = AttackingGroupState.ADVANCE;
                 }
@@ -246,6 +247,7 @@ public class AttackingGroupUnit extends MovableUnit {
                     state = previousState;
                     if (state == AttackingGroupState.SURROUND){
                         surroundTimeout = baseSurroundTimeout;
+                        surroundAttack = false;
                     }
                 }
             }
@@ -279,16 +281,23 @@ public class AttackingGroupUnit extends MovableUnit {
         case SURROUND:
             int distanceToSurroundLoc = myLocation.distanceSquaredTo(surroundLocation);
             if (distanceToSurroundLoc < 36 && distanceToSurroundLoc > 24) {
-                if (rc.senseNearbyRobots(surroundLocation, 49, myTeam).length < numberInSwarm/4) {
+                if (surroundAttack) {
+                    bug(surroundLocation);
+                    checkForEnemies();
+                } else if (rc.senseNearbyRobots(surroundLocation, 49, myTeam).length ==0) {
                     surroundTimeout--;
-                } else if (rc.senseNearbyRobots(surroundLocation, 36, myTeam).length > 7
-                        || rc.senseNearbyRobots(surroundLocation, 24, myTeam).length > 2){
+                } else if (rc.senseNearbyRobots(surroundLocation, 36, myTeam).length > 3
+                        || rc.senseNearbyRobots(surroundLocation, 24, myTeam).length > 0){
                     if (surroundLocation == enemyHQLocation) {
                         Map.letMeInEnemyHQAttackRegion();
+                        surroundAttack = true;
+                        bug(surroundLocation);
                     } else {
                         int index = Common.getEnemyTowerIndex(surroundLocation);
                         if (index!= -1) {
                             Map.letMeInEnemyTowerRange(index);
+                            surroundAttack = true;
+                            bug(surroundLocation);
                         }
                     } 
                 }
@@ -333,7 +342,7 @@ public class AttackingGroupUnit extends MovableUnit {
     // Attacking ==================================================================
 
 
-    private static void setAttackTargetToNearestEnemy(RobotInfo[] nearbyEnemies)
+    private static void setAttackTargetToNearestEnemy(RobotInfo[] nearbyEnemies) throws GameActionException
     {
 
         RobotInfo nearestEnemy = null;
@@ -346,6 +355,12 @@ public class AttackingGroupUnit extends MovableUnit {
             }
         }
         attackTarget = nearestEnemy;
+        if (attackTarget.type == RobotType.HQ){
+            Map.letMeInEnemyHQAttackRegion();
+        } else if (attackTarget.type == RobotType.TOWER){
+            int towerIndex = Common.getEnemyTowerIndex(attackTarget.location);
+            Map.letMeInEnemyTowerRange(towerIndex);
+        }
     }
     
     
@@ -555,7 +570,13 @@ public class AttackingGroupUnit extends MovableUnit {
     }
     
     
-    
+    private static void checkForEnemies() throws GameActionException {
+        if (enemies.length > 0) {
+            if (rc.isWeaponReady()) {
+               priorityAttack(enemies, attackPriorities);
+            }
+        }
+    }
     
     // Parameters =================================================================
 
