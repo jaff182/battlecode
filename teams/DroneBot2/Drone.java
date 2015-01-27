@@ -418,7 +418,7 @@ public class Drone extends MovableUnit {
                         
                         if (!hasEnemyWorthTakingDown)
                             damageForDirection += enemy.type.attackPower; // missile splash will not hit it (maybe)
-                    } else if (distanceSquaredToMissile <= 4) {
+                    } else if (distanceSquaredToMissile <= 5) {
                         damageForDirection += enemy.type.attackPower;
                     }
                 }
@@ -427,6 +427,10 @@ public class Drone extends MovableUnit {
                 }
             }
 
+            if (Clock.getRoundNum() == 432 && rc.getID() == 2137) {
+                System.out.println("Direction: " + newDirection + " damage for direction: " + damageForDirection);
+            }
+            
             if (damageForDirection == 0) {
                 if (rc.isCoreReady() && movePossible(newDirection)) {
                     rc.move(newDirection);
