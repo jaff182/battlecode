@@ -169,14 +169,19 @@ public class MiningUnit extends MovableUnit {
      */
     private static void countOreInRelativeShell() throws GameActionException {
         //Initiate
-        double ore, bestOre = minOreWorthMining;
-        int dx, dy;
+        double ore, bestOre = minOreWorthMining-0.001;
+        int dx, dy, idx;
+        int length = shellsX[HCL].length;
+        int offsetGenerator = Common.rand.nextInt(4*length);
+        int offset = offsetGenerator/4, rotation = offsetGenerator%4;
+        int cos = ((1-rotation)%2), sin = ((rotation-2)%2);
         
         //Iterate through each cell in the shell
-        for(int i=0; i<shellsX[HCL].length; i++) {
+        for(int i=0; i<length; i++) {
             //Get relative location
-            dx = shellsX[HCL][i];
-            dy = shellsY[HCL][i];
+            idx = (i+offset)%length;
+            dx = cos*shellsX[HCL][idx] + sin*shellsY[HCL][idx];
+            dy = -sin*shellsX[HCL][idx] + cos*shellsY[HCL][idx];
             
             //Skip alternate cells in outer 2 shells to save bytecode
             //Unroll loops to save bytecode
@@ -189,7 +194,7 @@ public class MiningUnit extends MovableUnit {
                     //abstraction thoroughly broken and inlined to save bytecodes
                     && (((4088 & rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA)) & ~Map.mobLevel) == 0)) {
                         ore = rc.senseOre(loc);
-                        if(ore >= bestOre) {
+                        if(ore > bestOre) {
                             lastOreLocation = loc;
                             lastOreHCL = HCL;
                             bestOre = ore;
@@ -204,7 +209,7 @@ public class MiningUnit extends MovableUnit {
                     //abstraction thoroughly broken and inlined to save bytecodes
                     && (((4088 & rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA)) & ~Map.mobLevel) == 0)) {
                         ore = rc.senseOre(loc);
-                        if(ore >= bestOre) {
+                        if(ore > bestOre) {
                             lastOreLocation = loc;
                             lastOreHCL = HCL;
                             bestOre = ore;
@@ -219,7 +224,7 @@ public class MiningUnit extends MovableUnit {
                     //abstraction thoroughly broken and inlined to save bytecodes
                     && (((4088 & rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA)) & ~Map.mobLevel) == 0)) {
                         ore = rc.senseOre(loc);
-                        if(ore >= bestOre) {
+                        if(ore > bestOre) {
                             lastOreLocation = loc;
                             lastOreHCL = HCL;
                             bestOre = ore;
@@ -234,7 +239,7 @@ public class MiningUnit extends MovableUnit {
                     //abstraction thoroughly broken and inlined to save bytecodes
                     && (((4088 & rc.readBroadcast(Map.locationToMapXIndex(loc.x)*130+Map.locationToMapYIndex(loc.y)+Channels.MAP_DATA)) & ~Map.mobLevel) == 0)) {
                         ore = rc.senseOre(loc);
-                        if(ore >= bestOre) {
+                        if(ore > bestOre) {
                             lastOreLocation = loc;
                             lastOreHCL = HCL;
                             bestOre = ore;

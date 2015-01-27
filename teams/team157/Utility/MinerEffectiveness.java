@@ -32,7 +32,7 @@ public class MinerEffectiveness {
      * proportion is averaged. Should be significantly more than mining and movement 
      * delays.
      */
-    public static final int MEASUREMENT_PERIOD = 50;
+    public static final int MEASUREMENT_PERIOD = 20;
     
     /**
      * Total sum of effectiveness proportions over the current measurement period.
@@ -123,15 +123,16 @@ public class MinerEffectiveness {
             
             //Determine new min mining rate
             double minMiningRate = 0.001*RobotPlayer.rc.readBroadcast(SCORE_CHANNEL);
-            if(minMiningRate > GameConstants.MINIMUM_MINE_AMOUNT && mean < 0.75) {
+            if(minMiningRate > GameConstants.MINIMUM_MINE_AMOUNT/GameConstants.MINER_MINE_RATE && mean < 0.75) {
                     //Lower mining threshhold
-                    minMiningRate = Math.max(minMiningRate*0.9,GameConstants.MINIMUM_MINE_AMOUNT);
+                    minMiningRate = Math.max(minMiningRate*0.9,GameConstants.MINIMUM_MINE_AMOUNT/GameConstants.MINER_MINE_RATE);
             } else if(minMiningRate < GameConstants.MINER_MINE_MAX 
                 && mean > 0.95) {
                     //Raise mining threshhold
                     minMiningRate = Math.min(minMiningRate*1.1,GameConstants.MINER_MINE_MAX);
             }
             RobotPlayer.rc.broadcast(MinerEffectiveness.SCORE_CHANNEL,(int)(1000*minMiningRate));
+            RobotPlayer.rc.setIndicatorString(2,"threshhold is "+minMiningRate);
             
             //Reset sum
             sum = 0;
