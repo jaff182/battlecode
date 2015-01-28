@@ -4,6 +4,7 @@ import java.util.Random;
 
 import DroneBot2.Utility.*;
 import battlecode.common.*;
+import DroneBot2.*;
 
 public class Common extends RobotPlayer {
     

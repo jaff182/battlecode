@@ -391,10 +391,10 @@ public class Drone extends MovableUnit {
                 currentDamage += enemy.type.attackPower;
                 currentDamageIfWeAttack += enemy.type.attackPower;
             } else {
-                if (distanceToEnemy <= 4) {
+                if (distanceToEnemy <= 8 && enemy.coreDelay < 2.0) {
                     currentDamage += enemy.type.attackPower;
                     currentDamageIfWeAttack += enemy.type.attackPower;
-                } else if (distanceToEnemy <= 5)
+                } else if (distanceToEnemy <= 10)
                     currentDamageIfWeAttack += enemy.type.attackPower;
             }
         }

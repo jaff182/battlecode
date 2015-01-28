@@ -51,9 +51,6 @@ public class Missile {
             } else if (roundsLeft < 3 && numberOfEnemiesInAttackRange > 1) {
                 // explode if many enemies nearby and far enough from spawn location
                 rc.explode();
-            } else if (numberOfEnemiesInAttackRange > 0 && (roundsLeft < 1 && rc.getHealth() == 1)) {
-                // explode if too little rounds left to move and can attack enemies
-                rc.explode();
             } else if (numberOfEnemiesInAttackRange == 0 && roundsLeft < 1 && rc.senseNearbyRobots(2, rc.getTeam()).length != 0) {
                 rc.disintegrate();
             } else {

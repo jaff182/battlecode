@@ -16,9 +16,11 @@ public class Drone extends MovableUnit {
     private static double minSupplyLevelOfSupplyDrone = 4000; //min supply level before moving to supply target
     private static double lowSupplyLevel = 400; //min supply level before returning to hq to resupply
     public static int roundNumSupply = 0; // round number after which all newly spawned drones are supply drones
-    private static int baseSupplyTimeout = 15;
+    private static int supplyDroneIndex;
+    private static int baseSupplyTimeout = 5;
     private static int supplyTimeout = baseSupplyTimeout; // number of rounds after staying near supply target before returning to hq
-    private static int supplyDistributeRadius = 255;
+    private static int supplyStartTime; //the round number that the drone left the HQ to supply
+    private static int supplyDistributeRadius = GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED;
     private static final int[] ordinalOffsets = {0, 7, 1, 6, 2, 5, 3, 4};
 
     
@@ -40,9 +42,8 @@ public class Drone extends MovableUnit {
     }
     
     private static void init() throws GameActionException {  
-        if (Clock.getRoundNum() > roundNumSupply && rc.readBroadcast(Channels.DOES_SUPPLY_DRONE_EXIST) == 0) {
-            droneState = DroneState.SUPPLY;
-        } else
+        droneState = DroneState.SUPPLY;
+        //Check if there is a need for another supply drone
             droneState = DroneState.FOLLOW_RESUPPLY;
         currentWanderDirection = rc.getLocation().directionTo(enemyHQLocation);
         target = enemyHQLocation;
@@ -99,7 +100,7 @@ public class Drone extends MovableUnit {
     /**
      * Switches drone state based on number of enemies in sight
      */
-    private static void droneSwitchState() {
+    private static void droneSwitchState() throws GameActionException {
         
         
         switch (droneState) {
@@ -167,9 +168,10 @@ public class Drone extends MovableUnit {
         case SUPPLY:
             if (supplyTargetID == HQID) {
                 if (rc.getSupplyLevel() > minSupplyLevelOfSupplyDrone) {
-//                System.out.println("Choosing supply target..");
-                chooseSupplyTarget2();
-                supplyTimeout = baseSupplyTimeout;
+//                  System.out.println("Choosing supply target..");
+                    chooseSupplyTarget3();
+                    supplyTimeout = baseSupplyTimeout;
+                    supplyStartTime= Clock.getRoundNum();
                 }
             } else if (rc.getSupplyLevel() < lowSupplyLevel || supplyTimeout < 0) {
                 supplyTargetID = HQID;
@@ -247,9 +249,7 @@ public class Drone extends MovableUnit {
                     moveAndAvoidEnemies(myLocation.directionTo(Drone.lastSeenLocation).rotateRight().rotateRight(), enemiesInSight);
             }
             break;
-
         case SUPPLY:
-            rc.broadcast(Channels.DOES_SUPPLY_DRONE_EXIST, 1);
 //            System.out.println("Supply drone at " + myLocation);
             if (supplyTargetID == HQID) {
                 // staying near HQ to collect supply
@@ -258,18 +258,20 @@ public class Drone extends MovableUnit {
                 moveAndAvoidEnemies(myLocation.directionTo(HQLocation), enemiesInSight);
                 // try to avoid enemies while moving to supplytarget
             } else {
-                try {
-                    RobotInfo robot = rc.senseRobot(supplyTargetID);
-                    supplyTarget = robot.location;
-                } catch (GameActionException e) {
-                    chooseSupplyTarget2();
-                    RobotInfo robot = rc.senseRobot(supplyTargetID);
-                    supplyTarget = robot.location;
+                boolean success = false;
+                while(!success) {
+                    try {
+                        RobotInfo robot = rc.senseRobot(supplyTargetID);
+                        supplyTarget = robot.location;
+                        success = true;
+                    } catch (GameActionException e) {
+                        chooseSupplyTarget3();
+                    }
                 }
                 rc.setIndicatorString(2, "Supply target: " + supplyTargetID + " at " + supplyTarget);
                 moveAndAvoidEnemies(myLocation.directionTo(supplyTarget), enemiesInSight);
                 if (supplyTargetID != HQID && (myLocation.distanceSquaredTo(supplyTarget) < supplyDistributeRadius)) {
-                    distributeSupply(suppliabilityMultiplier_Preattack);
+                    //Supply.dispense(suppliabilityMultiplier_Preattack);
                     supplyTimeout--;
                 }
             }
@@ -355,6 +357,10 @@ public class Drone extends MovableUnit {
         }
     }
     
+    private static void chooseSupplyTarget3() throws GameActionException {
+            return;
+        }
+    
     /**
      * Move in direction that avoids enemies while favoring input direction.
      * @param dir favored direction
@@ -373,10 +379,10 @@ public class Drone extends MovableUnit {
                 currentDamage += enemy.type.attackPower;
                 currentDamageIfWeAttack += enemy.type.attackPower;
             } else {
-                if (distanceToEnemy <= 4) {
+                if (distanceToEnemy <= 8 && enemy.coreDelay < 2.0) {
                     currentDamage += enemy.type.attackPower;
                     currentDamageIfWeAttack += enemy.type.attackPower;
-                } else if (distanceToEnemy <= 5)
+                } else if (distanceToEnemy <= 10)
                     currentDamageIfWeAttack += enemy.type.attackPower;
             }
         }
@@ -418,19 +424,20 @@ public class Drone extends MovableUnit {
                         
                         if (!hasEnemyWorthTakingDown)
                             damageForDirection += enemy.type.attackPower; // missile splash will not hit it (maybe)
-                    } else if (distanceSquaredToMissile <= 5) {
+                        else
+                            damageForDirection += 0.5*enemy.type.attackPower;
+                    } else if (distanceSquaredToMissile <= 4) {
                         damageForDirection += enemy.type.attackPower;
                     }
+                } 
+                else if (enemy.type == RobotType.LAUNCHER && enemy.missileCount != 0 && enemy.location.distanceSquaredTo(newLocation) <=8 + ((Common.rc.getCoreDelay() >0.4) ? 1 : 0)) {
+                    damageForDirection += RobotType.MISSILE.attackPower;
                 }
                 else if (enemy.location.distanceSquaredTo(newLocation) <= enemy.type.attackRadiusSquared) {
                     damageForDirection += enemy.type.attackPower;
                 }
             }
 
-            if (Clock.getRoundNum() == 432 && rc.getID() == 2137) {
-                System.out.println("Direction: " + newDirection + " damage for direction: " + damageForDirection);
-            }
-            
             if (damageForDirection == 0) {
                 if (rc.isCoreReady() && movePossible(newDirection)) {
                     rc.move(newDirection);
@@ -665,7 +672,7 @@ public class Drone extends MovableUnit {
     
     /**
      * Multipliers for the effective supply capacity for friendly unit robotTypes, by 
-     * which the dispenseSupply() and distributeSupply() methods allocate supply (so 
+     * which the Supply.dispense() and Supply.distribute() methods allocate supply (so 
      * higher means give more supply to units of that type).
      */
     private static double[] suppliabilityMultiplier_Conservative = {
@@ -701,11 +708,12 @@ public class Drone extends MovableUnit {
 
 
     public static enum DroneState {
-        //SWARM, // aggressive mode for drones in a group
+        SWARM, // aggressive mode for drones in a group
         UNSWARM, // defensive mode for lone drones, stays away from target waits for reinforcements
         FOLLOW, // following enemy
         RETREAT, // retreats when enemy is in sight range and then stays still.
-        SUPPLY // move back to hq to collect supply and distribute it to other units
-, FOLLOW_RESUPPLY, FOLLOW_WANDER
+        SUPPLY, // move back to hq to collect supply and distribute it to other units
+        FOLLOW_RESUPPLY, 
+        FOLLOW_WANDER
     }
 }
