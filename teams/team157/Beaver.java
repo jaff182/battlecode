@@ -362,7 +362,7 @@ public class Beaver extends MiningUnit {
     }
     
     /**
-     * Finds a direction to build.
+     * Finds a direction to build with least ore on it.
      * @return The optimal direction to build. Direction.NONE if current location is 
      *         the best direction, or null if no direction to build.
      * @throws GameActionException
@@ -387,10 +387,14 @@ public class Beaver extends MiningUnit {
             if((dirInt+relativeParity)%2 == 1) {
                 MapLocation loc = myLocation.add(directions[dirInt]);
                 if(movePossible(loc)) {
-                    double ore = rc.senseOre(loc);
-                    if(ore < minOre) {
-                        minOre = ore;
-                        bestDirInt = dirInt;
+                    MapLocation loc1 = myLocation.add(directions[dirInt].rotateLeft());
+                    MapLocation loc2 = myLocation.add(directions[dirInt].rotateRight());
+                    if(movePossible(loc1) && movePossible(loc2)) {
+                        double ore = rc.senseOre(loc);
+                        if(ore < minOre) {
+                            minOre = ore;
+                            bestDirInt = dirInt;
+                        }
                     }
                 }
             }
@@ -401,13 +405,55 @@ public class Beaver extends MiningUnit {
     }
     
     /**
+     * Finds a direction to build.
+     * @return The optimal direction to build. Direction.NONE if current location is 
+     *         the best direction, or null if no direction to build.
+     * @throws GameActionException
+     */
+    private static Direction findBuildDir() throws GameActionException {
+        myLocation = rc.getLocation();
+        int relativeParity = (Math.abs(myLocation.x)+Math.abs(myLocation.y)+checkerboardParity)%2;
+        int dirInt0 = myLocation.directionTo(HQLocation).ordinal();
+        double minOre;
+        int bestDirInt;
+        if(relativeParity == 0) {
+            //Current location is also viable for building
+            minOre = rc.senseOre(myLocation);
+            bestDirInt = 8;
+        } else {
+            minOre = Integer.MAX_VALUE;
+            bestDirInt = -1;
+        }
+        //Find location closest to HQ with minimum ore
+        for(int offset : offsets) {
+            int dirInt = (dirInt0+offset+8)%8;
+            if((dirInt+relativeParity)%2 == 1) {
+                MapLocation loc = myLocation.add(directions[dirInt]);
+                if(movePossible(loc)) {
+                    MapLocation loc1 = myLocation.add(directions[dirInt].rotateLeft());
+                    MapLocation loc2 = myLocation.add(directions[dirInt].rotateRight());
+                    if(movePossible(loc1) && movePossible(loc2)) {
+                        return directions[dirInt];
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
      * Build robot of type robotType, or move elsewhere if not possible
      * @param robotType RobotType of building to build
      * @throws GameActionException
      */
     private static void tryBuild(RobotType robotType) throws GameActionException {
         if(rc.isCoreReady()) {
-            Direction dir = findBuildDirection();
+            Direction dir;
+            if(robotType == RobotType.MINERFACTORY) {
+                dir = findBuildDir();
+            } else {
+                dir = findBuildDirection();
+            }
             if(dir != null && dir.ordinal() < 8 
                 && rc.canBuild(dir,robotType) && rc.hasBuildRequirements(robotType)) {
                 //Build!
